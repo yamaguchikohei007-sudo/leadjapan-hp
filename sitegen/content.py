@@ -85,7 +85,7 @@ BUSINESSES: tuple[Business, ...] = (
 )
 
 
-SITE_URL = ""
+SITE_URL = "https://leadjapan-hp.pages.dev"
 
 NEWS: tuple[NewsItem, ...] = load_news()
 
