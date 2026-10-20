@@ -27,6 +27,9 @@ img, svg { max-width: 100%; height: auto; }
 h1, h2, h3, h4 { font-family: var(--font); line-height: 1.5; margin: 0 0 .6em; }
 a { color: var(--navy); }
 :focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+/* On navy, red is too faint for a focus ring (2.3:1): use white */
+.site-footer :focus-visible, .cta-band :focus-visible, .page-hero :focus-visible,
+.hero :focus-visible, .skip-link:focus-visible { outline-color: #fff; }
 
 .container {
   max-width: 1200px;
@@ -103,6 +106,10 @@ a { color: var(--navy); }
   .global-nav a { color: #fff; font-size: 1.2rem; }
   .logo:has(~ .nav-toggle:checked) { color: #fff; }
   .logo-mark { width: 36px; }
+  /* open menu is navy: current-page underline and focus rings go white */
+  .nav-toggle:checked ~ .global-nav a::after { background: #fff; }
+  .nav-toggle:checked ~ .global-nav :focus-visible, .logo:has(~ .nav-toggle:checked):focus-visible,
+  .nav-toggle:checked ~ .nav-toggle-label { outline-color: #fff; }
 }
 
 /* Footer */

@@ -54,6 +54,21 @@ class BrandColorTests(unittest.TestCase):
         for selector in (".page-hero .section-label", ".cta-band .section-label", ".hero-kicker"):
             self.assertIn("color: var(--sky)", css_rule(selector), selector)
 
+    def test_focus_and_current_marks_on_navy_are_white(self):
+        # red on navy is 2.3:1, under the 3:1 WCAG 1.4.11 needs for focus/state cues
+        self.assertGreaterEqual(contrast("#FFFFFF", "#10366B"), 3)
+        css = re.sub(r"/\*.*?\*/", "", CSS.read_text(encoding="utf-8"), flags=re.S)
+        rules = {sel.strip(): body for sels, body in re.findall(r"([^{}]+)\{([^}]*)\}", css)
+                 for sel in sels.split(",")}
+        for selector in (".site-footer :focus-visible", ".cta-band :focus-visible",
+                         ".page-hero :focus-visible", ".hero :focus-visible",
+                         ".skip-link:focus-visible",
+                         ".nav-toggle:checked ~ .global-nav :focus-visible",
+                         ".nav-toggle:checked ~ .nav-toggle-label"):
+            self.assertIn("outline-color: #fff", rules.get(selector, ""), selector)
+        self.assertIn("background: #fff",
+                      rules.get(".nav-toggle:checked ~ .global-nav a::after", ""))
+
 
 class FaviconTests(unittest.TestCase):
     def test_favicon_uses_brand_mark(self):
