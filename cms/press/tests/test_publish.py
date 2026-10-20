@@ -97,7 +97,7 @@ class PublishTests(TestCase):
         self.assertEqual(paths, ["content", "static/img/news"])
         self.assertEqual(message, "news: サイトに反映 (2026-10-20 09:05)")
         self.assertEqual(git.pushes, 1)
-        self.assertEqual(r.url, "https://yamaguchikohei007-sudo.github.io/leadjapan-hp/")
+        self.assertEqual(r.url, "https://leadjapan-hp.pages.dev")
         self.assertIn("数分でサイトに反映されます", r.message)
 
     def test_push_failure_reports_and_keeps_commit(self):

@@ -11,7 +11,7 @@ Python 標準ライブラリだけで生成する静的サイトです。外部�
 - `static/css/style.css`, `static/css/motion.css` — スタイルとスクロール演出。
 - `static/img/tokyo-skyline.svg` — 東京の街並みのイラスト。
 - `tests/` — テスト。
-- `.github/workflows/pages.yml` — GitHub Pages への自動公開設定。
+- `.github/workflows/ci.yml` — push / プルリクエスト時のテスト実行（公開は Cloudflare Pages が行います）。
 
 ## 文言の編集
 
@@ -84,7 +84,7 @@ Cloudflare Pages（無料プラン・商用利用可）で公開します。`mai
    | 環境変数（Environment variables） | `PYTHON_VERSION` = `3.13` |
 
 5. **Save and Deploy** を押します。最初のデプロイが終わると `https://<プロジェクト名>.pages.dev` の URL が表示されます。この URL をメモします。
-6. `sitegen/content.py` の `SITE_URL` にその URL を設定します（例: `SITE_URL = "https://leadjapan-hp.pages.dev"`）。記事ページの `og:url` / `og:image` に使われます。
+6. `sitegen/content.py` の `SITE_URL` にその URL を設定します（現在は `SITE_URL = "https://leadjapan-hp.pages.dev"`）。記事ページの `og:url` / `og:image` に使われます。
 
 ### 独自ドメインを使う場合
 
@@ -93,17 +93,7 @@ Cloudflare Pages（無料プラン・商用利用可）で公開します。`mai
 3. 画面の案内に従って DNS を設定します（ドメインを Cloudflare で管理している場合は自動、他社 DNS の場合は表示された CNAME レコードを追加）。
 4. 有効になったら `sitegen/content.py` の `SITE_URL` を独自ドメインの URL に変更し、push します。
 
-## 公開手順（GitHub Pages・無料）
-
-1. GitHub で **public** リポジトリを作成します。
-2. このプロジェクトを push します（`main` ブランチ）。
-3. リポジトリの **Settings › Pages › Source** を **「GitHub Actions」** に設定します。
-4. `main` への push で `.github/workflows/pages.yml` が実行され、公開されます。手動で実行する場合は Actions タブから `workflow_dispatch` を使います。
-5. 公開 URL は `https://<ユーザー名>.github.io/<リポジトリ名>/` になります。
-
 すべての内部リンクは相対パスのため、サブパスでも動作します。
-
-GitHub Pages は public リポジトリなら無料です（private リポジトリで使うには有料プランが必要です）。最初のデプロイが Pages の Source を「GitHub Actions」に設定する前に実行されて失敗した場合は、設定後に Actions タブからワークフローを再実行してください。
 
 既知の制限: 深い階層の存在しない URL（例: `/repo/a/b/c`）では、`404.html` の CSS・画像が相対パスのため読み込まれず、装飾なしで表示されることがあります。現状は許容しています。
 
@@ -190,7 +180,7 @@ Markdown の書き方:
 | 予期しないエラーが発生しました | 想定外の問題です。ファイルは元に戻されます。メッセージを管理者に伝えてください |
 | その他のエラー（書き出し・コミットの失敗） | メッセージに原因が出ます。ファイルは元に戻されます |
 
-公開先は現在 GitHub Pages です。Cloudflare Pages への移行は今後予定しています。
+公開先は Cloudflare Pages（https://leadjapan-hp.pages.dev/ ）です。`main` への push 後、Cloudflare 側のビルドが終わると数分で反映されます。
 
 ### バックアップ
 
@@ -211,7 +201,7 @@ Markdown の書き方:
 
 - プライバシーポリシーの文面は草案です。公開前に内容を確認してください。
 - スクロール演出は Chrome / Edge / Safari 26 以降で動作します。それ以外のブラウザでは、演出なしでコンテンツが静的に表示されます。
-- 独自ドメインを後で使う場合は、ドメイン取得費用のみ有料です（任意）。GitHub Pages の設定でカスタムドメインを指定し、DNS の設定を行ってください。
+- 独自ドメインを後で使う場合は、ドメイン取得費用のみ有料です（任意）。手順は「Cloudflare Pages での公開」の「独自ドメインを使う場合」を参照してください。
 
 ## 画像のクレジット
 

@@ -20,7 +20,7 @@ from .export import IMAGE_DIR, ExportError, export_published
 NEWS_JSON = "content/news.json"
 COMMIT_PATHS = ["content", IMAGE_DIR]
 _publish_lock = threading.Lock()
-FALLBACK_URL = "https://yamaguchikohei007-sudo.github.io/leadjapan-hp/"
+FALLBACK_URL = "https://leadjapan-hp.pages.dev/"
 
 
 class GitError(Exception):
