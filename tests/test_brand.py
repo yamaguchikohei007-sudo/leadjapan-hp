@@ -2,6 +2,7 @@ import re
 import unittest
 
 from tests.helpers import ROOT
+from sitegen.render import render_layout
 
 CSS = ROOT / "static/css/style.css"
 
@@ -52,6 +53,22 @@ class BrandColorTests(unittest.TestCase):
     def test_labels_on_navy_use_sky(self):
         for selector in (".page-hero .section-label", ".cta-band .section-label", ".hero-kicker"):
             self.assertIn("color: var(--sky)", css_rule(selector), selector)
+
+
+class FaviconTests(unittest.TestCase):
+    def test_favicon_uses_brand_mark(self):
+        path = ROOT / "static/img/favicon.svg"
+        svg = path.read_text(encoding="utf-8")
+        self.assertRegex(svg, r'<rect[^>]*fill="#10366B"')
+        self.assertRegex(svg, r'<circle[^>]*fill="#D71920"')
+        self.assertEqual(svg.count("<polygon"), 2)
+        self.assertNotIn("<text", svg)
+        self.assertNotIn("<script", svg)
+        self.assertLess(path.stat().st_size, 1024)
+
+    def test_theme_color(self):
+        html = render_layout(title="t", description="d", body="", current="index.html")
+        self.assertIn('<meta name="theme-color" content="#10366B">', html)
 
 
 if __name__ == "__main__":

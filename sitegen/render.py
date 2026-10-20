@@ -49,6 +49,7 @@ def render_layout(*, title: str, description: str, body: str, current: str,
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#10366B">
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(description)}">
 <link rel="icon" type="image/svg+xml" href="static/img/favicon.svg">
