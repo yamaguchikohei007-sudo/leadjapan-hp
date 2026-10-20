@@ -1,7 +1,8 @@
 import unittest
 
 from tests.helpers import LinkCollector
-from sitegen.render import render_layout, find_placeholders
+from sitegen.content import SITE
+from sitegen.render import LOGO_MARK, render_layout, find_placeholders
 
 
 class RenderTests(unittest.TestCase):
@@ -34,6 +35,23 @@ class RenderTests(unittest.TestCase):
         p = LinkCollector()
         p.feed(render_layout(title="t", description="d", body="", current="index.html"))
         self.assertEqual(p.scripts, 0)
+
+    def test_logo_mark_uses_current_color(self):
+        self.assertIn('viewBox="0 0 256 196"', LOGO_MARK)
+        self.assertEqual(LOGO_MARK.count('fill="currentColor"'), 2)
+        self.assertEqual(LOGO_MARK.count("<circle"), 1)
+        self.assertEqual(LOGO_MARK.count("#D71920"), 1)
+        self.assertIn('aria-hidden="true"', LOGO_MARK)
+
+    def test_header_logo_markup(self):
+        html = render_layout(title="t", description="d", body="", current="index.html")
+        self.assertIn(
+            f'<a class="logo" href="index.html" aria-label="{SITE["name"]}">{LOGO_MARK}'
+            '<span class="logo-text">Lead Japan <small>合同会社</small></span></a>', html)
+
+    def test_footer_logo_markup(self):
+        html = render_layout(title="t", description="d", body="", current="index.html")
+        self.assertIn(f'<div class="footer-logo">{LOGO_MARK}</div>', html)
 
     def test_find_placeholders(self):
         self.assertEqual(find_placeholders("a【要入力】b【要入力】"), 2)
