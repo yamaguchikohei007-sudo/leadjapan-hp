@@ -42,8 +42,8 @@ class PullRequestError(Exception):
 
 @dataclass
 class PublishResult:
-    status: Literal["pr_created", "pr_updated", "no_changes", "tests_failed", "push_failed", "pr_failed",
-                    "blocked"]
+    status: Literal["pr_created", "pr_updated", "pr_closed", "no_changes", "tests_failed", "push_failed",
+                    "pr_failed", "blocked"]
     message: str
     url: str | None = None
     output: str = ""
@@ -63,6 +63,7 @@ class Git(Protocol):
 class PullRequests(Protocol):
     def find_open(self) -> str | None: ...
     def create(self, title: str, body: str) -> str: ...
+    def close(self, url: str, comment: str) -> None: ...
 
 
 class SubprocessGit:
@@ -177,6 +178,9 @@ class GhPullRequests:
             raise PullRequestError(f"PR の URL を読み取れません: {out.strip()}")
         return urls[-1]
 
+    def close(self, url: str, comment: str) -> None:
+        self._run("pr", "close", url, "--delete-branch", "--comment", comment)
+
 
 def run_site_tests(repo_root: Path) -> tuple[bool, str]:
     try:
@@ -229,7 +233,7 @@ def _publish_in(worktree: Path, git: Git, prs: PullRequests,
         return PublishResult("tests_failed", "テストが失敗したため反映を中止しました", output=output)
 
     if not git.has_changes(worktree, COMMIT_PATHS):
-        return PublishResult("no_changes", "変更はありません（公開中のサイトと同じ内容です）")
+        return _withdraw_pending(prs)
     try:
         git.commit(worktree, COMMIT_PATHS, f"news: サイトに反映 ({now():%Y-%m-%d %H:%M})")
     except GitError as e:
@@ -260,6 +264,23 @@ def _publish_in(worktree: Path, git: Git, prs: PullRequests,
                                           "次のリンクから PR を作成してください。", manual)
     return PublishResult("pr_created", "PR を作成しました。GitHub で内容を確認してマージすると、数分でサイトに反映されます。",
                          url)
+
+
+def _withdraw_pending(prs: PullRequests) -> PublishResult:
+    """The export equals main. A still-open pending PR now holds content the
+    owner has taken back (e.g. an article returned to draft): merging it would
+    publish that, so it is closed and its branch deleted."""
+    try:
+        url = prs.find_open()
+        if url:
+            prs.close(url, "管理画面の内容が公開中のサイトと同じに戻ったため、この PR は不要になりました"
+                           "（管理画面の「サイトに反映」が自動で閉じました）。")
+    except PullRequestError as e:
+        return PublishResult("pr_failed", f"公開中のサイトと同じ内容ですが、反映待ちの PR が残っていないか確認できませんでした: {e}。"
+                                          "GitHub に開いたままの「news: サイトに反映」の PR があれば、マージせずに閉じてください。")
+    if url:
+        return PublishResult("pr_closed", "公開中のサイトと同じ内容に戻ったため、反映待ちの PR を閉じました（マージ不要です）。", url)
+    return PublishResult("no_changes", "変更はありません（公開中のサイトと同じ内容です）")
 
 
 def publish(repo_root: Path, **kwargs) -> PublishResult:

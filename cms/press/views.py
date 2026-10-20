@@ -46,7 +46,8 @@ def publish_view(request):
         return render(request, "admin/press/article/publish.html", {**admin.site.each_context(request),
                                                                       "title": "サイトに反映"})
     result = publish(settings.REPO_ROOT)
-    level = {"pr_created": messages.SUCCESS, "pr_updated": messages.SUCCESS, "no_changes": messages.INFO,
+    level = {"pr_created": messages.SUCCESS, "pr_updated": messages.SUCCESS, "pr_closed": messages.INFO,
+             "no_changes": messages.INFO,
              "push_failed": messages.WARNING, "pr_failed": messages.WARNING}.get(result.status, messages.ERROR)
     text = format_html("{}", result.message)
     if result.url:

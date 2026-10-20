@@ -12,6 +12,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from press import publish as publish_mod
+from press.export import export_published
 from press.publish import (PUBLISH_BRANCH, GhPullRequests, GitError, PublishResult, PullRequestError,
                            SubprocessGit, publish)
 from press.tests.test_models import make_article
@@ -65,7 +66,7 @@ class FakeGit:
 
 class FakePRs:
     def __init__(self, open_url=None, error=None):
-        self.open_url, self.error, self.created = open_url, error, []
+        self.open_url, self.error, self.created, self.closed = open_url, error, [], []
 
     def find_open(self):
         if self.error:
@@ -75,6 +76,10 @@ class FakePRs:
     def create(self, title, body):
         self.created.append((title, body))
         return PR_URL
+
+    def close(self, url, comment):
+        self.closed.append(url)
+        self.open_url = None
 
 
 class PublishTests(TestCase):
@@ -149,11 +154,26 @@ class PublishTests(TestCase):
         self.assertEqual(len(self.prs.created), 1)
 
     def test_no_changes_against_main(self):
-        from press.export import export_published
         export_published(self.base)  # main already holds exactly this export
         r = self.run_publish()
         self.assertEqual(r.status, "no_changes")
         self.assertEqual((self.git.commits, self.git.pushes), ([], 0))
+
+    def test_reverting_to_main_closes_the_pending_pr(self):
+        # e.g. an article published (PR opened) and then set back to draft before merging:
+        # the open PR would publish it, so it must not survive
+        export_published(self.base)
+        r = self.run_publish(prs=FakePRs(open_url=PR_URL))
+        self.assertEqual(r.status, "pr_closed")
+        self.assertEqual(self.prs.closed, [PR_URL])
+        self.assertIn("マージ不要", r.message)
+        self.assertEqual((self.git.commits, self.git.pushes), ([], 0))
+
+    def test_reverting_to_main_warns_when_pending_pr_cannot_be_checked(self):
+        export_published(self.base)
+        r = self.run_publish(prs=FakePRs(error="gh コマンドが見つかりません"))
+        self.assertEqual(r.status, "pr_failed")
+        self.assertIn("マージせずに閉じてください", r.message)
 
     def test_tests_failed(self):
         r = self.run_publish(tests=lambda root: (False, "boom"))
@@ -348,6 +368,13 @@ class GhPullRequestsTests(TestCase):
         self.assertIn("--head", run.call_args.args[0])
         with self.run_gh(""):
             self.assertIsNone(GhPullRequests(Path(".")).find_open())
+
+    def test_close_deletes_branch(self):
+        with self.run_gh() as run:
+            GhPullRequests(Path(".")).close(PR_URL, "c")
+        args = run.call_args.args[0]
+        self.assertEqual(args[:4], ["gh", "pr", "close", PR_URL])
+        self.assertIn("--delete-branch", args)
 
     def test_create_returns_url(self):
         with self.run_gh("Creating pull request...\n" + PR_URL + "\n"):
