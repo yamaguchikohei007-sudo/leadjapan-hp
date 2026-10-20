@@ -64,6 +64,35 @@ python3 -m http.server -d site 8000
 python3 -m unittest discover -s tests -v
 ```
 
+## Cloudflare Pages での公開
+
+Cloudflare Pages（無料プラン・商用利用可）で公開します。`main` に push されるたびに Cloudflare 側で `python build.py` が実行され、自動で公開されます。
+
+### 初回設定
+
+1. Cloudflare のアカウントを作成します（https://dash.cloudflare.com/sign-up 。無料プランで足ります）。
+2. ダッシュボードで **Workers & Pages** → **Create** → **Pages** タブ → **Connect to Git** を選びます。
+3. GitHub と連携し、リポジトリ **`yamaguchikohei007-sudo/leadjapan-hp`** を選びます（Cloudflare の GitHub アプリにこのリポジトリへのアクセスを許可します）。
+4. ビルド設定を次のとおり入力します。
+
+   | 項目 | 値 |
+   | --- | --- |
+   | Production branch | `main` |
+   | Framework preset | `None` |
+   | Build command | `python build.py` |
+   | Build output directory | `site` |
+   | 環境変数（Environment variables） | `PYTHON_VERSION` = `3.13` |
+
+5. **Save and Deploy** を押します。最初のデプロイが終わると `https://<プロジェクト名>.pages.dev` の URL が表示されます。この URL をメモします。
+6. `sitegen/content.py` の `SITE_URL` にその URL を設定します（例: `SITE_URL = "https://leadjapan-hp.pages.dev"`）。記事ページの `og:url` / `og:image` に使われます。
+
+### 独自ドメインを使う場合
+
+1. ドメインを取得します（ドメイン費用のみ有料）。
+2. Cloudflare の Pages プロジェクト → **Custom domains** → **Set up a custom domain** でドメイン（例: `www.example.co.jp`）を追加します。
+3. 画面の案内に従って DNS を設定します（ドメインを Cloudflare で管理している場合は自動、他社 DNS の場合は表示された CNAME レコードを追加）。
+4. 有効になったら `sitegen/content.py` の `SITE_URL` を独自ドメインの URL に変更し、push します。
+
 ## 公開手順（GitHub Pages・無料）
 
 1. GitHub で **public** リポジトリを作成します。
