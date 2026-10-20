@@ -7,7 +7,7 @@ from unittest import mock
 
 from sitegen.content import BUSINESSES, NEWS, PLACEHOLDER, PRIVACY, SITE, NewsItem
 from sitegen.render import esc
-from sitegen.pages import (HERO_WIDTHS, PAGES, body_business, body_company, body_contact, body_index,
+from sitegen.pages import (HERO_WIDTHS, PAGES, article_page_title, body_business, body_company, body_contact, body_index,
                            body_message, body_news, body_news_article,
                            body_privacy, article_pages, news_page_filename, news_list_html, og_tags,
                            page_hero)
@@ -171,6 +171,15 @@ class ArticleTests(unittest.TestCase):
         self.assertIn("&lt;t&gt;", out)
         self.assertIn('property="og:image" content="https://x.pages.dev/static/img/hero-tokyo.jpg"',
                       og_tags(_item(), "https://x.pages.dev"))
+
+    def test_article_page_title_uses_site_name(self):
+        with mock.patch.dict("sitegen.pages.SITE", {"name": "X社"}):
+            self.assertEqual(article_page_title("T"), "T | X社")
+
+    def test_page_hero_title_aligns_with_breadcrumb(self):
+        # a flex item container shrinks and centres itself unless it is full width
+        css = (ROOT / "static/css/style.css").read_text(encoding="utf-8")
+        self.assertRegex(css, r"\.page-hero > \.container \{[^}]*width: 100%")
 
     def test_article_pages_metadata(self):
         pages = article_pages([_item()])

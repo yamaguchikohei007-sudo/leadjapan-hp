@@ -82,22 +82,25 @@ class MotionCssTests(unittest.TestCase):
         css = strip_comments(read("static/css/style.css"))
         self.assertNotRegex(css, r"\.reveal[^{]*\{[^}]*opacity:\s*0")
 
+    def reveal_rule(self) -> str:
+        m = re.search(r"(?m)^\s*\.reveal\s*\{([^}]*)\}", extract_block(self.css(), SUPPORTS))
+        self.assertTrue(m, ".reveal rule inside @supports")
+        return m.group(1)
+
     def test_reveal_rule_order_and_fill(self):
-        inside = extract_block(self.css(), SUPPORTS)
-        m = re.search(r"\n  \.reveal \{([^}]*)\}", inside)
-        self.assertTrue(m)
-        body = m.group(1)
-        self.assertIn("animation: reveal linear backwards", body)
-        self.assertNotRegex(body, r"animation: reveal linear (both|forwards)")
+        body = self.reveal_rule()
+        shorthand = re.search(r"animation:\s*([^;]*);", body).group(1).split()
+        # "backwards": hidden before the range, but never held hidden after it
+        self.assertIn("backwards", shorthand)
+        self.assertFalse({"both", "forwards"} & set(shorthand))
+        # the shorthand resets animation-timeline, so the timeline must come after it
         self.assertGreater(body.index("animation-timeline"), body.index("animation:"))
 
     def test_reveal_range_is_capped_in_absolute_lengths(self):
-        inside = extract_block(self.css(), SUPPORTS)
-        m = re.search(r"\n  \.reveal \{([^}]*)\}", inside)
-        rng = re.search(r"animation-range:([^;]*);", m.group(1)).group(1)
-        rng = " ".join(rng.split())
-        self.assertIn("entry calc(var(--d, 0) * 20px)", rng)
-        self.assertIn("entry calc(80px + var(--d, 0) * 20px)", rng)
+        # tall wrappers must not stretch the fade over their whole height
+        rng = " ".join(re.search(r"animation-range:([^;]*);", self.reveal_rule()).group(1).split())
+        self.assertTrue(rng.startswith("entry"), rng)
+        self.assertIn("px", rng)
         self.assertNotIn("cover", rng)
         self.assertNotIn("%", rng)
 

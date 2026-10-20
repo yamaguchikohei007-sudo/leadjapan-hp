@@ -176,10 +176,14 @@ html:has(.global-nav:popover-open) { overflow: hidden; }
   border-top: 3px solid var(--red); padding: 28px;
 }
 
+/* Title only, so a modest band rather than 40% of the screen (it pushed content off phones). */
 .page-hero {
-  min-height: 40vh; display: flex; align-items: center;
+  min-height: clamp(180px, 28vh, 320px); display: flex; align-items: center;
   background: var(--navy); color: #fff;
 }
+/* As a flex item the container shrank to its text and centred itself (margin-inline: auto);
+   full width keeps the title on the same left edge as the breadcrumb below. */
+.page-hero > .container { width: 100%; }
 .page-hero .section-label { color: var(--sky); }
 /* .page-hero-title: same look as the h1, for pages whose h1 is the article title */
 .page-hero h1, .page-hero-title { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; line-height: 1.5; margin: 0; }
@@ -401,7 +405,8 @@ html:has(.global-nav:popover-open) { overflow: hidden; }
 .article-body p { margin: 0 0 1.2em; }
 .article-body ul, .article-body ol { margin: 0 0 1.2em; padding-left: 1.6em; }
 .article-body blockquote { margin: 1.4em 0; padding: .2em 0 .2em 1.2em; border-left: 3px solid var(--sky); }
-.article-body a { color: var(--red); text-decoration: underline; }
+/* Navy like every other link; the red stays as the underline accent. */
+.article-body a { color: var(--navy); text-decoration: underline; text-decoration-color: var(--red); text-underline-offset: .2em; }
 .article-body img { max-width: 100%; height: auto; }
 .press-contact { margin-top: 2.4rem; padding: 20px 24px; background: var(--mist); border-top: 3px solid var(--red); }
 .press-contact h3 { font-size: 1rem; margin: 0 0 .5em; color: var(--navy); }
