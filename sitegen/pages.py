@@ -53,6 +53,17 @@ def _section_head(label: str, title: str, extra: str = "") -> str:
     )
 
 
+# WebP versions of hero-tokyo.jpg, made by tools/hero_images.py (same widths).
+HERO_WIDTHS: tuple[int, ...] = (960, 1280, 1920)
+# The photo covers the hero (object-fit: cover, at least one screen tall), so on
+# tall screens it is wider than the viewport: 1.5 = its width / height.
+HERO_SIZES = "max(100vw, 150vh)"
+
+
+def _hero_srcset() -> str:
+    return ", ".join(f"/static/img/hero-tokyo-{w}.webp {w}w" for w in HERO_WIDTHS)
+
+
 def body_index() -> str:
     cards = "\n".join(
         f'<a class="card biz-card reveal" style="--d: {i}" href="/business.html#{esc(b.slug)}">'
@@ -66,7 +77,10 @@ def body_index() -> str:
     )
     return f"""<section class="section hero">
 <!-- Photo: Louie Martinez / Unsplash (Unsplash License) https://unsplash.com/photos/IocJwyqRv3M -->
+<picture>
+<source type="image/webp" srcset="{_hero_srcset()}" sizes="{HERO_SIZES}">
 <img class="hero-skyline" src="/static/img/hero-tokyo.jpg" alt="東京タワーと東京の街並み" width="1920" height="1278" fetchpriority="high">
+</picture>
 <div class="hero-sky" aria-hidden="true"></div>
 <div class="container hero-inner">
 <p class="hero-kicker reveal">{esc(SITE["name_en"])}</p>

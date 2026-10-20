@@ -7,10 +7,26 @@ from unittest import mock
 
 from sitegen.content import BUSINESSES, NEWS, PLACEHOLDER, PRIVACY, SITE, NewsItem
 from sitegen.render import esc
-from sitegen.pages import (PAGES, body_business, body_company, body_contact, body_index,
+from sitegen.pages import (HERO_WIDTHS, PAGES, body_business, body_company, body_contact, body_index,
                            body_message, body_news, body_news_article,
                            body_privacy, article_pages, news_page_filename, news_list_html, og_tags,
                            page_hero)
+
+
+def _webp_size(path: Path) -> tuple[int, int]:
+    """(width, height) from a lossy or lossless WebP header, stdlib only."""
+    data = path.read_bytes()[:30]
+    assert data[:4] == b"RIFF" and data[8:12] == b"WEBP", path
+    chunk = data[12:16]
+    if chunk == b"VP8 ":
+        return (int.from_bytes(data[26:28], "little") & 0x3FFF,
+                int.from_bytes(data[28:30], "little") & 0x3FFF)
+    if chunk == b"VP8L":
+        bits = int.from_bytes(data[21:25], "little")
+        return (bits & 0x3FFF) + 1, ((bits >> 14) & 0x3FFF) + 1
+    if chunk == b"VP8X":
+        return int.from_bytes(data[24:27], "little") + 1, int.from_bytes(data[27:30], "little") + 1
+    raise AssertionError(f"{path}: unknown WebP chunk {chunk!r}")
 
 
 class IndexPageTests(unittest.TestCase):
@@ -24,6 +40,16 @@ class IndexPageTests(unittest.TestCase):
         self.assertIn('src="/static/img/hero-tokyo.jpg"', b)
         self.assertIn('alt="東京タワーと東京の街並み"', b)
         self.assertIn("Lead Japan — Tokyo, Japan", b)
+
+    def test_hero_webp_versions(self):
+        b = body_index()
+        self.assertIn('<source type="image/webp" srcset="', b)
+        for w in HERO_WIDTHS:
+            self.assertIn(f"/static/img/hero-tokyo-{w}.webp {w}w", b)
+            path = ROOT / f"static/img/hero-tokyo-{w}.webp"
+            self.assertEqual(_webp_size(path)[0], w, path.name)
+            self.assertLess(path.stat().st_size, 300 * 1024)
+        self.assertEqual(_webp_size(ROOT / "static/img/hero-tokyo-1920.webp"), (1920, 1278))
 
     def test_hero_photo_is_light_enough(self):
         photo = ROOT / "static/img/hero-tokyo.jpg"

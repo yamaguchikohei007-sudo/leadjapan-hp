@@ -1,17 +1,26 @@
 import datetime
 import tempfile
-from io import StringIO
+from io import BytesIO, StringIO
 from pathlib import Path
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import TestCase, override_settings
+from PIL import Image, ImageCms
 
 from sitegen.news import NewsItem, load_news, news_to_json
 
-from press.export import ExportError, article_to_newsitem, export_published, image_target
+from press.export import (MAX_IMAGE_WIDTH, ExportError, article_to_newsitem, export_published, image_target,
+                          optimized_image)
 from press.models import Article
 from press.tests.test_models import make_article
+
+
+def image_bytes(fmt="PNG", size=(40, 30), exif=None) -> bytes:
+    out = BytesIO()
+    kw = {"exif": exif} if exif is not None else {}
+    Image.new("RGB", size, (16, 54, 107)).save(out, fmt, **kw)
+    return out.getvalue()
 
 
 class ExportBase(TestCase):
@@ -47,12 +56,51 @@ class ExportTests(ExportBase):
         self.assertIn("<strong>x</strong>", load_news(self.repo / "content/news.json")[0].body_html)
 
     def test_export_copies_image(self):
-        a = self.make(slug="pic-1", status="published", image=SimpleUploadedFile("Photo.PNG", b"data"),
+        a = self.make(slug="pic-1", status="published", image=SimpleUploadedFile("Photo.PNG", image_bytes()),
                       image_alt="alt")
         export_published(self.repo)
         self.assertEqual(image_target(a), "static/img/news/pic-1.png")
-        self.assertEqual((self.repo / "static/img/news/pic-1.png").read_bytes(), b"data")
+        with Image.open(self.repo / "static/img/news/pic-1.png") as im:
+            self.assertEqual((im.format, im.size), ("PNG", (40, 30)))
         self.assertEqual(load_news(self.repo / "content/news.json")[0].image, "static/img/news/pic-1.png")
+
+    def test_export_shrinks_wide_images_and_drops_metadata(self):
+        exif = Image.Exif()
+        exif[0x010F] = "CameraMaker"  # Make; GPS data would travel the same way
+        data = image_bytes("JPEG", size=(3200, 2000), exif=exif.tobytes())
+        self.make(slug="big-1", status="published", image=SimpleUploadedFile("big.jpg", data), image_alt="alt")
+        export_published(self.repo)
+        out = self.repo / "static/img/news/big-1.jpg"
+        with Image.open(out) as im:
+            self.assertEqual(im.size, (MAX_IMAGE_WIDTH, 1000))
+            self.assertNotIn("exif", im.info)
+        self.assertLess(out.stat().st_size, len(data))
+
+    def test_export_applies_exif_rotation(self):
+        exif = Image.Exif()
+        exif[0x0112] = 6  # Orientation: rotate 90° (how phones store portrait photos)
+        data = image_bytes("JPEG", size=(40, 30), exif=exif.tobytes())
+        self.make(slug="rot-1", status="published", image=SimpleUploadedFile("r.jpg", data), image_alt="alt")
+        export_published(self.repo)
+        with Image.open(self.repo / "static/img/news/rot-1.jpg") as im:
+            self.assertEqual(im.size, (30, 40))
+
+    def test_export_is_repeatable(self):
+        # identical bytes on every run, or each publish would commit "changed" images
+        self.make(slug="pic-1", status="published", image=SimpleUploadedFile("p.jpg", image_bytes("JPEG")),
+                  image_alt="alt")
+        export_published(self.repo)
+        first = (self.repo / "static/img/news/pic-1.jpg").read_bytes()
+        export_published(self.repo)
+        self.assertEqual((self.repo / "static/img/news/pic-1.jpg").read_bytes(), first)
+
+    def test_export_rejects_unreadable_image(self):
+        self.make(slug="bad-1", status="published", image=SimpleUploadedFile("b.png", b"not an image"),
+                  image_alt="alt")
+        with self.assertRaises(ExportError) as cm:
+            export_published(self.repo)
+        self.assertIn("bad-1", str(cm.exception))
+        self.assertFalse((self.repo / "content/news.json").exists())
 
     def test_image_target_none_and_bad_extension(self):
         self.assertIsNone(image_target(make_article()))
@@ -83,6 +131,32 @@ class ExportTests(ExportBase):
         a = self.make(slug="gone-2", image=SimpleUploadedFile("g.png", b"d"), image_alt="a")
         Path(a.image.path).unlink()
         a.clean()  # must not raise FileNotFoundError
+
+
+class ColourProfileTests(TestCase):
+    SRGB = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+
+    def encode(self, mode, icc):
+        out = BytesIO()
+        kw = {"icc_profile": icc} if icc else {}
+        Image.new(mode, (8, 8)).save(out, "JPEG", **kw)
+        return out.getvalue()
+
+    def test_rgb_profile_kept(self):
+        with Image.open(BytesIO(optimized_image(self.encode("RGB", self.SRGB), ".jpg"))) as im:
+            self.assertEqual(im.info.get("icc_profile"), self.SRGB)
+
+    def test_profile_that_does_not_match_rgb_is_not_embedded(self):
+        # grey pixels carrying a profile that cannot be converted: plain RGB, no profile
+        for ext in (".jpg", ".webp"):
+            with self.subTest(ext=ext):
+                with Image.open(BytesIO(optimized_image(self.encode("L", self.SRGB), ext))) as im:
+                    self.assertEqual(im.mode, "RGB")
+                    self.assertIsNone(im.info.get("icc_profile"))
+
+    def test_cmyk_without_profile_becomes_rgb(self):
+        with Image.open(BytesIO(optimized_image(self.encode("CMYK", None), ".jpg"))) as im:
+            self.assertEqual(im.mode, "RGB")
 
 
 class ImportTests(TestCase):
