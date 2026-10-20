@@ -1,3 +1,4 @@
+import re
 import unittest
 from pathlib import Path
 
@@ -12,6 +13,13 @@ class FontTests(unittest.TestCase):
         self.assertIn("family=Inter:", FONTS_URL)
         self.assertIn("family=Noto+Sans+JP:", FONTS_URL)
         self.assertNotIn("Serif", FONTS_URL)
+
+    def test_loads_exactly_the_weights_the_css_uses(self):
+        css = "".join((ROOT / f"static/css/{n}.css").read_text(encoding="utf-8") for n in ("style", "motion"))
+        used = {"400"} | set(re.findall(r"font-weight:\s*(\d+)", css))  # 400: body text
+        for family in ("Inter", "Noto+Sans+JP"):
+            m = re.search(rf"family={re.escape(family)}:wght@([\d;]+)", FONTS_URL)
+            self.assertEqual(set(m.group(1).split(";")), used, family)
 
     def test_css_uses_inter_then_noto_sans_jp(self):
         css = (ROOT / "static/css/style.css").read_text(encoding="utf-8")

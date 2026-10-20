@@ -1,17 +1,25 @@
 import datetime
 import tempfile
-from io import StringIO
+from io import BytesIO, StringIO
 from pathlib import Path
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import TestCase, override_settings
+from PIL import Image
 
 from sitegen.news import NewsItem, load_news, news_to_json
 
-from press.export import ExportError, article_to_newsitem, export_published, image_target
+from press.export import MAX_IMAGE_WIDTH, ExportError, article_to_newsitem, export_published, image_target
 from press.models import Article
 from press.tests.test_models import make_article
+
+
+def image_bytes(fmt="PNG", size=(40, 30), exif=None) -> bytes:
+    out = BytesIO()
+    kw = {"exif": exif} if exif is not None else {}
+    Image.new("RGB", size, (16, 54, 107)).save(out, fmt, **kw)
+    return out.getvalue()
 
 
 class ExportBase(TestCase):
@@ -47,12 +55,42 @@ class ExportTests(ExportBase):
         self.assertIn("<strong>x</strong>", load_news(self.repo / "content/news.json")[0].body_html)
 
     def test_export_copies_image(self):
-        a = self.make(slug="pic-1", status="published", image=SimpleUploadedFile("Photo.PNG", b"data"),
+        a = self.make(slug="pic-1", status="published", image=SimpleUploadedFile("Photo.PNG", image_bytes()),
                       image_alt="alt")
         export_published(self.repo)
         self.assertEqual(image_target(a), "static/img/news/pic-1.png")
-        self.assertEqual((self.repo / "static/img/news/pic-1.png").read_bytes(), b"data")
+        with Image.open(self.repo / "static/img/news/pic-1.png") as im:
+            self.assertEqual((im.format, im.size), ("PNG", (40, 30)))
         self.assertEqual(load_news(self.repo / "content/news.json")[0].image, "static/img/news/pic-1.png")
+
+    def test_export_shrinks_wide_images_and_drops_metadata(self):
+        exif = Image.Exif()
+        exif[0x010F] = "CameraMaker"  # Make; GPS data would travel the same way
+        data = image_bytes("JPEG", size=(3200, 2000), exif=exif.tobytes())
+        self.make(slug="big-1", status="published", image=SimpleUploadedFile("big.jpg", data), image_alt="alt")
+        export_published(self.repo)
+        out = self.repo / "static/img/news/big-1.jpg"
+        with Image.open(out) as im:
+            self.assertEqual(im.size, (MAX_IMAGE_WIDTH, 1000))
+            self.assertNotIn("exif", im.info)
+        self.assertLess(out.stat().st_size, len(data))
+
+    def test_export_is_repeatable(self):
+        # identical bytes on every run, or each publish would commit "changed" images
+        self.make(slug="pic-1", status="published", image=SimpleUploadedFile("p.jpg", image_bytes("JPEG")),
+                  image_alt="alt")
+        export_published(self.repo)
+        first = (self.repo / "static/img/news/pic-1.jpg").read_bytes()
+        export_published(self.repo)
+        self.assertEqual((self.repo / "static/img/news/pic-1.jpg").read_bytes(), first)
+
+    def test_export_rejects_unreadable_image(self):
+        self.make(slug="bad-1", status="published", image=SimpleUploadedFile("b.png", b"not an image"),
+                  image_alt="alt")
+        with self.assertRaises(ExportError) as cm:
+            export_published(self.repo)
+        self.assertIn("bad-1", str(cm.exception))
+        self.assertFalse((self.repo / "content/news.json").exists())
 
     def test_image_target_none_and_bad_extension(self):
         self.assertIsNone(image_target(make_article()))

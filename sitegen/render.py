@@ -5,9 +5,10 @@ import html
 
 from sitegen.content import COPYRIGHT, NAV, PLACEHOLDER, SITE
 
+# Only the weights style.css uses (400, 500, 700): each extra weight is another download.
 FONTS_URL = (
     "https://fonts.googleapis.com/css2?"
-    "family=Inter:wght@400;500;600;700&"
+    "family=Inter:wght@400;500;700&"
     "family=Noto+Sans+JP:wght@400;500;700&display=swap"
 )
 
