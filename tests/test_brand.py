@@ -78,6 +78,13 @@ class MobileMenuCssTests(unittest.TestCase):
         base = re.search(r"(?m)^\.global-nav \{([^}]*)\}", self.css())
         self.assertNotIn("display", base.group(1))
 
+    def test_open_menu_styles_apply_at_every_width(self):
+        # a menu opened on a narrow screen can stay open while it widens (tablet rotation)
+        css = self.css()
+        self.assertRegex(css, r"(?m)^\.global-nav:popover-open \{")
+        self.assertRegex(css, r"(?m)^\.global-nav:popover-open \.nav-close \{")
+        self.assertIn(".global-nav[popover]:not(:popover-open) {", css)
+
     def test_page_behind_open_menu_does_not_scroll(self):
         self.assertIn("html:has(.global-nav:popover-open) { overflow: hidden; }", self.css())
 

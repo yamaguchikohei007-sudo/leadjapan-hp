@@ -80,8 +80,9 @@ a { color: var(--navy); }
 .nav-toggle, .nav-close, .nav-fallback { display: none; }
 
 @media (min-width: 769px) {
-  /* Wide screens: undo the browser's popover styles so the nav is always shown. */
-  .global-nav[popover] {
+  /* Wide screens: undo the browser's popover styles so the nav is always shown.
+     Only while closed: an open menu keeps its overlay look (see below). */
+  .global-nav[popover]:not(:popover-open) {
     display: flex; position: static; inset: auto; width: auto; height: auto;
     margin: 0; padding: 0; border: 0; overflow: visible; background: none; color: inherit;
   }
@@ -99,31 +100,34 @@ a { color: var(--navy); }
   .nav-toggle-bars::before, .nav-toggle-bars::after { content: ""; position: absolute; left: 0; }
   .nav-toggle-bars::before { top: -8px; }
   .nav-toggle-bars::after { top: 8px; }
-  .global-nav:popover-open {
-    position: fixed; inset: 0; width: auto; height: auto; margin: 0; padding: 0; border: 0;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
-    background: var(--navy); color: #fff;
-  }
-  .global-nav a { color: #fff; font-size: 1.2rem; }
-  /* lines up with the open button in the header (4px red rule + centred in 68px) */
-  .nav-close {
-    display: flex; position: absolute; top: 16px; right: clamp(16px, 5vw, 48px);
-    width: 44px; height: 44px; padding: 0; border: 0; background: none;
-    color: #fff; cursor: pointer;
-  }
-  .nav-close::before, .nav-close::after {
-    content: ""; position: absolute; top: 21px; left: 10px; width: 24px; height: 2px;
-    background: currentColor;
-  }
-  .nav-close::before { transform: rotate(45deg); }
-  .nav-close::after { transform: rotate(-45deg); }
-  /* open menu is navy: current-page underline and focus rings go white */
-  .global-nav:popover-open a::after { background: #fff; }
-  .global-nav:popover-open :focus-visible { outline-color: #fff; }
-  /* the page behind the open menu does not scroll */
-  html:has(.global-nav:popover-open) { overflow: hidden; }
   .logo-mark { width: 36px; }
 }
+
+/* Open menu: full-screen navy overlay. Not limited to narrow screens, so a menu
+   left open while the screen widens (e.g. a tablet rotated) stays usable. */
+.global-nav:popover-open {
+  position: fixed; inset: 0; width: auto; height: auto; margin: 0; padding: 0; border: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+  background: var(--navy); color: #fff;
+}
+.global-nav:popover-open a { color: #fff; font-size: 1.2rem; }
+/* lines up with the open button in the header (4px red rule + centred in 68px) */
+.global-nav:popover-open .nav-close {
+  display: flex; position: absolute; top: 16px; right: clamp(16px, 5vw, 48px);
+  width: 44px; height: 44px; padding: 0; border: 0; background: none;
+  color: #fff; cursor: pointer;
+}
+.nav-close::before, .nav-close::after {
+  content: ""; position: absolute; top: 21px; left: 10px; width: 24px; height: 2px;
+  background: currentColor;
+}
+.nav-close::before { transform: rotate(45deg); }
+.nav-close::after { transform: rotate(-45deg); }
+/* open menu is navy: current-page underline and focus rings go white */
+.global-nav:popover-open a::after { background: #fff; }
+.global-nav:popover-open :focus-visible { outline-color: #fff; }
+/* the page behind the open menu does not scroll */
+html:has(.global-nav:popover-open) { overflow: hidden; }
 
 /* Browsers without popover: the menu button jumps to the footer's link list. */
 @supports not selector(:popover-open) {
