@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pathlib
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "static/img/hero-tokyo.jpg"
@@ -16,7 +16,9 @@ WIDTHS = (960, 1280, 1920)  # keep in step with HERO_WIDTHS in sitegen/pages.py
 
 def main() -> None:
     with Image.open(SOURCE) as src:
-        im = src.convert("RGB")
+        # phone photos often store pixels sideways plus an EXIF rotation tag,
+        # which the WebP output would not carry
+        im = ImageOps.exif_transpose(src).convert("RGB")
     for w in WIDTHS:
         out = SOURCE.with_name(f"hero-tokyo-{w}.webp")
         size = (w, round(im.height * w / im.width))

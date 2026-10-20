@@ -3,7 +3,7 @@ from __future__ import annotations
 import io
 from pathlib import Path
 
-from PIL import Image, ImageOps
+from PIL import Image, ImageCms, ImageOps
 
 from sitegen.news import NewsItem, news_to_json
 
@@ -20,18 +20,38 @@ class ExportError(Exception):
     pass
 
 
+def _to_rgb(im: Image.Image, icc: bytes | None, *, alpha: bool) -> tuple[Image.Image, bytes | None]:
+    """RGB(A) pixels for JPEG/WebP, with a colour profile that still matches them.
+
+    A CMYK or grey profile cannot describe RGB pixels: such images are converted
+    through their profile to sRGB (the web default, so no profile is embedded),
+    or, if that fails, converted plainly and the profile dropped."""
+    has_alpha = alpha and (im.mode in ("RGBA", "LA", "PA") or "transparency" in im.info)
+    target = "RGBA" if has_alpha else "RGB"
+    if im.mode in ("RGB", "RGBA", "P"):  # their profiles are RGB profiles
+        return (im if im.mode == target else im.convert(target)), icc
+    if icc and not has_alpha:
+        try:
+            src = ImageCms.ImageCmsProfile(io.BytesIO(icc))
+            return ImageCms.profileToProfile(im, src, ImageCms.createProfile("sRGB"), outputMode="RGB"), None
+        except (ImageCms.PyCMSError, OSError, ValueError):
+            pass
+    return im.convert(target), None
+
+
 def optimized_image(data: bytes, ext: str) -> bytes:
     """Rotate per EXIF, shrink to MAX_IMAGE_WIDTH and re-encode without metadata
-    (camera EXIF can include the GPS location). The colour profile is kept."""
+    (camera EXIF can include the GPS location). An RGB colour profile is kept."""
     with Image.open(io.BytesIO(data)) as src:
         icc = src.info.get("icc_profile")
         im = ImageOps.exif_transpose(src)
     if im.width > MAX_IMAGE_WIDTH:
         im = im.resize((MAX_IMAGE_WIDTH, round(im.height * MAX_IMAGE_WIDTH / im.width)), Image.LANCZOS)
     fmt = _FORMATS[ext]
+    if fmt in ("JPEG", "WEBP"):  # both store RGB only (WebP: plus alpha)
+        im, icc = _to_rgb(im, icc, alpha=fmt == "WEBP")
     opts: dict[str, object] = {"icc_profile": icc} if icc else {}
     if fmt == "JPEG":
-        im = im.convert("RGB")
         opts.update(quality=82, optimize=True, progressive=True)
     elif fmt == "WEBP":
         opts.update(quality=82, method=6)

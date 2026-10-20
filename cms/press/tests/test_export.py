@@ -6,11 +6,12 @@ from pathlib import Path
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import TestCase, override_settings
-from PIL import Image
+from PIL import Image, ImageCms
 
 from sitegen.news import NewsItem, load_news, news_to_json
 
-from press.export import MAX_IMAGE_WIDTH, ExportError, article_to_newsitem, export_published, image_target
+from press.export import (MAX_IMAGE_WIDTH, ExportError, article_to_newsitem, export_published, image_target,
+                          optimized_image)
 from press.models import Article
 from press.tests.test_models import make_article
 
@@ -75,6 +76,15 @@ class ExportTests(ExportBase):
             self.assertNotIn("exif", im.info)
         self.assertLess(out.stat().st_size, len(data))
 
+    def test_export_applies_exif_rotation(self):
+        exif = Image.Exif()
+        exif[0x0112] = 6  # Orientation: rotate 90° (how phones store portrait photos)
+        data = image_bytes("JPEG", size=(40, 30), exif=exif.tobytes())
+        self.make(slug="rot-1", status="published", image=SimpleUploadedFile("r.jpg", data), image_alt="alt")
+        export_published(self.repo)
+        with Image.open(self.repo / "static/img/news/rot-1.jpg") as im:
+            self.assertEqual(im.size, (30, 40))
+
     def test_export_is_repeatable(self):
         # identical bytes on every run, or each publish would commit "changed" images
         self.make(slug="pic-1", status="published", image=SimpleUploadedFile("p.jpg", image_bytes("JPEG")),
@@ -121,6 +131,32 @@ class ExportTests(ExportBase):
         a = self.make(slug="gone-2", image=SimpleUploadedFile("g.png", b"d"), image_alt="a")
         Path(a.image.path).unlink()
         a.clean()  # must not raise FileNotFoundError
+
+
+class ColourProfileTests(TestCase):
+    SRGB = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+
+    def encode(self, mode, icc):
+        out = BytesIO()
+        kw = {"icc_profile": icc} if icc else {}
+        Image.new(mode, (8, 8)).save(out, "JPEG", **kw)
+        return out.getvalue()
+
+    def test_rgb_profile_kept(self):
+        with Image.open(BytesIO(optimized_image(self.encode("RGB", self.SRGB), ".jpg"))) as im:
+            self.assertEqual(im.info.get("icc_profile"), self.SRGB)
+
+    def test_profile_that_does_not_match_rgb_is_not_embedded(self):
+        # grey pixels carrying a profile that cannot be converted: plain RGB, no profile
+        for ext in (".jpg", ".webp"):
+            with self.subTest(ext=ext):
+                with Image.open(BytesIO(optimized_image(self.encode("L", self.SRGB), ext))) as im:
+                    self.assertEqual(im.mode, "RGB")
+                    self.assertIsNone(im.info.get("icc_profile"))
+
+    def test_cmyk_without_profile_becomes_rgb(self):
+        with Image.open(BytesIO(optimized_image(self.encode("CMYK", None), ".jpg"))) as im:
+            self.assertEqual(im.mode, "RGB")
 
 
 class ImportTests(TestCase):
