@@ -46,11 +46,13 @@ def publish_view(request):
         return render(request, "admin/press/article/publish.html", {**admin.site.each_context(request),
                                                                       "title": "サイトに反映"})
     result = publish(settings.REPO_ROOT)
-    level = {"published": messages.SUCCESS, "no_changes": messages.INFO, "push_failed": messages.WARNING}.get(
-        result.status, messages.ERROR)
+    level = {"pr_created": messages.SUCCESS, "pr_updated": messages.SUCCESS, "pr_closed": messages.INFO,
+             "no_changes": messages.INFO,
+             "push_failed": messages.WARNING, "pr_failed": messages.WARNING}.get(result.status, messages.ERROR)
+    text = format_html("{}", result.message)
+    if result.url:
+        text = format_html('{} <a href="{}" target="_blank" rel="noopener">{}</a>', text, result.url, result.url)
     if result.output:
-        text = format_html("{}<pre>{}</pre>", result.message, result.output)
-    else:
-        text = result.message
+        text = format_html("{}<pre>{}</pre>", text, result.output)
     messages.add_message(request, level, text)
     return redirect("admin:press_article_changelist")
