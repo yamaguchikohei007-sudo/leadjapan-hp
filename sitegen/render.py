@@ -30,11 +30,24 @@ def find_placeholders(text: str) -> int:
     return text.count(PLACEHOLDER)
 
 
+def url(path: str) -> str:
+    """Root-relative URL for a site file ("company.html#x" -> "/company.html#x").
+
+    Root-relative so pages served from any depth (e.g. 404.html for /a/b/c)
+    still find their CSS and images. Absolute URLs and "/..." pass through.
+    """
+    if path.startswith(("/", "#", "http:", "https:", "mailto:")):
+        return path
+    if path == "index.html" or path.startswith("index.html#"):
+        return "/" + path.removeprefix("index.html")
+    return "/" + path
+
+
 def _nav_links(current: str | None) -> str:
     items = []
     for filename, label in NAV:
         attr = ' aria-current="page"' if filename == current else ""
-        items.append(f'<a href="{esc(filename)}"{attr}>{esc(label)}</a>')
+        items.append(f'<a href="{esc(url(filename))}"{attr}>{esc(label)}</a>')
     return "\n".join(items)
 
 
@@ -42,7 +55,7 @@ def render_layout(*, title: str, description: str, body: str, current: str,
                   head_extra: str = "") -> str:
     nav = _nav_links(current)
     footer_links = "\n".join(
-        f'<a href="{esc(f)}">{esc(label)}</a>' for f, label in NAV
+        f'<a href="{esc(url(f))}">{esc(label)}</a>' for f, label in NAV
     )
     return f"""<!DOCTYPE html>
 <html lang="ja">
@@ -52,19 +65,19 @@ def render_layout(*, title: str, description: str, body: str, current: str,
 <meta name="theme-color" content="#10366B">
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(description)}">
-<link rel="icon" type="image/svg+xml" href="static/img/favicon.svg">
+<link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="{FONTS_URL}">
-<link rel="stylesheet" href="static/css/style.css">
-<link rel="stylesheet" href="static/css/motion.css">
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/motion.css">
 {head_extra}
 </head>
 <body>
 <a class="skip-link" href="#main">本文へスキップ</a>
 <header class="site-header">
 <div class="container header-inner">
-<a class="logo" href="index.html" aria-label="{esc(SITE["name"])}">{LOGO_MARK}<span class="logo-text">Lead Japan <small>合同会社</small></span></a>
+<a class="logo" href="/" aria-label="{esc(SITE["name"])}">{LOGO_MARK}<span class="logo-text">Lead Japan <small>合同会社</small></span></a>
 <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="メニュー">
 <label for="nav-toggle" class="nav-toggle-label"><span class="visually-hidden">メニュー</span><span></span></label>
 <nav class="global-nav" aria-label="グローバルナビゲーション">
@@ -84,7 +97,7 @@ def render_layout(*, title: str, description: str, body: str, current: str,
 </div>
 <nav class="footer-nav" aria-label="フッターナビゲーション">
 {footer_links}
-<a href="privacy.html">プライバシーポリシー</a>
+<a href="/privacy.html">プライバシーポリシー</a>
 </nav>
 </div>
 <p class="copyright container">{esc(COPYRIGHT)}</p>

@@ -21,7 +21,7 @@ class IndexPageTests(unittest.TestCase):
     def test_index_hero(self):
         b = body_index()
         self.assertIn("<h1>日本を導き、世界へ。</h1>", b)
-        self.assertIn('src="static/img/hero-tokyo.jpg"', b)
+        self.assertIn('src="/static/img/hero-tokyo.jpg"', b)
         self.assertIn('alt="東京タワーと東京の街並み"', b)
         self.assertIn("Lead Japan — Tokyo, Japan", b)
 
@@ -33,7 +33,7 @@ class IndexPageTests(unittest.TestCase):
     def test_index_links_all_businesses(self):
         b = body_index()
         for biz in BUSINESSES:
-            self.assertIn(f'href="business.html#{biz.slug}"', b)
+            self.assertIn(f'href="/business.html#{biz.slug}"', b)
 
     def test_index_shows_latest_three_news(self):
         self.assertEqual(body_index().count("<li><time"), min(3, len(NEWS)))
@@ -43,7 +43,7 @@ class IndexPageTests(unittest.TestCase):
 
     def test_index_links_sections(self):
         b = body_index()
-        for href in ("company.html", "message.html", "news.html", "contact.html"):
+        for href in ("/company.html", "/message.html", "/news.html", "/contact.html"):
             self.assertIn(f'href="{href}"', b)
 
     def test_skyline_svg_has_tower_and_no_script(self):
@@ -62,7 +62,7 @@ class NewsListTests(unittest.TestCase):
         self.assertIn('<ul class="news-list">', out)
         self.assertIn('<li><time datetime="2026-01-05">2026.01.05</time>', out)
         self.assertIn('<span class="news-cat">A&amp;B</span>', out)
-        self.assertIn('<a href="news-s.html">&lt;x&gt;</a>', out)
+        self.assertIn('<a href="/news-s.html">&lt;x&gt;</a>', out)
         self.assertNotIn("<x>", out)
 
 
@@ -90,7 +90,7 @@ class NewsListLinkTests(unittest.TestCase):
     def test_news_list_links_article_pages(self):
         item = _item()
         out = news_list_html([item], with_summary=True)
-        self.assertIn('href="news-s.html"', out)
+        self.assertIn('href="/news-s.html"', out)
         self.assertIn('<p class="news-summary">sum</p>', out)
         self.assertNotIn("news-summary", news_list_html([item]))
 
@@ -102,12 +102,19 @@ class ArticleTests(unittest.TestCase):
         self.assertIn("<p><strong>x</strong></p>", out)
         self.assertIn("&lt;b&gt;", out)
         self.assertNotIn("<b>", out)
-        self.assertIn('<h2 class="article-title">', out)
-        self.assertIn('<figure class="article-image"><img src="static/img/news/a.png" alt="&quot;q&quot;"', out)
+        self.assertIn('<figure class="article-image"><img src="/static/img/news/a.png" alt="&quot;q&quot;"', out)
         self.assertIn('<div class="article-body">', out)
-        self.assertIn('<h1>ニュースルーム</h1>', out)
-        self.assertIn('<a href="news.html">ニュースルーム</a>', out)
-        self.assertIn('href="news.html">ニュース一覧へ戻る', out)
+        self.assertIn('<a href="/news.html">ニュースルーム</a>', out)
+        self.assertIn('href="/news.html">ニュース一覧へ戻る', out)
+
+    def test_article_title_is_the_only_h1(self):
+        out = body_news_article(_item(title="記事タイトル"))
+        self.assertEqual(out.count("<h1"), 1)
+        self.assertIn('<h1 class="article-title">記事タイトル</h1>', out)
+        self.assertIn('<p class="page-hero-title">ニュースルーム</p>', out)
+
+    def test_page_hero_has_h1_by_default(self):
+        self.assertIn("<h1>会社紹介</h1>", page_hero("会社紹介", "COMPANY"))
 
     def test_article_image_src_override_and_no_image(self):
         self.assertIn('src="preview.png"', body_news_article(_item(image="a.png"), image_src="preview.png"))
@@ -116,7 +123,7 @@ class ArticleTests(unittest.TestCase):
     def test_press_release_has_contact_block(self):
         out = body_news_article(_item(category="プレスリリース"))
         self.assertIn("本件に関するお問い合わせ", out)
-        self.assertIn('href="contact.html"', out)
+        self.assertIn('href="/contact.html"', out)
         self.assertIn(SITE["name"], out)
         self.assertNotIn("本件に関するお問い合わせ", body_news_article(_item(category="お知らせ")))
 
@@ -127,13 +134,17 @@ class ArticleTests(unittest.TestCase):
         self.assertIn('property="og:site_name" content="Lead Japan 合同会社"', out)
         self.assertNotIn("og:url", out)
         self.assertNotIn("og:image", out)
+        self.assertNotIn("canonical", out)
 
     def test_og_tags_with_site_url(self):
         out = og_tags(_item(slug="founding", image="static/img/news/a.png", title="<t>"), "https://x.pages.dev/")
-        self.assertIn('content="https://x.pages.dev/news-founding.html"', out)
+        # Cloudflare Pages serves news-founding.html as /news-founding
+        self.assertIn('<link rel="canonical" href="https://x.pages.dev/news-founding">', out)
+        self.assertIn('property="og:url" content="https://x.pages.dev/news-founding"', out)
         self.assertIn('property="og:image" content="https://x.pages.dev/static/img/news/a.png"', out)
         self.assertIn("&lt;t&gt;", out)
-        self.assertNotIn("og:image", og_tags(_item(), "https://x.pages.dev"))
+        self.assertIn('property="og:image" content="https://x.pages.dev/static/img/hero-tokyo.jpg"',
+                      og_tags(_item(), "https://x.pages.dev"))
 
     def test_article_pages_metadata(self):
         pages = article_pages([_item()])
@@ -185,7 +196,7 @@ class NewsPrivacyContactTests(unittest.TestCase):
     def test_news_page_lists_summaries_and_article_links(self):
         b = body_news()
         for item in NEWS:
-            self.assertIn(f'href="news-{item.slug}.html"', b)
+            self.assertIn(f'href="/news-{item.slug}.html"', b)
             self.assertIn(esc(item.summary), b)
         self.assertNotIn('href="news.html#', b)
 
@@ -196,7 +207,7 @@ class NewsPrivacyContactTests(unittest.TestCase):
         self.assertIn("制定日：2026年10月19日", b)
 
     def test_privacy_links_to_contact_page(self):
-        self.assertIn('<a href="contact.html">お問い合わせページ</a>', body_privacy())
+        self.assertIn('<a href="/contact.html">お問い合わせページ</a>', body_privacy())
 
     def test_privacy_enactment_date_once(self):
         self.assertEqual(body_privacy().count("制定日"), 1)
@@ -213,7 +224,7 @@ class NewsPrivacyContactTests(unittest.TestCase):
     def test_contact_no_form_post(self):
         b = body_contact()
         self.assertNotIn("<form", b)
-        self.assertIn('href="privacy.html"', b)
+        self.assertIn('href="/privacy.html"', b)
 
     def test_contact_placeholder_email_not_mailto(self):
         with mock.patch.dict("sitegen.pages.SITE", {"email": PLACEHOLDER}):

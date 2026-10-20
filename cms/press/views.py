@@ -20,7 +20,7 @@ SITE_NAME = "Lead Japan 合同会社"
 def preview(request, pk):
     article = get_object_or_404(Article, pk=pk)
     item = article_to_newsitem(article, image=None)
-    image_src = f"media/{article.image.name}" if article.image else None
+    image_src = article.image.url if article.image else None
     html = render_layout(
         title=f"{item.title} | {SITE_NAME}",
         description=item.summary,
