@@ -50,7 +50,7 @@ class IndexPageTests(unittest.TestCase):
         svg = (ROOT / Path("static/img/tokyo-skyline.svg")).read_text(encoding="utf-8")
         self.assertIn('id="beacon"', svg)
         self.assertNotIn("<script", svg)
-        self.assertIn("#e8380d", svg.lower())
+        self.assertIn("#d71920", svg.lower())
         self.assertIn('viewBox="0 0 1600 600"', svg)
         self.assertLess(len(svg.encode("utf-8")), 60 * 1024)
 

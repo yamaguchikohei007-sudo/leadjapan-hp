@@ -82,7 +82,7 @@
   /* Reading progress bar under the header */
   .site-header::after {
     content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
-    background: var(--tower);
+    background: var(--red);
     transform: scaleX(0); transform-origin: left;
     animation: progress-grow linear both;
     animation-timeline: scroll(root);
