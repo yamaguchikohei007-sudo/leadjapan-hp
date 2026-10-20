@@ -58,11 +58,12 @@ a { color: var(--navy); }
 .logo {
   display: inline-flex; align-items: center; gap: .6em;
   font-family: var(--font); font-weight: 700; font-size: 1.35rem;
-  color: var(--navy); text-decoration: none; position: relative; z-index: 120;
+  color: var(--navy); text-decoration: none;
 }
 .logo-mark { width: 44px; height: auto; flex: none; }
 .logo small { font-family: var(--font); font-size: .7rem; font-weight: 500; margin-left: .3em; }
-.global-nav { display: flex; gap: clamp(16px, 2.5vw, 36px); }
+/* no display here: it would override the browser hiding the closed popover on mobile */
+.global-nav { gap: clamp(16px, 2.5vw, 36px); }
 .global-nav a {
   position: relative; color: var(--navy); text-decoration: none;
   font-size: .95rem; font-weight: 500; padding: 4px 0;
@@ -74,42 +75,65 @@ a { color: var(--navy); }
 }
 .global-nav a:hover::after, .global-nav a[aria-current="page"]::after { transform: scaleX(1); }
 
-.nav-toggle {
-  position: absolute; width: 1px; height: 1px; overflow: hidden;
-  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; margin: -1px;
+/* Mobile menu: a native popover, no JavaScript. The button opens it, Esc and
+   the close button shut it, and browsers announce its open/closed state. */
+.nav-toggle, .nav-close, .nav-fallback { display: none; }
+
+@media (min-width: 769px) {
+  /* Wide screens: undo the browser's popover styles so the nav is always shown. */
+  .global-nav[popover] {
+    display: flex; position: static; inset: auto; width: auto; height: auto;
+    margin: 0; padding: 0; border: 0; overflow: visible; background: none; color: inherit;
+  }
 }
-.nav-toggle-label { display: none; }
 
 @media (max-width: 768px) {
-  .nav-toggle-label {
+  .nav-toggle {
     display: flex; align-items: center; justify-content: center;
-    width: 44px; height: 44px; cursor: pointer; position: relative; z-index: 120;
+    width: 44px; height: 44px; padding: 0; border: 0; background: none;
+    color: var(--navy); cursor: pointer;
   }
-  .nav-toggle-label > span:not(.visually-hidden), .nav-toggle-label > span:not(.visually-hidden)::before, .nav-toggle-label > span:not(.visually-hidden)::after {
-    display: block; width: 24px; height: 2px; background: var(--navy);
-    position: relative; transition: transform .3s, background .3s;
+  .nav-toggle-bars, .nav-toggle-bars::before, .nav-toggle-bars::after {
+    display: block; width: 24px; height: 2px; background: currentColor; position: relative;
   }
-  .nav-toggle-label > span:not(.visually-hidden)::before, .nav-toggle-label > span:not(.visually-hidden)::after { content: ""; position: absolute; left: 0; }
-  .nav-toggle-label > span:not(.visually-hidden)::before { top: -8px; }
-  .nav-toggle-label > span:not(.visually-hidden)::after { top: 8px; }
-  .nav-toggle:focus-visible ~ .nav-toggle-label { outline: 3px solid var(--red); outline-offset: 2px; }
-  .nav-toggle:checked ~ .nav-toggle-label > span:not(.visually-hidden) { background: transparent; }
-  .nav-toggle:checked ~ .nav-toggle-label > span:not(.visually-hidden)::before { background: #fff; transform: translateY(8px) rotate(45deg); }
-  .nav-toggle:checked ~ .nav-toggle-label > span:not(.visually-hidden)::after { background: #fff; transform: translateY(-8px) rotate(-45deg); }
-  .global-nav {
-    display: none;
-    position: fixed; inset: 0; z-index: 110;
-    flex-direction: column; align-items: center; justify-content: center; gap: 28px;
-    background: var(--navy);
+  .nav-toggle-bars::before, .nav-toggle-bars::after { content: ""; position: absolute; left: 0; }
+  .nav-toggle-bars::before { top: -8px; }
+  .nav-toggle-bars::after { top: 8px; }
+  .global-nav:popover-open {
+    position: fixed; inset: 0; width: auto; height: auto; margin: 0; padding: 0; border: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+    background: var(--navy); color: #fff;
   }
-  .nav-toggle:checked ~ .global-nav { display: flex; }
   .global-nav a { color: #fff; font-size: 1.2rem; }
-  .logo:has(~ .nav-toggle:checked) { color: #fff; }
-  .logo-mark { width: 36px; }
+  /* lines up with the open button in the header (4px red rule + centred in 68px) */
+  .nav-close {
+    display: flex; position: absolute; top: 16px; right: clamp(16px, 5vw, 48px);
+    width: 44px; height: 44px; padding: 0; border: 0; background: none;
+    color: #fff; cursor: pointer;
+  }
+  .nav-close::before, .nav-close::after {
+    content: ""; position: absolute; top: 21px; left: 10px; width: 24px; height: 2px;
+    background: currentColor;
+  }
+  .nav-close::before { transform: rotate(45deg); }
+  .nav-close::after { transform: rotate(-45deg); }
   /* open menu is navy: current-page underline and focus rings go white */
-  .nav-toggle:checked ~ .global-nav a::after { background: #fff; }
-  .nav-toggle:checked ~ .global-nav :focus-visible, .logo:has(~ .nav-toggle:checked):focus-visible,
-  .nav-toggle:checked ~ .nav-toggle-label { outline-color: #fff; }
+  .global-nav:popover-open a::after { background: #fff; }
+  .global-nav:popover-open :focus-visible { outline-color: #fff; }
+  /* the page behind the open menu does not scroll */
+  html:has(.global-nav:popover-open) { overflow: hidden; }
+  .logo-mark { width: 36px; }
+}
+
+/* Browsers without popover: the menu button jumps to the footer's link list. */
+@supports not selector(:popover-open) {
+  @media (max-width: 768px) {
+    .nav-toggle, .global-nav { display: none; }
+    .nav-fallback {
+      display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px;
+      color: var(--navy); font-weight: 700; text-decoration: none;
+    }
+  }
 }
 
 /* Footer */

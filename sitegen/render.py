@@ -78,9 +78,10 @@ def render_layout(*, title: str, description: str, body: str, current: str,
 <header class="site-header">
 <div class="container header-inner">
 <a class="logo" href="/" aria-label="{esc(SITE["name"])}">{LOGO_MARK}<span class="logo-text">Lead Japan <small>合同会社</small></span></a>
-<input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="メニュー">
-<label for="nav-toggle" class="nav-toggle-label"><span class="visually-hidden">メニュー</span><span></span></label>
-<nav class="global-nav" aria-label="グローバルナビゲーション">
+<button type="button" class="nav-toggle" popovertarget="global-nav"><span class="visually-hidden">メニュー</span><span class="nav-toggle-bars" aria-hidden="true"></span></button>
+<a class="nav-fallback" href="#footer-nav">メニュー</a>
+<nav id="global-nav" class="global-nav" popover aria-label="グローバルナビゲーション">
+<button type="button" class="nav-close" popovertarget="global-nav" popovertargetaction="hide"><span class="visually-hidden">メニューを閉じる</span></button>
 {nav}
 </nav>
 </div>
@@ -95,7 +96,7 @@ def render_layout(*, title: str, description: str, body: str, current: str,
 <p class="footer-name">{esc(SITE["name"])}</p>
 <p>{esc(SITE["location"])}</p>
 </div>
-<nav class="footer-nav" aria-label="フッターナビゲーション">
+<nav id="footer-nav" class="footer-nav" aria-label="フッターナビゲーション">
 {footer_links}
 <a href="/privacy.html">プライバシーポリシー</a>
 </nav>

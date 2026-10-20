@@ -63,11 +63,28 @@ class BrandColorTests(unittest.TestCase):
         for selector in (".site-footer :focus-visible", ".cta-band :focus-visible",
                          ".page-hero :focus-visible", ".hero :focus-visible",
                          ".skip-link:focus-visible",
-                         ".nav-toggle:checked ~ .global-nav :focus-visible",
-                         ".nav-toggle:checked ~ .nav-toggle-label"):
+                         ".global-nav:popover-open :focus-visible"):
             self.assertIn("outline-color: #fff", rules.get(selector, ""), selector)
         self.assertIn("background: #fff",
-                      rules.get(".nav-toggle:checked ~ .global-nav a::after", ""))
+                      rules.get(".global-nav:popover-open a::after", ""))
+
+
+class MobileMenuCssTests(unittest.TestCase):
+    def css(self) -> str:
+        return re.sub(r"/\*.*?\*/", "", CSS.read_text(encoding="utf-8"), flags=re.S)
+
+    def test_closed_popover_stays_hidden_on_mobile(self):
+        # an unscoped display on .global-nav would beat the browser's popover hiding
+        base = re.search(r"(?m)^\.global-nav \{([^}]*)\}", self.css())
+        self.assertNotIn("display", base.group(1))
+
+    def test_page_behind_open_menu_does_not_scroll(self):
+        self.assertIn("html:has(.global-nav:popover-open) { overflow: hidden; }", self.css())
+
+    def test_fallback_without_popover_support(self):
+        css = self.css()
+        start = css.index("@supports not selector(:popover-open)")
+        self.assertIn(".nav-fallback", css[start:])
 
 
 class FaviconTests(unittest.TestCase):

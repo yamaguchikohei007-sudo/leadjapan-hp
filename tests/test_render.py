@@ -36,10 +36,25 @@ class RenderTests(unittest.TestCase):
         self.assertIn("<title>A&lt;b&gt;&amp;&quot;</title>", html)
         self.assertNotIn("<x>", html)
 
-    def test_mobile_nav_toggle_markup(self):
+    def test_mobile_nav_is_a_native_popover(self):
+        # popover: Esc closes it and the button reports open/closed, without JavaScript
         html = render_layout(title="t", description="d", body="", current="index.html")
-        self.assertIn('id="nav-toggle"', html)
-        self.assertIn('for="nav-toggle"', html)
+        self.assertIn('<button type="button" class="nav-toggle" popovertarget="global-nav">', html)
+        self.assertIn('<nav id="global-nav" class="global-nav" popover ', html)
+        self.assertIn('popovertarget="global-nav" popovertargetaction="hide"', html)
+        self.assertIn("メニューを閉じる", html)
+        self.assertNotIn('type="checkbox"', html)
+
+    def test_menu_button_named_once(self):
+        html = render_layout(title="t", description="d", body="", current="index.html")
+        toggle = html.split('class="nav-toggle"', 1)[1].split("</button>", 1)[0]
+        self.assertEqual(toggle.count("メニュー"), 1)
+        self.assertNotIn("aria-label", toggle)
+
+    def test_menu_fallback_links_to_footer_nav(self):
+        html = render_layout(title="t", description="d", body="", current="index.html")
+        self.assertIn('<a class="nav-fallback" href="#footer-nav">メニュー</a>', html)
+        self.assertIn('<nav id="footer-nav"', html)
 
     def test_no_scripts(self):
         p = LinkCollector()
