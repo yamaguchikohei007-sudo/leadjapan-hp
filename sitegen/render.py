@@ -11,6 +11,16 @@ FONTS_URL = (
     "family=Noto+Sans+JP:wght@400;500;700&display=swap"
 )
 
+# Brand mark: two strokes follow the text colour (navy / white), the dot stays red.
+LOGO_MARK = (
+    '<svg class="logo-mark" viewBox="0 0 256 196" width="256" height="196" '
+    'aria-hidden="true" focusable="false">'
+    '<polygon points="0,179 56,179 179,0 123,0" fill="currentColor"/>'
+    '<polygon points="140,84 166,66 254,194 196,194" fill="currentColor"/>'
+    '<circle cx="129" cy="165" r="26" fill="#D71920"/>'
+    "</svg>"
+)
+
 
 def esc(s: object) -> str:
     return html.escape(str(s), quote=True)
@@ -53,7 +63,7 @@ def render_layout(*, title: str, description: str, body: str, current: str,
 <a class="skip-link" href="#main">本文へスキップ</a>
 <header class="site-header">
 <div class="container header-inner">
-<a class="logo" href="index.html">Lead Japan <small>合同会社</small></a>
+<a class="logo" href="index.html" aria-label="{esc(SITE["name"])}">{LOGO_MARK}<span class="logo-text">Lead Japan <small>合同会社</small></span></a>
 <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="メニュー">
 <label for="nav-toggle" class="nav-toggle-label"><span class="visually-hidden">メニュー</span><span></span></label>
 <nav class="global-nav" aria-label="グローバルナビゲーション">
@@ -67,6 +77,7 @@ def render_layout(*, title: str, description: str, body: str, current: str,
 <footer class="site-footer">
 <div class="container footer-inner">
 <div class="footer-company">
+<div class="footer-logo">{LOGO_MARK}</div>
 <p class="footer-name">{esc(SITE["name"])}</p>
 <p>{esc(SITE["location"])}</p>
 </div>
