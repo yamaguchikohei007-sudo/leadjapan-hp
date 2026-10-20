@@ -6,6 +6,7 @@ from django.db import models
 
 from sitegen import content as site_content
 from sitegen.news import CATEGORIES, SLUG_RE
+from sitegen.pages import article_page_title
 
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
@@ -54,8 +55,7 @@ class Article(models.Model):
 
     def clean(self):
         errors = {}
-        page_title = f"{self.title} | Lead Japan 合同会社"
-        if any(page_title == t for t, _ in site_content.PAGE_META.values()):
+        if any(article_page_title(self.title) == t for t, _ in site_content.PAGE_META.values()):
             errors["title"] = "このタイトルは固定ページのタイトルと重なるため使えません。別のタイトルにしてください"
         if self.image:
             if not self.image_alt.strip():

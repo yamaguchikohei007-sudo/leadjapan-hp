@@ -392,13 +392,18 @@ def _fixed_page(name: str, body: Callable[[], str]) -> Page:
 PAGES: list[Page] = [_fixed_page(name, body) for name, body in _BODIES.items()]
 
 
+def article_page_title(title: str) -> str:
+    """<title> of a news article page (also used by the admin preview and its checks)."""
+    return f"{title} | {SITE['name']}"
+
+
 def article_pages(items: Sequence[NewsItem] | None = None) -> list[Page]:
     """One Page per news item. Reads NEWS at call time when items is None."""
     items = NEWS if items is None else items
     return [
         Page(
             filename=news_page_filename(item),
-            title=f"{item.title} | Lead Japan 合同会社",
+            title=article_page_title(item.title),
             description=item.summary,
             body=lambda item=item: body_news_article(item),
             nav_current="news.html",
