@@ -36,23 +36,27 @@ class PreviewTests(TestCase):
         html = r.content.decode()
         self.assertIn("下書きの記事 | Lead Japan 合同会社", html)
         self.assertIn("<strong>太字</strong>", html)
-        self.assertIn('href="static/css/style.css"', html)
+        self.assertIn('href="/static/css/style.css"', html)
 
     def test_preview_missing_is_404(self):
         self.login()
         self.assertEqual(self.client.get(reverse("press:preview", args=[99999])).status_code, 404)
 
     def test_preview_static_served(self):
+        # same root-relative path the published pages use
         self.login()
-        r = self.client.get("/preview/static/css/style.css")
+        r = self.client.get("/static/css/style.css")
         self.assertEqual(r.status_code, 200)
 
     def test_preview_static_requires_staff(self):
-        self.assertEqual(self.client.get("/preview/static/css/style.css").status_code, 302)
+        self.assertEqual(self.client.get("/static/css/style.css").status_code, 302)
+
+    def test_preview_media_requires_staff(self):
+        self.assertEqual(self.client.get("/media/news/p.png").status_code, 302)
 
     def test_preview_static_traversal_is_404(self):
         self.login()
-        for path in ("/preview/static/../build.py", "/preview/static/%2e%2e/build.py", "/preview/media/../db.sqlite3"):
+        for path in ("/static/../build.py", "/static/%2e%2e/build.py", "/media/../db.sqlite3"):
             with self.subTest(path=path):
                 r = self.client.get(path)
                 self.assertIn(r.status_code, (400, 404))  # never 200
@@ -63,8 +67,8 @@ class PreviewTests(TestCase):
         (Path(self._tmp.name) / "news/p.png").write_bytes(b"png")
         Article.objects.filter(pk=self.article.pk).update(image="news/p.png", image_alt="alt")
         html = self.client.get(self.url).content.decode()
-        self.assertIn('src="media/news/p.png"', html)
-        self.assertEqual(self.client.get("/preview/media/news/p.png").status_code, 200)
+        self.assertIn('src="/media/news/p.png"', html)
+        self.assertEqual(self.client.get("/media/news/p.png").status_code, 200)
 
     def test_change_form_has_preview_link(self):
         self.login()

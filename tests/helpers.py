@@ -17,20 +17,24 @@ class LinkCollector(html.parser.HTMLParser):
         self.links: list[str] = []      # every href/src (resources + anchors)
         self.resources: list[str] = []  # loaded resources: src=, <link href>
         self.anchors: list[str] = []    # <a href>
-        self.scripts = 0
+        self.scripts = 0                # executable scripts only
+        self.jsonld = 0                 # <script type="application/ld+json"> (data, not code)
         self.title = ""
         self._in_title = False
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
         if tag == "script":
-            self.scripts += 1
+            if a.get("type") == "application/ld+json":
+                self.jsonld += 1
+            else:
+                self.scripts += 1
         if tag == "title":
             self._in_title = True
         for key in ("href", "src"):
             if a.get(key) is not None:
                 self.links.append(a[key])
-                if key == "src" or tag == "link":
+                if key == "src" or (tag == "link" and a.get("rel") != "canonical"):
                     self.resources.append(a[key])
                 elif tag == "a":
                     self.anchors.append(a[key])
@@ -63,6 +67,8 @@ def check_internal_links_resolve(tc, out: pathlib.Path) -> None:
             if link.startswith(("http:", "https:", "mailto:", "#")):
                 continue
             path, _, frag = link.partition("#")
+            if path.startswith("/"):
+                path = path.removeprefix("/") or "index.html"
             target = out / path
             tc.assertTrue(target.exists(), f"{page.name}: {link}")
             if frag:

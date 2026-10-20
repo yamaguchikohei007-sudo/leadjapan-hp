@@ -153,7 +153,8 @@ a { color: var(--navy); }
   background: var(--navy); color: #fff;
 }
 .page-hero .section-label { color: var(--sky); }
-.page-hero h1 { font-size: clamp(2rem, 5vw, 3rem); margin: 0; }
+/* .page-hero-title: same look as the h1, for pages whose h1 is the article title */
+.page-hero h1, .page-hero-title { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; line-height: 1.5; margin: 0; }
 
 @media (max-width: 480px) {
   .footer-inner { flex-direction: column; }

@@ -1,6 +1,7 @@
 """Page registry. PAGES is filled by later tasks."""
 from __future__ import annotations
 
+import datetime
 from dataclasses import dataclass
 from typing import Callable, Sequence
 
@@ -9,7 +10,8 @@ from sitegen.content import (
     MESSAGE, MESSAGE_TITLE, NEWS, NOT_FOUND_TEXT, PAGE_META, PLACEHOLDER, PRIVACY, PRIVACY_ENACTED,
     SITE, SITE_URL, NewsItem,
 )
-from sitegen.render import esc
+from sitegen.render import esc, url
+from sitegen.seo import head_meta, organization_jsonld
 
 
 @dataclass(frozen=True)
@@ -20,6 +22,8 @@ class Page:
     body: Callable[[], str]
     nav_current: str | None = None
     head_extra: str = ""
+    indexable: bool = True  # listed in sitemap.xml
+    lastmod: datetime.date | None = None
 
 
 def news_page_filename(item: NewsItem) -> str:
@@ -35,7 +39,7 @@ def news_list_html(items: Sequence[NewsItem], *, with_summary: bool = False) -> 
         rows.append(
             f'<li><time datetime="{item.date:%Y-%m-%d}">{item.date:%Y.%m.%d}</time>'
             f'<span class="news-cat">{esc(item.category)}</span>'
-            f'<a href="{esc(news_page_filename(item))}">{esc(item.title)}</a>{summary}</li>'
+            f'<a href="{esc(url(news_page_filename(item)))}">{esc(item.title)}</a>{summary}</li>'
         )
     return '<ul class="news-list">\n' + "\n".join(rows) + "\n</ul>"
 
@@ -51,7 +55,7 @@ def _section_head(label: str, title: str, extra: str = "") -> str:
 
 def body_index() -> str:
     cards = "\n".join(
-        f'<a class="card biz-card reveal" style="--d: {i}" href="business.html#{esc(b.slug)}">'
+        f'<a class="card biz-card reveal" style="--d: {i}" href="/business.html#{esc(b.slug)}">'
         f'<span class="biz-num">{esc(b.number)}</span>'
         f'<h3 class="biz-title">{esc(b.title)}</h3>'
         f'<span class="biz-en">{esc(b.title_en)}</span>'
@@ -62,7 +66,7 @@ def body_index() -> str:
     )
     return f"""<section class="section hero">
 <!-- Photo: Louie Martinez / Unsplash (Unsplash License) https://unsplash.com/photos/IocJwyqRv3M -->
-<img class="hero-skyline" src="static/img/hero-tokyo.jpg" alt="東京タワーと東京の街並み" width="1920" height="1278" fetchpriority="high">
+<img class="hero-skyline" src="/static/img/hero-tokyo.jpg" alt="東京タワーと東京の街並み" width="1920" height="1278" fetchpriority="high">
 <div class="hero-sky" aria-hidden="true"></div>
 <div class="container hero-inner">
 <p class="hero-kicker reveal">{esc(SITE["name_en"])}</p>
@@ -77,7 +81,7 @@ def body_index() -> str:
 {_section_head("About", "会社紹介", " reveal--left")}
 <div class="about-body reveal" style="--d: 1">
 <p class="lead-text">{esc(SITE["philosophy"])}</p>
-<a class="btn" href="company.html">会社紹介を見る</a>
+<a class="btn" href="/company.html">会社紹介を見る</a>
 </div>
 </div>
 </section>
@@ -95,7 +99,7 @@ def body_index() -> str:
 <div class="container message-inner">
 {_section_head("Message", "代表挨拶")}
 <blockquote class="message-excerpt reveal reveal--zoom" style="--d: 1"><p>{esc(MESSAGE[0])}</p></blockquote>
-<a class="btn reveal" style="--d: 2" href="message.html">代表挨拶を読む</a>
+<a class="btn reveal" style="--d: 2" href="/message.html">代表挨拶を読む</a>
 </div>
 </section>
 
@@ -104,7 +108,7 @@ def body_index() -> str:
 {_section_head("News", "ニュースルーム", " reveal--left")}
 <div class="news-body reveal reveal--right" style="--d: 1">
 {news_list_html(NEWS[:3])}
-<a class="btn" href="news.html">ニュース一覧へ</a>
+<a class="btn" href="/news.html">ニュース一覧へ</a>
 </div>
 </div>
 </section>
@@ -112,23 +116,26 @@ def body_index() -> str:
 <section class="section cta-band" id="contact">
 <div class="container cta-inner reveal">
 <span class="section-label">Contact</span>
-<a class="cta-link" href="contact.html">お問い合わせはこちら</a>
+<a class="cta-link" href="/contact.html">お問い合わせはこちら</a>
 </div>
 </section>"""
 
 
 def page_hero(
-    title: str, label_en: str, crumbs: Sequence[tuple[str, str | None]] | None = None
+    title: str, label_en: str, crumbs: Sequence[tuple[str, str | None]] | None = None,
+    *, heading: bool = True,
 ) -> str:
-    """crumbs: (label, href-or-None) after ホーム; default is just the page title."""
+    """crumbs: (label, href-or-None) after ホーム; default is just the page title.
+    heading=False when the page's own <h1> is further down (news articles)."""
     trail = crumbs if crumbs is not None else [(title, None)]
-    parts = ['<a href="index.html">ホーム</a>']
+    parts = ['<a href="/">ホーム</a>']
     for label, href in trail:
-        parts.append(f'<a href="{esc(href)}">{esc(label)}</a>' if href else f"<span>{esc(label)}</span>")
+        parts.append(f'<a href="{esc(url(href))}">{esc(label)}</a>' if href else f"<span>{esc(label)}</span>")
+    title_html = f"<h1>{esc(title)}</h1>" if heading else f'<p class="page-hero-title">{esc(title)}</p>'
     return (
         '<section class="page-hero"><div class="container">'
         f'<span class="section-label">{esc(label_en)}</span>'
-        f'<h1>{esc(title)}</h1>'
+        f"{title_html}"
         "</div></section>\n"
         '<div class="container"><nav class="breadcrumb" aria-label="パンくずリスト">'
         + " / ".join(parts)
@@ -228,7 +235,7 @@ def body_message() -> str:
 <section class="section">
 <div class="container message-layout">
 <aside class="message-side reveal reveal--left" aria-hidden="true">
-<img src="static/img/tokyo-skyline.svg" alt="" width="1600" height="600">
+<img src="/static/img/tokyo-skyline.svg" alt="" width="1600" height="600">
 </aside>
 <article class="message-body reveal reveal--right" style="--d: 1">
 <h2>{esc(MESSAGE_TITLE)}</h2>
@@ -249,7 +256,7 @@ def body_news() -> str:
 
 
 def body_news_article(item: NewsItem, *, image_src: str | None = None) -> str:
-    src = image_src if image_src is not None else item.image
+    src = image_src if image_src is not None else (url(item.image) if item.image else None)
     figure = (
         f'<figure class="article-image"><img src="{esc(src)}" alt="{esc(item.image_alt)}"></figure>\n'
         if src
@@ -260,43 +267,30 @@ def body_news_article(item: NewsItem, *, image_src: str | None = None) -> str:
         contact = (
             '<aside class="press-contact">\n'
             "<h3>本件に関するお問い合わせ</h3>\n"
-            f'<p>{esc(SITE["name"])}<br><a href="contact.html">お問い合わせページ</a></p>\n'
+            f'<p>{esc(SITE["name"])}<br><a href="/contact.html">お問い合わせページ</a></p>\n'
             "</aside>\n"
         )
     crumbs = [("ニュースルーム", "news.html"), (item.title, None)]
-    return f"""{page_hero("ニュースルーム", "NEWSROOM", crumbs)}
+    return f"""{page_hero("ニュースルーム", "NEWSROOM", crumbs, heading=False)}
 <section class="section">
 <div class="container news-articles">
 <article class="news-article">
 <div class="news-meta"><time datetime="{item.date:%Y-%m-%d}">{item.date:%Y.%m.%d}</time><span class="news-cat">{esc(item.category)}</span></div>
-<h2 class="article-title">{esc(item.title)}</h2>
+<h1 class="article-title">{esc(item.title)}</h1>
 {figure}<div class="article-body">{item.body_html}</div>
 {contact}</article>
-<p class="article-back"><a href="news.html">ニュース一覧へ戻る</a></p>
+<p class="article-back"><a href="/news.html">ニュース一覧へ戻る</a></p>
 </div>
 </section>"""
 
 
 def og_tags(item: NewsItem, site_url: str) -> str:
-    def tag(prop: str, value: str) -> str:
-        return f'<meta property="{prop}" content="{esc(value)}">'
-
-    tags = [
-        tag("og:title", item.title),
-        tag("og:description", item.summary),
-        tag("og:type", "article"),
-        tag("og:site_name", "Lead Japan 合同会社"),
-    ]
-    if site_url:
-        base = site_url.rstrip("/") + "/"
-        tags.append(tag("og:url", base + news_page_filename(item)))
-        if item.image:
-            tags.append(tag("og:image", base + item.image))
-    return "\n".join(tags)
+    return head_meta(filename=news_page_filename(item), title=item.title, description=item.summary,
+                     og_type="article", image=item.image, site_url=site_url)
 
 
 CONTACT_LABEL = "お問い合わせページ"
-CONTACT_LINK = f'<a href="contact.html">{CONTACT_LABEL}</a>'
+CONTACT_LINK = f'<a href="/contact.html">{CONTACT_LABEL}</a>'
 
 
 def body_privacy() -> str:
@@ -343,7 +337,7 @@ def body_contact() -> str:
 <!-- 無料の Google フォームを使う場合はここに埋め込みリンクを置く -->
 <h2 class="contact-sub">お問い合わせの例</h2>
 <ul class="contact-cats">{categories}</ul>
-<p class="contact-note">お預かりした個人情報は、プライバシーポリシーに定める利用目的の範囲内で利用します。詳しくは<a href="privacy.html">プライバシーポリシー</a>をご確認ください。</p>
+<p class="contact-note">お預かりした個人情報は、プライバシーポリシーに定める利用目的の範囲内で利用します。詳しくは<a href="/privacy.html">プライバシーポリシー</a>をご確認ください。</p>
 </div>
 </section>"""
 
@@ -353,7 +347,7 @@ def body_404() -> str:
 <section class="section">
 <div class="container">
 <p>{esc(NOT_FOUND_TEXT)}</p>
-<p><a class="btn" href="index.html">トップページへ戻る</a></p>
+<p><a class="btn" href="/">トップページへ戻る</a></p>
 </div>
 </section>"""
 
@@ -369,10 +363,19 @@ _BODIES: dict[str, Callable[[], str]] = {
     "404.html": body_404,
 }
 
-PAGES: list[Page] = [
-    Page(filename=name, title=PAGE_META[name][0], description=PAGE_META[name][1], body=body)
-    for name, body in _BODIES.items()
-]
+def _fixed_page(name: str, body: Callable[[], str]) -> Page:
+    title, description = PAGE_META[name]
+    if name == "404.html":
+        # Served for any missing URL: keep it out of search results and the sitemap.
+        return Page(name, title, description, body, head_extra='<meta name="robots" content="noindex">',
+                    indexable=False)
+    head = head_meta(filename=name, title=title, description=description)
+    if name == "index.html":
+        head += "\n" + organization_jsonld()
+    return Page(name, title, description, body, head_extra=head)
+
+
+PAGES: list[Page] = [_fixed_page(name, body) for name, body in _BODIES.items()]
 
 
 def article_pages(items: Sequence[NewsItem] | None = None) -> list[Page]:
@@ -386,6 +389,7 @@ def article_pages(items: Sequence[NewsItem] | None = None) -> list[Page]:
             body=lambda item=item: body_news_article(item),
             nav_current="news.html",
             head_extra=og_tags(item, SITE_URL),
+            lastmod=item.date,
         )
         for item in items
     ]
