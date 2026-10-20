@@ -66,7 +66,7 @@ python3 -m unittest discover -s tests -v
 
 ## Cloudflare Pages での公開
 
-Cloudflare Pages（無料プラン・商用利用可）で公開します。`main` に push されるたびに Cloudflare 側で `python build.py` が実行され、自動で公開されます。
+Cloudflare Pages（無料プラン・商用利用可）で公開します。`main` に push されるたびに Cloudflare 側でテストと `python build.py` が実行され、テストが通った場合だけ自動で公開されます（テストが失敗するとビルドが止まり、公開中のサイトはそのまま残ります）。
 
 ### 初回設定
 
@@ -79,7 +79,7 @@ Cloudflare Pages（無料プラン・商用利用可）で公開します。`mai
    | --- | --- |
    | Production branch | `main` |
    | Framework preset | `None` |
-   | Build command | `python build.py` |
+   | Build command | `python -m unittest discover -s tests && python build.py` |
    | Build output directory | `site` |
    | 環境変数（Environment variables） | `PYTHON_VERSION` = `3.13` |
 
