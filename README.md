@@ -10,8 +10,23 @@ Python 標準ライブラリだけで生成する静的サイトです。外部�
 - `sitegen/render.py` — 共通レイアウト（ヘッダー、フッター、ナビゲーション）。
 - `static/css/style.css`, `static/css/motion.css` — スタイルとスクロール演出。
 - `static/img/tokyo-skyline.svg` — 東京の街並みのイラスト。
+- `static/img/favicon.svg` — ファビコン（ネイビーの角丸にロゴマーク）。
+- ロゴマーク（ヘッダー・フッター）は `sitegen/render.py` の `LOGO_MARK` にあります。
 - `tests/` — テスト。
 - `.github/workflows/ci.yml` — push / プルリクエスト時のテスト実行（公開は Cloudflare Pages が行います）。
+
+## ブランドカラーとロゴ
+
+| 名前 | 値 | 用途 |
+| --- | --- | --- |
+| ディープネイビー | `#10366B` | コーポレートのメインカラー（CSS の `--navy`） |
+| ジャパンレッド | `#D71920` | 日本を象徴するアクセントカラー（CSS の `--red`） |
+
+色はすべて `static/css/style.css` の `:root` で定義しています。補助色として `--navy-dark`（濃いネイビー）、`--sky`（ネイビー背景上の小見出し用の淡い青）、`--mist`（薄い背景）があります。
+
+- ネイビー背景の上の文字にジャパンレッドは使いません（コントラストが不足し読みにくいため）。赤は線・下線・丸などの装飾と、白背景上の文字に使います。
+- 「Lead Japan」の文字ロゴは画像ではなく文字（Inter）で表示しています。
+- 正式なロゴデータ（SVG など）を入手したら、`sitegen/render.py` の `LOGO_MARK` と `static/img/favicon.svg` の図形を差し替えてください。
 
 ## 文言の編集
 
