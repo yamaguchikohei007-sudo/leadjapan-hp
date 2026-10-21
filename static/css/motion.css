@@ -6,15 +6,14 @@
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: none; }
 }
-@keyframes hero-zoom {
-  from { transform: scale(1.08); }
-  to   { transform: scale(1); }
+@keyframes hero-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-@keyframes hero-cue {
-  0%   { transform: scaleY(0); transform-origin: top; }
-  50%  { transform: scaleY(1); transform-origin: top; }
-  51%  { transform: scaleY(1); transform-origin: bottom; }
-  100% { transform: scaleY(0); transform-origin: bottom; }
+/* the visitor's dot: a slow ripple, quiet enough to be noticed only on a second look */
+@keyframes hero-pin-wave {
+  from { transform: scale(.4); opacity: .9; }
+  to   { transform: scale(2.2); opacity: 0; }
 }
 
 /* .hero-kicker / .hero-sub also carry .reveal; these selectors are more
@@ -22,11 +21,12 @@
 .hero .hero-kicker { animation: hero-rise 900ms cubic-bezier(.2, .7, .2, 1) both; }
 .hero h1           { animation: hero-rise 900ms cubic-bezier(.2, .7, .2, 1) 150ms both; }
 .hero .hero-sub    { animation: hero-rise 900ms cubic-bezier(.2, .7, .2, 1) 300ms both; }
-.hero .hero-skyline {
-  animation: hero-zoom 2.4s cubic-bezier(.2, .7, .2, 1) both;
-  transform-origin: 22% 70%;
+.hero-actions      { animation: hero-rise 900ms cubic-bezier(.2, .7, .2, 1) 450ms both; }
+.hero-map          { animation: hero-fade 1.6s ease-out both; }
+.pin-wave {
+  transform-box: fill-box; transform-origin: center;
+  animation: hero-pin-wave 3.2s ease-out 1.2s infinite both;
 }
-.scroll-cue::after { animation: hero-cue 2.2s ease-in-out infinite; }
 
 /* ===== Scroll-driven motion (Chromium / Safari 26+) ===== */
 @supports (animation-timeline: view()) {
@@ -46,9 +46,9 @@
     from { opacity: 0; transform: scale(.92); }
     to   { opacity: 1; transform: none; }
   }
-  @keyframes skyline-parallax {
+  @keyframes map-parallax {
     from { translate: 0 0; }
-    to   { translate: 0 80px; }
+    to   { translate: 0 60px; }
   }
   @keyframes progress-grow {
     from { transform: scaleX(0); }
@@ -70,11 +70,11 @@
   /* Hero copy (.hero .hero-kicker/.hero-sub) out-specifies .reveal above, so
      it keeps its load animation and ends visible. */
 
-  /* Skyline: load zoom (transform) + scroll parallax (translate) together. */
-  .hero .hero-skyline {
+  /* Map: load fade (opacity) + scroll parallax (translate) together. */
+  .hero-map {
     animation:
-      hero-zoom 2.4s cubic-bezier(.2, .7, .2, 1) both,
-      skyline-parallax linear both;
+      hero-fade 1.6s ease-out both,
+      map-parallax linear both;
     animation-timeline: auto, scroll(root);
     animation-range: normal, 0px 100vh;
   }

@@ -5,28 +5,14 @@ from pathlib import Path
 from tests.helpers import ROOT
 from unittest import mock
 
-from sitegen.content import BUSINESSES, NEWS, PLACEHOLDER, PRIVACY, SITE, NewsItem
+from sitegen.content import (ABOUT_LEAD, ABOUT_TEXT, BUSINESSES, CONTACT_HOURS, CTA_LEAD, HERO_LEAD, MESSAGE, MESSAGE_EXCERPT,
+                             NEWS, PLACEHOLDER, PRIVACY, SECTION_DISPLAY, SITE, NewsItem)
+from sitegen.geo import pin_xy
 from sitegen.render import esc
-from sitegen.pages import (HERO_WIDTHS, PAGES, article_page_title, body_business, body_company, body_contact, body_index,
+from sitegen.pages import (PAGES, article_page_title, body_business, body_company, body_contact, body_index,
                            body_message, body_news, body_news_article,
                            body_privacy, article_pages, news_page_filename, news_list_html, og_tags,
                            page_hero)
-
-
-def _webp_size(path: Path) -> tuple[int, int]:
-    """(width, height) from a lossy or lossless WebP header, stdlib only."""
-    data = path.read_bytes()[:30]
-    assert data[:4] == b"RIFF" and data[8:12] == b"WEBP", path
-    chunk = data[12:16]
-    if chunk == b"VP8 ":
-        return (int.from_bytes(data[26:28], "little") & 0x3FFF,
-                int.from_bytes(data[28:30], "little") & 0x3FFF)
-    if chunk == b"VP8L":
-        bits = int.from_bytes(data[21:25], "little")
-        return (bits & 0x3FFF) + 1, ((bits >> 14) & 0x3FFF) + 1
-    if chunk == b"VP8X":
-        return int.from_bytes(data[24:27], "little") + 1, int.from_bytes(data[27:30], "little") + 1
-    raise AssertionError(f"{path}: unknown WebP chunk {chunk!r}")
 
 
 class IndexPageTests(unittest.TestCase):
@@ -36,25 +22,33 @@ class IndexPageTests(unittest.TestCase):
 
     def test_index_hero(self):
         b = body_index()
-        self.assertIn("<h1>日本を導き、世界へ。</h1>", b)
-        self.assertIn('src="/static/img/hero-tokyo.jpg"', b)
-        self.assertIn('alt="東京タワーと東京の街並み"', b)
+        self.assertIn('<h1><span>日本を導き、</span><span class="hero-accent">世界へ。</span></h1>', b)
         self.assertIn("Lead Japan — Tokyo, Japan", b)
+        self.assertIn(esc(HERO_LEAD), b)
+        self.assertNotIn("SCROLL", b)
 
-    def test_hero_webp_versions(self):
+    def test_hero_map_and_visitor_pin_default_to_tokyo(self):
         b = body_index()
-        self.assertIn('<source type="image/webp" srcset="', b)
-        for w in HERO_WIDTHS:
-            self.assertIn(f"/static/img/hero-tokyo-{w}.webp {w}w", b)
-            path = ROOT / f"static/img/hero-tokyo-{w}.webp"
-            self.assertEqual(_webp_size(path)[0], w, path.name)
-            self.assertLess(path.stat().st_size, 300 * 1024)
-        self.assertEqual(_webp_size(ROOT / "static/img/hero-tokyo-1920.webp"), (1920, 1278))
+        self.assertIn('<img src="/static/img/japan-map.svg" alt=""', b)
+        x, y = pin_xy("13")
+        # functions/index.js rewrites this transform; as built, the dot is on Tokyo
+        self.assertEqual(b.count("data-visitor-pin"), 1)
+        self.assertIn(f'<g data-visitor-pin transform="translate({x} {y})">', b)
+        self.assertIn('<div class="hero-map" aria-hidden="true">', b)
 
-    def test_hero_photo_is_light_enough(self):
+    def test_og_photo_is_light_enough(self):
+        # no longer on the page; still the default og:image for social shares
         photo = ROOT / "static/img/hero-tokyo.jpg"
         self.assertTrue(photo.exists())
         self.assertLess(photo.stat().st_size, 800 * 1024)
+
+    def test_index_section_copy(self):
+        b = body_index()
+        for text in (ABOUT_LEAD, MESSAGE_EXCERPT, CTA_LEAD, CONTACT_HOURS, *SECTION_DISPLAY.values()):
+            self.assertIn(esc(text), b)
+        self.assertIn(MESSAGE_EXCERPT, " ".join(MESSAGE))
+        self.assertIn(esc(ABOUT_TEXT), b)
+        self.assertIn(ABOUT_TEXT, SITE["philosophy"])  # excerpt of the philosophy
 
     def test_index_links_all_businesses(self):
         b = body_index()

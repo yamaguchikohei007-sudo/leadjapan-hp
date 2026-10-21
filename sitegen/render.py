@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import html
 
-from sitegen.content import COPYRIGHT, NAV, PLACEHOLDER, SITE
+from sitegen.content import COPYRIGHT, FOOTER_CONTACT, FOOTER_DESCRIPTION, NAV, PLACEHOLDER, SITE
 
 # Only the weights style.css uses (400, 500, 700): each extra weight is another download.
 FONTS_URL = (
@@ -91,18 +91,33 @@ def render_layout(*, title: str, description: str, body: str, current: str,
 {body}
 </main>
 <footer class="site-footer">
-<div class="container footer-inner">
+<div class="container">
+<div class="footer-grid">
 <div class="footer-company">
-<div class="footer-logo">{LOGO_MARK}</div>
-<p class="footer-name">{esc(SITE["name"])}</p>
-<p>{esc(SITE["location"])}</p>
+<div class="footer-brand"><div class="footer-logo">{LOGO_MARK}</div><span class="logo-text">Lead Japan <small>合同会社</small></span></div>
+<p>{esc(FOOTER_DESCRIPTION)}</p>
 </div>
-<nav id="footer-nav" class="footer-nav" aria-label="フッターナビゲーション">
+<nav id="footer-nav" class="footer-nav" aria-labelledby="footer-nav-heading">
+<h2 class="footer-heading" id="footer-nav-heading" lang="en">Sitemap</h2>
 {footer_links}
-<a href="/privacy.html">プライバシーポリシー</a>
 </nav>
+<div class="footer-col">
+<h2 class="footer-heading" lang="en">Company</h2>
+<p class="footer-name">{esc(SITE["name"])}</p>
+<p>{esc(SITE["address"])}</p>
+<p>設立 {esc(SITE["founded"])}</p>
 </div>
-<p class="copyright container">{esc(COPYRIGHT)}</p>
+<div class="footer-col">
+<h2 class="footer-heading" lang="en">Contact</h2>
+<p>{esc(FOOTER_CONTACT)}</p>
+<a class="btn btn-outline-light btn-small" href="/contact.html">お問い合わせ</a>
+</div>
+</div>
+<div class="footer-bottom">
+<p class="copyright">{esc(COPYRIGHT)}</p>
+<a href="/privacy.html">プライバシーポリシー</a>
+</div>
+</div>
 </footer>
 </body>
 </html>

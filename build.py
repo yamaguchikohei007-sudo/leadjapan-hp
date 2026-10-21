@@ -13,6 +13,9 @@ from sitegen.seo import robots_txt, sitemap_xml
 
 ROOT = pathlib.Path(__file__).resolve().parent
 STATIC = ROOT / "static"
+# Cloudflare Pages: run functions/index.js for the home page only. Every other
+# request stays a free static one and never counts toward the Functions quota.
+ROUTES_JSON = '{"version": 1, "include": ["/"], "exclude": []}\n'
 
 
 def build(out_dir: pathlib.Path, pages: Sequence[Page] | None = None) -> list[pathlib.Path]:
@@ -38,6 +41,7 @@ def build(out_dir: pathlib.Path, pages: Sequence[Page] | None = None) -> list[pa
         entries = [(p.filename, p.lastmod) for p in pages if p.indexable]
         (out_dir / "sitemap.xml").write_text(sitemap_xml(entries, content.SITE_URL), encoding="utf-8")
         (out_dir / "robots.txt").write_text(robots_txt(content.SITE_URL), encoding="utf-8")
+    (out_dir / "_routes.json").write_text(ROUTES_JSON, encoding="utf-8")
     if STATIC.exists():
         shutil.copytree(STATIC, out_dir / "static")
     return written
