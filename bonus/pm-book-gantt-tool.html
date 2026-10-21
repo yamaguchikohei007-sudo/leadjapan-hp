@@ -897,7 +897,8 @@
   /* ---------------- Init ---------------- */
   function init(){
     var had = loadTasks();
-    if(!had || !state.tasks || state.tasks.length===0){
+    // an empty saved list means the user cleared every task: keep it empty
+    if(!had || !Array.isArray(state.tasks)){
       state.tasks = sampleData();
       saveTasks();
     }
@@ -2554,13 +2555,17 @@
     // projectName is carried in its own column, filled only on the first data row —
     // on re-import, the app reads it back and auto-applies it as the project title.
     var currentTitle = (document.getElementById('projectTitle').value || '').trim() || DEFAULT_TITLE;
-    var header = ['wbs','name','assignee','start','end','progress','status','parentName','dependsOn','isMilestone','milestoneIcon','projectName'];
+    // dependsOnWbs (same order as dependsOn) lets re-import tell apart tasks with the same name;
+    // the parent is found from the row's own wbs ("1.2.3" -> "1.2").
+    var header = ['wbs','name','assignee','start','end','progress','status','parentName','dependsOn','isMilestone','milestoneIcon','projectName','dependsOnWbs'];
     var lines = [header.join(',')];
     state.tasks.forEach(function(t, idx){
       var parent = t.parentId ? getTask(t.parentId) : null;
-      var dependsOnNames = (t.deps||[]).map(function(id){ var dt=getTask(id); return dt? dt.name : null; }).filter(Boolean).join(';');
+      var depTasks = (t.deps||[]).map(getTask).filter(Boolean);
+      var dependsOnNames = depTasks.map(function(dt){ return dt.name; }).join(';');
+      var dependsOnWbs = depTasks.map(function(dt){ return wbsMap[dt.id]||''; }).join(';');
       var projectNameField = idx===0 ? currentTitle : '';
-      lines.push([wbsMap[t.id]||'', t.name, t.assignee||'', t.start, t.end, t.progress||0, t.status||'todo', parent? parent.name : '', dependsOnNames, t.isMilestone?'TRUE':'FALSE', t.isMilestone ? (t.milestoneIcon||'diamond') : '', projectNameField].map(toCsvField).join(','));
+      lines.push([wbsMap[t.id]||'', t.name, t.assignee||'', t.start, t.end, t.progress||0, t.status||'todo', parent? parent.name : '', dependsOnNames, t.isMilestone?'TRUE':'FALSE', t.isMilestone ? (t.milestoneIcon||'diamond') : '', projectNameField, dependsOnWbs].map(toCsvField).join(','));
     });
     var blob = new Blob(["﻿"+lines.join('\n')], {type:'text/csv;charset=utf-8;'});
     var url = URL.createObjectURL(blob);
@@ -2662,10 +2667,13 @@
         var newTasks, unresolved = 0, dts, importStats = { badDates:0 };
 
         if(useIdFormat){
+          // IDs in the file are only used to link rows to each other; every task gets a
+          // fresh internal ID, so nothing from the file is ever written into markup as an ID.
           var idMap = {};
           newTasks = records.map(function(r){
-            var id = r.id && r.id.trim() ? r.id.trim() : genId();
-            idMap[id] = id;
+            var id = genId();
+            var fileId = (r.id||'').trim();
+            if(fileId && !(fileId in idMap)) idMap[fileId] = id;
             return {
               id:id,
               name: r.name || '(無題タスク)',
@@ -2681,8 +2689,9 @@
             };
           });
           newTasks.forEach(function(t){
-            t.deps = t.deps.filter(function(d){return idMap[d];});
-            if(t.parentId && !idMap[t.parentId]) t.parentId = null;
+            t.deps = t.deps.map(function(d){ return Object.prototype.hasOwnProperty.call(idMap, d) ? idMap[d] : null; })
+              .filter(function(d){ return d && d!==t.id; });
+            t.parentId = t.parentId && Object.prototype.hasOwnProperty.call(idMap, t.parentId) ? idMap[t.parentId] : null;
             if(t.parentId===t.id) t.parentId = null;
           });
         } else {
@@ -2697,23 +2706,47 @@
               status: ['todo','doing','done'].indexOf((r.status||'').trim().toLowerCase())>=0 ? (r.status||'').trim().toLowerCase() : 'todo',
               isMilestone: /^(true|1|yes)$/i.test((r.isMilestone||'').trim()),
               milestoneIcon: !/^(true|1|yes)$/i.test((r.isMilestone||'').trim()) ? '' : (MILESTONE_ICONS[(r.milestoneIcon||'').trim()] ? r.milestoneIcon.trim() : 'diamond'),
+              _wbs: (r.wbs||'').trim(),
               _parentName: (r.parentName||'').trim(),
-              _dependsOnNames: (r.dependsOn||'').split(';').map(function(s){return s.trim();}).filter(Boolean)
+              _dependsOnNames: (r.dependsOn||'').split(';').map(function(s){return s.trim();}),
+              _dependsOnWbs: (r.dependsOnWbs||'').split(';').map(function(s){return s.trim();})
             };
           });
-          var nameMap = {};
-          newTasks.forEach(function(t){ if(!(t.name in nameMap)) nameMap[t.name] = t.id; });
+          // Names can repeat (e.g. a "レビュー" under each phase), so a WBS number from the
+          // file is used first, as long as it points at a task with the expected name
+          // (a hand-edited file may have stale numbers); otherwise the first task with that name.
+          var nameMap = Object.create(null), wbsMap = Object.create(null);
+          newTasks.forEach(function(t){
+            if(!(t.name in nameMap)) nameMap[t.name] = t;
+            if(t._wbs && !(t._wbs in wbsMap)) wbsMap[t._wbs] = t;
+          });
+          function resolve(name, wbs){
+            var byWbs = wbs ? wbsMap[wbs] : null;
+            var found = byWbs && byWbs.name===name ? byWbs : nameMap[name];
+            return found ? found.id : null;
+          }
           newTasks.forEach(function(t){
             if(t._parentName){
-              t.parentId = nameMap[t._parentName] || null;
+              t.parentId = resolve(t._parentName, t._wbs.replace(/(^|\.)[^.]*$/, ''));
+              if(t.parentId===t.id) t.parentId = null;
               if(!t.parentId) unresolved++;
             } else {
               t.parentId = null;
             }
-            t.deps = t._dependsOnNames.map(function(n){ return nameMap[n] || null; }).filter(function(id){ return id; });
+            var depNames = [], depIds = [];
+            t._dependsOnNames.forEach(function(n, i){
+              if(!n) return;
+              depNames.push(n);
+              var id = resolve(n, t._dependsOnWbs[i]||'');
+              if(id && id!==t.id) depIds.push(id);
+            });
+            t._dependsOnNames = depNames;
+            t.deps = depIds;
             unresolved += t._dependsOnNames.length - t.deps.length;
+            delete t._wbs;
             delete t._parentName;
             delete t._dependsOnNames;
+            delete t._dependsOnWbs;
           });
         }
 
