@@ -2343,6 +2343,13 @@
     ['fStart','fEnd','fProgressRange'].forEach(function(id){
       document.getElementById(id).disabled = !!isGroup;
     });
+    if(isGroup){
+      var effGroup = getEffective(task);
+      document.getElementById('fStart').value = effGroup.start || '';
+      document.getElementById('fEnd').value = effGroup.end || '';
+      document.getElementById('fProgressRange').value = effGroup.progress;
+      document.getElementById('fProgressVal').textContent = effGroup.progress+'%';
+    }
     document.getElementById('fRollupNote').style.display = isGroup ? '' : 'none';
     // a group task (has children) can't be a milestone — hide the option entirely
     document.getElementById('fieldMilestoneCheckboxWrap').style.display = isGroup ? 'none' : '';
@@ -2393,7 +2400,9 @@
       end = document.getElementById('fEnd').value;
       progress = Number(document.getElementById('fProgressRange').value);
 
-      if(state.editingId){
+      if(state.editingId && hasChildren(state.editingId)){
+        // group task: schedule is rolled up from its children and not editable here
+      } else if(state.editingId){
         if(!start || !end){ errEl.textContent = '開始日と終了日を入力してください。'; return; }
         if(parseISO(end) < parseISO(start)){ errEl.textContent = '終了日は開始日以降にしてください。'; return; }
       } else if(start || end){
