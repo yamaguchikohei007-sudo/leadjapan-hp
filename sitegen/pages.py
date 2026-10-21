@@ -6,10 +6,11 @@ from dataclasses import dataclass
 from typing import Callable, Sequence
 
 from sitegen.content import (
-    BUSINESSES, COMPANY_NAME_ORIGIN, CONTACT_CATEGORIES, CONTACT_HOURS, CONTACT_INTRO, HERO_SUB,
-    MESSAGE, MESSAGE_TITLE, NEWS, NOT_FOUND_TEXT, PAGE_META, PLACEHOLDER, PRIVACY, PRIVACY_ENACTED,
-    SITE, SITE_URL, NewsItem,
+    ABOUT_LEAD, ABOUT_TEXT, BUSINESSES, COMPANY_NAME_ORIGIN, CONTACT_CATEGORIES, CONTACT_HOURS, CONTACT_INTRO, CTA_LEAD,
+    HERO_LEAD, HERO_SUB, MESSAGE, MESSAGE_EXCERPT, MESSAGE_TITLE, NEWS, NOT_FOUND_TEXT, PAGE_META, PLACEHOLDER,
+    PRIVACY, PRIVACY_ENACTED, SECTION_DISPLAY, SITE, SITE_URL, NewsItem,
 )
+from sitegen.geo import MAP_HEIGHT, MAP_WIDTH, pin_xy
 from sitegen.render import esc, url
 from sitegen.seo import head_meta, organization_jsonld
 
@@ -44,93 +45,135 @@ def news_list_html(items: Sequence[NewsItem], *, with_summary: bool = False) -> 
     return '<ul class="news-list">\n' + "\n".join(rows) + "\n</ul>"
 
 
-def _section_head(label: str, title: str, extra: str = "") -> str:
+def _section_head(label: str, title: str, extra: str = "", display: str = "") -> str:
+    """display: optional large English heading shown between the label and the title."""
+    display_html = f'<p class="section-display" lang="en">{esc(display)}</p>' if display else ""
     return (
         f'<div class="section-head reveal{extra}">'
         f'<span class="section-label">{esc(label)}</span>'
+        f"{display_html}"
         f'<h2 class="section-title">{esc(title)}</h2>'
         "</div>"
     )
 
 
-# WebP versions of hero-tokyo.jpg, made by tools/hero_images.py (same widths).
-HERO_WIDTHS: tuple[int, ...] = (960, 1280, 1920)
-# The photo covers the hero (object-fit: cover, at least one screen tall), so on
-# tall screens it is wider than the viewport: 1.5 = its width / height.
-HERO_SIZES = "max(100vw, 150vh)"
+def _more_link(href: str, label: str) -> str:
+    return f'<a class="link-more" href="{esc(href)}">{esc(label)}</a>'
 
 
-def _hero_srcset() -> str:
-    return ", ".join(f"/static/img/hero-tokyo-{w}.webp {w}w" for w in HERO_WIDTHS)
+def _hero_map() -> str:
+    """Map of Japan and the visitor's dot. The dot starts on Tokyo; on Cloudflare,
+    functions/index.js moves it (data-visitor-pin) to the visitor's prefecture."""
+    x, y = pin_xy()
+    return (
+        '<div class="hero-map" aria-hidden="true">'
+        f'<img src="/static/img/japan-map.svg" alt="" width="{MAP_WIDTH}" height="{MAP_HEIGHT}" fetchpriority="high">'
+        f'<svg class="hero-pin" viewBox="0 0 {MAP_WIDTH} {MAP_HEIGHT}" focusable="false">'
+        f'<g data-visitor-pin transform="translate({x} {y})">'
+        '<circle class="pin-wave" r="20"/><circle class="pin-dot" r="6"/></g></svg>'
+        "</div>"
+    )
 
 
 def body_index() -> str:
     cards = "\n".join(
-        f'<a class="card biz-card reveal" style="--d: {i}" href="/business.html#{esc(b.slug)}">'
-        f'<span class="biz-num">{esc(b.number)}</span>'
+        f'<a class="biz-card reveal" style="--d: {i}" href="/business.html#{esc(b.slug)}">'
+        f'<span class="biz-card-top"><span class="biz-icon-wrap">{ICONS.get(b.slug, "")}</span>'
+        f'<span class="biz-num">{esc(b.number)}</span></span>'
+        f'<span class="biz-en" lang="en">{esc(b.title_en)}</span>'
         f'<h3 class="biz-title">{esc(b.title)}</h3>'
-        f'<span class="biz-en">{esc(b.title_en)}</span>'
         f'<p class="biz-summary">{esc(b.summary)}</p>'
         f'<span class="biz-more">詳しく見る</span>'
         "</a>"
         for i, b in enumerate(BUSINESSES)
     )
+    band = "".join(
+        f'<li><a href="/business.html#{esc(b.slug)}"><span class="hero-band-num">{esc(b.number)}</span>'
+        f"{esc(b.title.removesuffix('の展開'))}</a></li>"
+        for b in BUSINESSES
+    )
+    facts = (
+        ("設立", SITE["founded"][:4]),
+        ("事業領域", str(len(BUSINESSES))),
+        ("拠点", "Tokyo"),
+    )
+    facts_html = "".join(f"<div><dt>{esc(k)}</dt><dd>{esc(v)}</dd></div>" for k, v in facts)
+    contact_cats = "".join(f"<li>{esc(c)}</li>" for c in CONTACT_CATEGORIES)
     return f"""<section class="section hero">
-<!-- Photo: Louie Martinez / Unsplash (Unsplash License) https://unsplash.com/photos/IocJwyqRv3M -->
-<picture>
-<source type="image/webp" srcset="{_hero_srcset()}" sizes="{HERO_SIZES}">
-<img class="hero-skyline" src="/static/img/hero-tokyo.jpg" alt="東京タワーと東京の街並み" width="1920" height="1278" fetchpriority="high">
-</picture>
-<div class="hero-sky" aria-hidden="true"></div>
+<div class="hero-grid" aria-hidden="true"></div>
+{_hero_map()}
+<p class="hero-word" aria-hidden="true">LEAD JAPAN</p>
 <div class="container hero-inner">
-<p class="hero-kicker reveal">{esc(SITE["name_en"])}</p>
-<h1>{esc(SITE["tagline"])}</h1>
-<p class="hero-sub reveal" style="--d: 1">{esc(HERO_SUB)}</p>
+<p class="hero-kicker reveal">{esc(HERO_SUB)}</p>
+<h1><span>日本を導き、</span><span class="hero-accent">世界へ。</span></h1>
+<p class="hero-sub reveal" style="--d: 1">{esc(HERO_LEAD)}</p>
+<p class="hero-actions"><a class="btn btn-light" href="/business.html">事業を見る</a><a class="btn btn-outline-light" href="/contact.html">お問い合わせ</a></p>
 </div>
-<a class="scroll-cue" href="#about" aria-label="下へスクロール"><span>SCROLL</span></a>
+<nav class="hero-band" aria-label="事業"><ul class="container">{band}</ul></nav>
 </section>
 
 <section class="section top-about" id="about">
 <div class="container about-grid">
-{_section_head("About", "会社紹介", " reveal--left")}
+{_section_head("About", "会社紹介", " reveal--left", SECTION_DISPLAY["about"])}
 <div class="about-body reveal" style="--d: 1">
-<p class="lead-text">{esc(SITE["philosophy"])}</p>
-<a class="btn" href="/company.html">会社紹介を見る</a>
+<p class="about-lead">{esc(ABOUT_LEAD)}</p>
+<p>{esc(ABOUT_TEXT)}</p>
+{_more_link("/company.html", "会社紹介を見る")}
+<dl class="about-facts">{facts_html}</dl>
 </div>
 </div>
 </section>
 
 <section class="section alt top-business" id="business">
 <div class="container">
-{_section_head("Business", "事業概要")}
+<div class="head-row">
+{_section_head("Business", "事業概要", display=SECTION_DISPLAY["business"])}
+{_more_link("/business.html", "事業概要を見る")}
+</div>
 <div class="biz-grid">
 {cards}
 </div>
 </div>
 </section>
 
-<section class="section top-message" id="message">
-<div class="container message-inner">
-{_section_head("Message", "代表挨拶")}
-<blockquote class="message-excerpt reveal reveal--zoom" style="--d: 1"><p>{esc(MESSAGE[0])}</p></blockquote>
-<a class="btn reveal" style="--d: 2" href="/message.html">代表挨拶を読む</a>
+<section class="section section-dark top-message" id="message">
+<div class="container message-grid">
+{_section_head("Message", "代表挨拶", " reveal--left", SECTION_DISPLAY["message"])}
+<div class="reveal" style="--d: 1">
+<blockquote class="message-excerpt"><p>{esc(MESSAGE_EXCERPT)}</p></blockquote>
+<p class="message-sign">{esc(SITE["name"])} 代表社員 <strong>{esc(SITE["representative"])}</strong></p>
+<a class="btn btn-outline-light" href="/message.html">代表挨拶を読む</a>
+</div>
 </div>
 </section>
 
-<section class="section alt top-news" id="news">
-<div class="container news-grid">
-{_section_head("News", "ニュースルーム", " reveal--left")}
-<div class="news-body reveal reveal--right" style="--d: 1">
+<section class="section top-news" id="news">
+<div class="container">
+<div class="head-row">
+{_section_head("News", "ニュースルーム", display=SECTION_DISPLAY["news"])}
+{_more_link("/news.html", "ニュース一覧へ")}
+</div>
+<div class="news-body reveal" style="--d: 1">
 {news_list_html(NEWS[:3])}
-<a class="btn" href="/news.html">ニュース一覧へ</a>
 </div>
 </div>
 </section>
 
-<section class="section cta-band" id="contact">
-<div class="container cta-inner reveal">
+<section class="section alt cta-band" id="contact">
+<div class="container">
+<div class="cta-card reveal">
+<div class="cta-main">
 <span class="section-label">Contact</span>
-<a class="cta-link" href="/contact.html">お問い合わせはこちら</a>
+<p class="section-display" lang="en">{esc(SECTION_DISPLAY["contact"])}</p>
+<h2 class="section-title">お問い合わせ</h2>
+<p class="cta-lead">{esc(CTA_LEAD)}</p>
+<ul class="cta-tags">{contact_cats}</ul>
+</div>
+<div class="cta-box">
+<dl><dt>受付時間</dt><dd>{esc(CONTACT_HOURS)}</dd><dt>所在地</dt><dd>{esc(SITE["address"])}</dd></dl>
+<a class="btn btn-light btn-block" href="/contact.html">お問い合わせはこちら</a>
+</div>
+</div>
 </div>
 </section>"""
 

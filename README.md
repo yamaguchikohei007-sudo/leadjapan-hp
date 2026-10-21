@@ -10,7 +10,10 @@ Python 標準ライブラリだけで生成する静的サイトです。外部�
 - `sitegen/pages.py` — 各ページの構成。
 - `sitegen/render.py` — 共通レイアウト（ヘッダー、フッター、ナビゲーション）。
 - `static/css/style.css`, `static/css/motion.css` — スタイルとスクロール演出。
-- `static/img/tokyo-skyline.svg` — 東京の街並みのイラスト。
+- `static/img/tokyo-skyline.svg` — 東京の街並みのイラスト（代表挨拶ページ）。
+- `static/img/japan-map.svg` — トップページの日本地図（`tools/japan_map.py` で作成。下の「トップページの地図と赤い点」を参照）。
+- `sitegen/geo.py` — 地図の範囲と都道府県の位置。
+- `functions/index.js` — トップページの赤い点を閲覧者の都道府県に動かす Cloudflare Pages Functions（サーバー側だけで動き、ブラウザには JavaScript を送りません）。
 - `static/img/favicon.svg` — ファビコン（ネイビーの角丸にロゴマーク）。
 - ロゴマーク（ヘッダー・フッター）は `sitegen/render.py` の `LOGO_MARK` にあります。
 - `tests/` — テスト。
@@ -104,6 +107,20 @@ Cloudflare Pages（無料プラン・商用利用可）で公開します。`mai
 5. **Save and Deploy** を押します。最初のデプロイが終わると `https://<プロジェクト名>.pages.dev` の URL が表示されます。この URL をメモします。
 6. `sitegen/content.py` の `SITE_URL` にその URL を設定します（現在は `SITE_URL = "https://leadjapan-hp.pages.dev"`）。記事ページの `og:url` / `og:image` に使われます。
 
+7. **Settings** → **Runtime** → **Fail open / closed** を **Fail open** にします。トップページの赤い点（下記）は無料枠（1日10万回）で動いており、使い切ったときに Fail open ならエラーではなく通常のページ（赤い点は東京）が表示されます。
+
+### トップページの地図と赤い点
+
+トップページの日本地図には、閲覧者のおおよその場所（都道府県単位）を赤い点で目立たないように表示します。ラベルなどは出しません。
+
+- 場所は Cloudflare が IP アドレスから推定した都道府県で、点はその県庁所在地に置きます。海外からの閲覧・場所が分からないとき・エラーのときは東京に表示します。
+- 処理は `functions/index.js`（Cloudflare Pages Functions）で、トップページ（`/`）を返すときにだけ動きます（`build.py` が書き出す `site/_routes.json` で限定。ほかのページや画像は無料・無制限の静的配信のままです）。位置は保存・記録しません。
+- ページは閲覧者ごとに違うので、`Cache-Control: private, no-store` を付けて、他の人にキャッシュされたページが届かないようにしています。
+- 手元のプレビュー（`python3 -m http.server`）では Functions は動かないため、赤い点は常に東京です。
+- 推定は外れることがあります（スマホ回線は東京・大阪の設備を経由しやすく、VPN では別の場所になります）。
+- 公開サイトに JavaScript を使わない方針の例外です。`functions/index.js` は Cloudflare のサーバー上でだけ動き、ブラウザには送られません。テストは `node --test tests/js/visitor_pin.test.mjs`（Node.js がある環境では `python -m unittest` からも実行されます）。
+- 地図の範囲や都道府県の位置（`sitegen/geo.py`）を変えたときは、地図データ（[ne_10m_admin_0_countries_jpn.geojson](https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries_jpn.geojson)）をダウンロードして `python3 tools/japan_map.py <ダウンロードしたファイル>` を実行し、`static/img/japan-map.svg` と `functions/index.js` の位置表を作り直します。
+
 ### 独自ドメインを使う場合
 
 1. ドメインを取得します（ドメイン費用のみ有料）。
@@ -117,7 +134,7 @@ Cloudflare Pages（無料プラン・商用利用可）で公開します。`mai
 
 `SITE_URL` をもとに、ビルド時に次のものを自動で作ります（`sitegen/seo.py`）。`SITE_URL` を独自ドメインに変えれば、すべて追従します。
 
-- 各ページの正規 URL（`canonical`）と SNS 共有用の情報（OGP）。共有時の画像は、記事に画像があればその画像、なければトップページの写真です。
+- 各ページの正規 URL（`canonical`）と SNS 共有用の情報（OGP）。共有時の画像は、記事に画像があればその画像、なければ東京の写真（`static/img/hero-tokyo.jpg`）です。
 - `sitemap.xml`（404 ページを除く全ページ）と `robots.txt`。
 - トップページの会社情報（構造化データ。社名・所在地など。メールアドレスは確定後に自動で追加されます）。
 - 404 ページは検索結果に出ないよう `noindex` にしています。
@@ -242,5 +259,5 @@ GitHub の CI でも、push と PR のたびにサイトのテストと管理画
 
 ## 画像のクレジット
 
-- トップページの写真: Louie Martinez / Unsplash（[Unsplash ライセンス](https://unsplash.com/license)、商用利用可・クレジット表記は任意）。元画像: https://unsplash.com/photos/IocJwyqRv3M
-- 写真を差し替えるときは `static/img/hero-tokyo.jpg` を同じ名前で置き換えます（横長・1920px 程度・800KB 未満）。そのあと `~/.venvs/leadjapan-cms/bin/python tools/hero_images.py` を実行して、画面の大きさに合わせた軽い WebP 版（`hero-tokyo-960/1280/1920.webp`）を作り直し、一緒にコミットしてください。作り直さないと、多くのブラウザで古い写真が表示されたままになります。
+- SNS 共有用の画像（`static/img/hero-tokyo.jpg`、トップページには表示しません）: Louie Martinez / Unsplash（[Unsplash ライセンス](https://unsplash.com/license)、商用利用可・クレジット表記は任意）。元画像: https://unsplash.com/photos/IocJwyqRv3M
+- 地図データ: [Natural Earth](https://www.naturalearthdata.com/)（パブリックドメイン）。国境は日本の見解に沿った版（`ne_10m_admin_0_countries_jpn`）を使っています。
