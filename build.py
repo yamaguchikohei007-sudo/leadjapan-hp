@@ -13,9 +13,10 @@ from sitegen.seo import robots_txt, sitemap_xml
 
 ROOT = pathlib.Path(__file__).resolve().parent
 STATIC = ROOT / "static"
-# Cloudflare Pages: run functions/index.js for the home page only. Every other
+# Cloudflare Pages: run functions/index.js for the home page and
+# functions/pm-book-bonus/download.js for the reader-bonus form only. Every other
 # request stays a free static one and never counts toward the Functions quota.
-ROUTES_JSON = '{"version": 1, "include": ["/"], "exclude": []}\n'
+ROUTES_JSON = '{"version": 1, "include": ["/", "/pm-book-bonus/download"], "exclude": []}\n'
 
 
 def build(out_dir: pathlib.Path, pages: Sequence[Page] | None = None) -> list[pathlib.Path]:

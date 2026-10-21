@@ -36,7 +36,8 @@ class ContentTest(unittest.TestCase):
 
     def test_nav_targets(self):
         self.assertEqual([f for f, _ in c.NAV],
-                         ["company.html", "business.html", "message.html", "news.html", "contact.html"])
+                         ["company.html", "business.html", "message.html", "pm-book.html", "news.html",
+                          "contact.html"])
 
 
 if __name__ == "__main__":

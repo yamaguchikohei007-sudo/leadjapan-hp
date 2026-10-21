@@ -36,13 +36,15 @@ class MapTests(unittest.TestCase):
 
 
 class RoutesTests(unittest.TestCase):
-    def test_function_only_runs_for_the_home_page(self):
+    def test_functions_only_run_where_needed(self):
         from tests.helpers import build_to_tmp
         out = build_to_tmp()
         self.addCleanup(shutil.rmtree, out, ignore_errors=True)
         routes = json.loads((out / "_routes.json").read_text(encoding="utf-8"))
-        self.assertEqual(routes, {"version": 1, "include": ["/"], "exclude": []})
-        self.assertEqual([p.name for p in (ROOT / "functions").iterdir()], ["index.js"])
+        # the home page (this pin) and the reader-bonus form (tests/test_book.py)
+        self.assertEqual(routes, {"version": 1, "include": ["/", "/pm-book-bonus/download"], "exclude": []})
+        functions = sorted(str(p.relative_to(ROOT / "functions")) for p in (ROOT / "functions").rglob("*.js"))
+        self.assertEqual(functions, ["index.js", "pm-book-bonus/download.js"])
 
     def test_function_never_logs_or_stores(self):
         js = FUNCTION.read_text(encoding="utf-8")

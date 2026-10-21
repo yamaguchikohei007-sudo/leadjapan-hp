@@ -6,13 +6,16 @@ from dataclasses import dataclass
 from typing import Callable, Sequence
 
 from sitegen.content import (
-    ABOUT_LEAD, ABOUT_TEXT, BUSINESSES, COMPANY_NAME_ORIGIN, CONTACT_CATEGORIES, CONTACT_HOURS, CONTACT_INTRO, CTA_LEAD,
+    BOOK, BOOK_ABOUT, BOOK_AUTHOR, BOOK_AUTHOR_BIO, BOOK_AUTHOR_NAME, BOOK_BONUS_ERROR, BOOK_BONUS_HOWTO,
+    BOOK_BONUS_INTRO, BOOK_BONUS_TEXT, BOOK_BONUS_TITLE, BOOK_CATCH, BOOK_COLUMNS_NOTE, BOOK_COMING_SOON_NOTE,
+    BOOK_COVER_ALT, BOOK_FOR_YOU, BOOK_LEAD, BOOK_OG_DESCRIPTION, BOOK_PARTS, BOOK_SUBTITLE, BOOK_TITLE,
+    BOOK_TRADEMARK_NOTE, ABOUT_LEAD, ABOUT_TEXT, BUSINESSES, COMPANY_NAME_ORIGIN, CONTACT_CATEGORIES, CONTACT_HOURS, CONTACT_INTRO, CTA_LEAD,
     HERO_LEAD, HERO_SUB, MESSAGE, MESSAGE_EXCERPT, MESSAGE_TITLE, NEWS, NOT_FOUND_TEXT, PAGE_META, PLACEHOLDER,
     PRIVACY, PRIVACY_ENACTED, SECTION_DISPLAY, SITE, SITE_URL, NewsItem,
 )
 from sitegen.geo import MAP_HEIGHT, MAP_WIDTH, pin_xy
 from sitegen.render import esc, url
-from sitegen.seo import head_meta, organization_jsonld
+from sitegen.seo import book_jsonld, head_meta, organization_jsonld
 
 
 @dataclass(frozen=True)
@@ -278,7 +281,8 @@ def body_business() -> str:
             f'<span class="biz-en">{esc(b.title_en)}</span>'
             f'<p>{esc(b.summary)}</p>'
             f'<ul>{details}</ul>'
-            "</div>\n</section>"
+            + (_more_link("/pm-book.html", "書籍の紹介を見る") if b.slug == "publishing" else "")
+            + "</div>\n</section>"
         )
     return f"""{page_hero("事業概要", "BUSINESS")}
 <div class="container business-list">
@@ -399,6 +403,151 @@ def body_contact() -> str:
 </section>"""
 
 
+BOOK_BONUS_ACTION = "/pm-book-bonus/download"  # functions/pm-book-bonus/download.js
+
+
+def body_book(book: dict[str, str | None] = BOOK) -> str:
+    on_sale = book["status"] == "on_sale"
+    label = "好評発売中" if on_sale else book["release_label"]
+    if on_sale and book.get("amazon_url"):
+        buy = (f'<a class="btn book-btn" href="{esc(book["amazon_url"])}" target="_blank" rel="noopener">'
+               "Amazonで購入する</a>")
+        note = ""
+    else:
+        buy = ""
+        note = f'<p class="book-hero-note">{esc(BOOK_COMING_SOON_NOTE)}</p>'
+    about = "\n".join(f"<p>{esc(p)}</p>" for p in BOOK_ABOUT)
+    for_you = "".join(f"<li>{esc(t)}</li>" for t in BOOK_FOR_YOU)
+    parts = "\n".join(
+        '<article class="book-part reveal">'
+        f'<span class="book-part-label">{esc(part.label)}</span>'
+        f'<h3>{esc(part.title)}</h3>'
+        f"<p>{esc(part.summary)}</p>"
+        + (f'<p class="book-part-note">{esc(part.note)}</p>' if part.note else "")
+        + "<ul>" + "".join(f"<li>{esc(h)}</li>" for h in part.headings) + "</ul>"
+        "</article>"
+        for part in BOOK_PARTS
+    )
+    bonus = "\n".join(f"<p>{esc(p)}</p>" for p in BOOK_BONUS_TEXT)
+    bio = "\n".join(f"<p>{esc(p)}</p>" for p in BOOK_AUTHOR_BIO)
+    rows = [
+        ("書名", BOOK_TITLE),
+        ("副題", BOOK_SUBTITLE),
+        ("著者", BOOK_AUTHOR),
+        ("発行・発売", SITE["name"]),
+        ("形態", book["format"]),
+        ("発売日", book.get("release_date")),
+        ("価格", f"{int(book['price']):,}円" if book.get("price") else None),
+        ("ISBN", book.get("isbn")),
+    ]
+    info = "\n".join(f'<tr><th scope="row">{esc(k)}</th><td>{esc(v)}</td></tr>' for k, v in rows if v)
+    return f"""<section class="book-hero" id="hero">
+<div class="container book-hero-inner">
+<picture class="book-cover">
+<source srcset="/static/img/book/cover_front.webp" type="image/webp">
+<img src="/static/img/book/cover_front.png" alt="{esc(BOOK_COVER_ALT)}" width="1000" height="1422" fetchpriority="high">
+</picture>
+<div class="book-hero-text">
+<p class="book-status">{esc(label)}</p>
+<h1 class="book-title"><span>外資系プロジェクトマネージャー</span><span class="book-title-main">1年目の教科書</span></h1>
+<p class="book-subtitle">{esc(BOOK_SUBTITLE)}</p>
+<p class="book-author">{esc(BOOK_AUTHOR)} 著</p>
+<p class="book-catch">{esc(BOOK_CATCH)}</p>
+<p class="book-lead">{esc(BOOK_LEAD)}</p>
+{note}<p class="book-actions">{buy}<a class="btn book-btn-outline" href="#contents">本書の構成を見る</a></p>
+</div>
+</div>
+</section>
+<div class="container"><nav class="breadcrumb" aria-label="パンくずリスト"><a href="/">ホーム</a> / <span>書籍</span></nav></div>
+
+<section class="section book-section" id="about">
+<div class="container book-narrow">
+{_section_head("About", "この本について")}
+<div class="book-prose reveal">
+{about}
+</div>
+</div>
+</section>
+
+<section class="section alt book-section" id="for-you">
+<div class="container book-narrow">
+{_section_head("For you", "こんな方におすすめです")}
+<ul class="book-checklist reveal">{for_you}</ul>
+</div>
+</section>
+
+<section class="section book-section" id="contents">
+<div class="container book-narrow">
+{_section_head("Contents", "本書の構成")}
+<div class="book-parts">
+{parts}
+</div>
+<p class="book-columns reveal">{esc(BOOK_COLUMNS_NOTE)}</p>
+</div>
+</section>
+
+<section class="section alt book-section" id="bonus">
+<div class="container book-narrow">
+{_section_head("Bonus", f"読者特典　{BOOK_BONUS_TITLE}")}
+<div class="book-prose reveal">
+{bonus}
+<p><a class="btn" href="/pm-book-bonus.html">特典ページへ</a></p>
+</div>
+</div>
+</section>
+
+<section class="section book-section" id="author">
+<div class="container book-narrow">
+{_section_head("Author", "著者紹介")}
+<div class="book-prose reveal">
+<p class="book-author-name">{esc(BOOK_AUTHOR_NAME)}</p>
+{bio}
+</div>
+</div>
+</section>
+
+<section class="section alt book-section" id="info">
+<div class="container book-narrow">
+{_section_head("Information", "書籍情報")}
+<table class="company-table reveal">
+{info}
+</table>
+<p class="book-notes" id="notes">{esc(BOOK_TRADEMARK_NOTE)}</p>
+</div>
+</section>"""
+
+
+def body_book_bonus(*, error: bool = False) -> str:
+    """Password form for the reader bonus. The form posts to a Pages Function, which
+    sends the file or redirects to the error version of this page (no JavaScript)."""
+    alert = (
+        f'<p class="bonus-error" id="bonus-error" role="alert">{esc(BOOK_BONUS_ERROR)}</p>\n' if error else ""
+    )
+    invalid = ' aria-invalid="true" aria-describedby="bonus-error"' if error else ""
+    howto = "".join(f"<li>{esc(t)}</li>" for t in BOOK_BONUS_HOWTO)
+    crumbs = [("書籍", "pm-book.html"), ("読者特典", None)]
+    return f"""{page_hero("読者特典", "READER BONUS", crumbs)}
+<section class="section">
+<div class="container book-narrow">
+<div class="bonus-card reveal">
+<p class="bonus-book">『{esc(BOOK_TITLE)}』</p>
+<h2 class="bonus-title">{esc(BOOK_BONUS_TITLE)}</h2>
+<p>{esc(BOOK_BONUS_INTRO)}</p>
+{alert}<form class="bonus-form" method="post" action="{BOOK_BONUS_ACTION}">
+<label for="bonus-password">読者パスワード</label>
+<div class="bonus-row">
+<input id="bonus-password" name="password" type="password" required maxlength="64" autocomplete="off" autocapitalize="off" spellcheck="false"{invalid}>
+<button class="btn" type="submit">ダウンロード</button>
+</div>
+</form>
+<h3 class="bonus-sub">ご利用にあたって</h3>
+<ul class="bonus-howto">{howto}</ul>
+</div>
+<p class="article-back"><a href="/pm-book.html">書籍の紹介へ戻る</a></p>
+</div>
+</section>"""
+
+
 def body_404() -> str:
     return f"""{page_hero("ページが見つかりません", "404 NOT FOUND")}
 <section class="section">
@@ -417,15 +566,26 @@ _BODIES: dict[str, Callable[[], str]] = {
     "news.html": body_news,
     "privacy.html": body_privacy,
     "contact.html": body_contact,
+    "pm-book.html": body_book,
+    "pm-book-bonus.html": body_book_bonus,
+    "pm-book-bonus-error.html": lambda: body_book_bonus(error=True),
     "404.html": body_404,
 }
 
+# Reader-bonus pages: only for readers of the book, so kept out of search results.
+NOINDEX = ("404.html", "pm-book-bonus.html", "pm-book-bonus-error.html")
+
 def _fixed_page(name: str, body: Callable[[], str]) -> Page:
     title, description = PAGE_META[name]
-    if name == "404.html":
-        # Served for any missing URL: keep it out of search results and the sitemap.
-        return Page(name, title, description, body, head_extra='<meta name="robots" content="noindex">',
-                    indexable=False)
+    current = "pm-book.html" if name.startswith("pm-book") else None
+    if name in NOINDEX:
+        # 404 is served for any missing URL: keep it (and the bonus pages) out of search results and the sitemap.
+        return Page(name, title, description, body, nav_current=current,
+                    head_extra='<meta name="robots" content="noindex">', indexable=False)
+    if name == "pm-book.html":
+        head = head_meta(filename=name, title=BOOK_TITLE, description=BOOK_OG_DESCRIPTION, og_type="book",
+                         image="static/img/book/og_image.png")
+        return Page(name, title, description, body, nav_current=current, head_extra=head + "\n" + book_jsonld())
     head = head_meta(filename=name, title=title, description=description)
     if name == "index.html":
         head += "\n" + organization_jsonld()

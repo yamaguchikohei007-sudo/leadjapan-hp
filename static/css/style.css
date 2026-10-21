@@ -589,6 +589,88 @@ html:has(.global-nav:popover-open) { overflow: hidden; }
 .btn.is-disabled { opacity: .55; cursor: not-allowed; }
 .btn.is-disabled:hover { background: var(--navy); border-color: var(--navy); }
 
+/* ===== Book page (pm-book.html) and reader bonus (pm-book-bonus.html) =====
+   The hero takes the cover's yellow and navy; navy text only on yellow (white is unreadable). */
+.book-hero {
+  --book-yellow: #FFDF32; --book-navy: #09233D;
+  background: var(--book-yellow); color: var(--book-navy);
+  padding: clamp(48px, 8vw, 96px) 0;
+}
+.book-hero :focus-visible { outline-color: var(--book-navy); }
+.book-hero-inner { display: grid; gap: clamp(32px, 5vw, 64px); align-items: center; }
+.book-cover { display: block; width: 200px; margin-inline: auto; }
+.book-cover img { display: block; width: 100%; box-shadow: 0 12px 32px rgba(9, 35, 61, .18); }
+.book-status {
+  display: inline-block; margin: 0 0 1rem; padding: 2px 12px;
+  border: 1px solid var(--book-navy); border-radius: 999px; font-size: .85rem; font-weight: 700;
+}
+.book-title { margin: 0 0 .8rem; font-size: clamp(1.15rem, 2.4vw, 1.5rem); font-weight: 700; line-height: 1.4; color: var(--book-navy); }
+.book-title span { display: block; }
+.book-title-main { font-size: 2em; letter-spacing: .02em; }
+.book-subtitle { margin: 0; font-weight: 500; }
+.book-author { margin: 0 0 1.6rem; }
+.book-catch { margin: 0 0 .8rem; font-size: clamp(1.1rem, 2.2vw, 1.35rem); font-weight: 700; }
+.book-lead { margin: 0 0 1.6rem; max-width: 40em; }
+.book-hero-note { margin: 0 0 1rem; font-size: .9rem; }
+.book-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 0; }
+.book-btn, .book-btn-outline { min-height: 48px; }
+.book-btn { background: var(--book-navy); border-color: var(--book-navy); color: #fff; }
+.book-btn-outline { background: transparent; border-color: var(--book-navy); color: var(--book-navy); }
+.book-btn-outline:hover { background: var(--book-navy); border-color: var(--book-navy); color: var(--book-yellow); }
+@media (min-width: 768px) {
+  .book-hero-inner { grid-template-columns: 240px 1fr; }
+  .book-cover { width: 240px; }
+}
+@media (min-width: 1024px) {
+  .book-hero-inner { grid-template-columns: 340px 1fr; }
+  .book-cover { width: 340px; }
+}
+.book-narrow { max-width: 960px; }
+.book-prose p { max-width: 40em; }
+.book-checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.book-checklist li {
+  position: relative; padding: 14px 20px 14px 48px;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+}
+.book-checklist li::before {
+  content: ""; position: absolute; left: 20px; top: 1.45em; width: 12px; height: 6px;
+  border-left: 2px solid var(--red); border-bottom: 2px solid var(--red); transform: rotate(-45deg);
+}
+.book-parts { display: grid; gap: 24px; }
+@media (min-width: 768px) { .book-parts { grid-template-columns: repeat(2, 1fr); } }
+.book-part { padding: 24px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+.book-part-label { font-size: .85rem; font-weight: 700; color: var(--muted); }
+.book-part h3 { font-size: 1.15rem; color: var(--navy); margin: .2rem 0 .6rem; }
+.book-part p { margin: 0 0 .8rem; }
+.book-part-note { font-size: .85rem; color: var(--muted); }
+.book-part ul { margin: 0; padding-left: 1.2em; }
+.book-columns { margin-top: 2rem; max-width: 48em; }
+.book-author-name { font-size: 1.15rem; font-weight: 700; color: var(--navy); }
+.book-notes { margin-top: 2.5rem; font-size: .8rem; color: var(--muted); }
+
+.bonus-card {
+  max-width: 720px; padding: clamp(24px, 5vw, 48px);
+  border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.bonus-book { margin: 0; font-size: .9rem; color: var(--muted); }
+.bonus-title { font-size: clamp(1.3rem, 3vw, 1.7rem); color: var(--navy); }
+.bonus-form { margin: 1.6rem 0 0; }
+.bonus-form label { display: block; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+.bonus-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.bonus-row input {
+  flex: 1 1 220px; min-width: 0; min-height: 48px; padding: 10px 14px;
+  font: inherit; font-size: 1rem; color: var(--ink);
+  border: 1px solid rgba(16, 54, 107, .4); border-radius: 8px; background: #fff;
+}
+button.btn { font-family: inherit; cursor: pointer; }
+.bonus-row input[aria-invalid="true"] { border-color: var(--red); }
+.bonus-error {
+  margin: 1.2rem 0 0; padding: 12px 16px; border-left: 4px solid var(--red);
+  background: #FDF0F0; color: #A3121A; font-weight: 700;
+}
+.bonus-sub { font-size: 1rem; color: var(--navy); margin-top: 2.4rem; }
+.bonus-howto { margin: 0; padding-left: 1.2em; font-size: .9rem; }
+
 .visually-hidden {
   position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;

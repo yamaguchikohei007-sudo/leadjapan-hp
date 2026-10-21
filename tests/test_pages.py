@@ -264,7 +264,8 @@ class NewsPrivacyContactTests(unittest.TestCase):
     def test_all_pages_registered(self):
         self.assertEqual([p.filename for p in PAGES],
                          ["index.html", "company.html", "business.html", "message.html",
-                          "news.html", "privacy.html", "contact.html", "404.html"]
+                          "news.html", "privacy.html", "contact.html",
+                          "pm-book.html", "pm-book-bonus.html", "pm-book-bonus-error.html", "404.html"]
                          + [news_page_filename(n) for n in NEWS])
 
 

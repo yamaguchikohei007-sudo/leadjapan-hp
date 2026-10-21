@@ -13,11 +13,20 @@ Python 標準ライブラリだけで生成する静的サイトです。外部�
 - `static/img/tokyo-skyline.svg` — 東京の街並みのイラスト（代表挨拶ページ）。
 - `static/img/japan-map.svg` — トップページの日本地図（`tools/japan_map.py` で作成。下の「トップページの地図と赤い点」を参照）。
 - `sitegen/geo.py` — 地図の範囲と都道府県の位置。
+- `functions/pm-book-bonus/download.js`, `bonus/` — 書籍の読者特典のダウンロード（下の「書籍ページと読者特典」）。
 - `functions/index.js` — トップページの赤い点を閲覧者の都道府県に動かす Cloudflare Pages Functions（サーバー側だけで動き、ブラウザには JavaScript を送りません）。
 - `static/img/favicon.svg` — ファビコン（ネイビーの角丸にロゴマーク）。
 - ロゴマーク（ヘッダー・フッター）は `sitegen/render.py` の `LOGO_MARK` にあります。
 - `tests/` — テスト。
 - `.github/workflows/ci.yml` — push / プルリクエスト時のテスト実行（公開は Cloudflare Pages が行います）。
+
+## 書籍ページと読者特典
+
+- `pm-book.html`（`/pm-book`）— 書籍『外資系プロジェクトマネージャー1年目の教科書』の紹介ページ。グローバルナビの「書籍」と、事業概要の「出版」から入れます。文章と設定は `sitegen/content.py` の `BOOK_*`（原稿は pm-book リポジトリの `06_HP紹介/HP書籍紹介_実装仕様.md`）。画像は `static/img/book/`。
+- 発売したら `sitegen/content.py` の `BOOK` を書き換えます（`"status": "on_sale"`、`amazon_url`、決まった `release_date`・`price`）。`None` の項目は表示されません。
+- `pm-book-bonus.html`（`/pm-book-bonus`）— 読者特典のパスワード入力ページ（検索エンジンには載せません）。フォームは `functions/pm-book-bonus/download.js`（Cloudflare Pages Functions）に送られ、パスワードが正しければ特典のHTMLファイルがダウンロードされます。間違っていれば `pm-book-bonus-error.html` に戻ります。
+- 特典ファイルの原本は `bonus/pm-book-gantt-tool.html` です。`static/` には置かないので、公開サイトから直接は取得できません。差し替えたら `python3 tools/bonus_module.py` を実行して `bonus/pm-book-gantt-tool.js`（関数に組み込まれる形）を作り直します。
+- 読者パスワードは、サイトにもリポジトリにも書きません（本の中だけで案内）。`bonus/download.js` にはハッシュ値だけを置いています。全角・前後の空白・大文字小文字の違いは許容します。パスワードを変えるときは、`bonus/download.js` の冒頭にあるコマンドで新しいハッシュ値を作り、`PASSWORD_SHA256` を置き換えます。
 
 ## ブランドカラーとロゴ
 

@@ -8,7 +8,7 @@ from tests.helpers import (LinkCollector, build_to_tmp, check_internal_links_res
                            check_only_free_external_hosts, check_unique_titles, collect)
 from build import build, format_warnings, placeholder_report
 from sitegen.content import SITE_URL, UNCONFIRMED, NEWS
-from sitegen.pages import PAGES, article_pages, news_page_filename
+from sitegen.pages import NOINDEX, PAGES, article_pages, news_page_filename
 
 
 class BuildTests(unittest.TestCase):
@@ -20,7 +20,8 @@ class BuildTests(unittest.TestCase):
     def test_writes_all_pages(self):
         names = sorted(p.name for p in self.out.glob("*.html"))
         self.assertEqual(names, sorted(["index.html", "company.html", "business.html", "message.html",
-                                        "news.html", "privacy.html", "contact.html", "404.html"]
+                                        "news.html", "privacy.html", "contact.html", "404.html",
+                                        "pm-book.html", "pm-book-bonus.html", "pm-book-bonus-error.html"]
                                        + [news_page_filename(n) for n in NEWS]))
 
     def test_article_pages_written_and_linked(self):
@@ -81,10 +82,10 @@ class BuildTests(unittest.TestCase):
         robots = (self.out / "robots.txt").read_text(encoding="utf-8")
         self.assertIn(f"Sitemap: {SITE_URL}/sitemap.xml", robots)
 
-    def test_every_page_has_canonical_and_og_except_404(self):
+    def test_every_page_has_canonical_and_og_except_noindex(self):
         for page in self.out.glob("*.html"):
             text = page.read_text(encoding="utf-8")
-            if page.name == "404.html":
+            if page.name in NOINDEX:
                 self.assertIn('<meta name="robots" content="noindex">', text)
                 self.assertNotIn('rel="canonical"', text)
                 continue
@@ -94,7 +95,7 @@ class BuildTests(unittest.TestCase):
     def test_home_has_organization_jsonld(self):
         self.assertEqual(collect(self.out / "index.html").jsonld, 1)
         for page in self.out.glob("*.html"):
-            if page.name != "index.html":
+            if page.name not in ("index.html", "pm-book.html"):  # pm-book.html: Book (tests/test_book.py)
                 self.assertEqual(collect(page).jsonld, 0, page.name)
 
     def test_all_internal_links_resolve(self):
