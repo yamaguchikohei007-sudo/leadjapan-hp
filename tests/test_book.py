@@ -13,6 +13,12 @@ from tools.bonus_module import MODULE, SOURCE, module_js
 
 FUNCTION = ROOT / "functions/pm-book-bonus/download.js"
 
+# Fixed settings, so these tests keep passing when BOOK is updated for the release.
+COMING_SOON = {"status": "coming_soon", "release_label": "近日発売", "amazon_url": None,
+               "release_date": None, "price": None, "isbn": None, "format": "電子書籍（Kindle）"}
+ON_SALE = {**COMING_SOON, "status": "on_sale", "amazon_url": "https://www.amazon.co.jp/dp/X",
+           "price": "1500", "release_date": "2026-12-01"}
+
 
 class BookPageTests(unittest.TestCase):
     @classmethod
@@ -29,15 +35,13 @@ class BookPageTests(unittest.TestCase):
         self.assertEqual(b.count('class="book-part reveal"'), len(BOOK_PARTS))
 
     def test_coming_soon_has_no_buy_button(self):
-        b = body_book()
-        self.assertEqual(BOOK["status"], "coming_soon")
+        b = body_book(COMING_SOON)
         self.assertNotIn("Amazonで購入する", b)
         self.assertIn("発売日が決まりしだい", b)
         self.assertIn('href="#contents"', b)
 
     def test_on_sale_shows_buy_button_and_known_rows(self):
-        book = {**BOOK, "status": "on_sale", "amazon_url": "https://www.amazon.co.jp/dp/X",
-                "price": "1500", "release_date": "2026-12-01"}
+        book = ON_SALE
         b = body_book(book)
         self.assertIn("好評発売中", b)
         self.assertIn('href="https://www.amazon.co.jp/dp/X" target="_blank" rel="noopener"', b)
@@ -48,13 +52,17 @@ class BookPageTests(unittest.TestCase):
         self.assertEqual(data["datePublished"], "2026-12-01")
 
     def test_unknown_values_are_left_out(self):
-        b = body_book()
+        b = body_book(COMING_SOON)
         for word in ("発売日</th>", "価格</th>", "ISBN", PLACEHOLDER, "【"):
             self.assertNotIn(word, b)
-        data = json.loads(re.search(r">(\{.*\})<", book_jsonld()).group(1))
+        data = json.loads(re.search(r">(\{.*\})<", book_jsonld(COMING_SOON)).group(1))
         self.assertEqual(data["@type"], "Book")
         for key in ("offers", "isbn", "datePublished"):
             self.assertNotIn(key, data)
+
+    def test_live_settings_render_without_placeholders(self):
+        self.assertIn(BOOK["status"], ("coming_soon", "on_sale"))
+        self.assertNotIn(PLACEHOLDER, body_book())
 
     def test_page_meta_and_links(self):
         page = (self.out / "pm-book.html").read_text(encoding="utf-8")

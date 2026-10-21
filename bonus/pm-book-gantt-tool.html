@@ -2639,6 +2639,8 @@
     return clamp(Math.round(n),0,100);
   }
   function importDates(r, stats){
+    // both blank: an unscheduled task (the tool exports those with empty dates) stays unscheduled
+    if(!(r.start||'').trim() && !(r.end||'').trim()) return { start:null, end:null };
     var s = normImportDate(r.start), e = normImportDate(r.end);
     if(!s && !e){ if((r.start||'').trim() || (r.end||'').trim()) stats.badDates++; s = toISO(todayDate()); e = toISO(addDays(todayDate(),1)); }
     else if(!s){ if((r.start||'').trim()) stats.badDates++; s = e; }
