@@ -109,6 +109,13 @@ class MotionCssTests(unittest.TestCase):
         self.assertIn(".hero .hero-kicker {", css)
         self.assertIn(".hero .hero-sub", css)
 
+    def test_animated_hero_map_does_not_own_static_opacity(self):
+        # hero-fade ends at opacity 1 and would override an opacity set on .hero-map
+        css = strip_comments(read("static/css/style.css"))
+        for body in re.findall(r"(?<![\w-])\.hero-map\s*\{([^}]*)\}", css):
+            self.assertNotIn("opacity", body)
+        self.assertIn("hero-fade", self.css())
+
     def test_main_clips_horizontal_overflow(self):
         css = strip_comments(read("static/css/style.css"))
         self.assertRegex(css, r"(?m)^main\s*\{[^}]*overflow-x:\s*clip")

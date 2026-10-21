@@ -353,9 +353,11 @@ html:has(.global-nav:popover-open) { overflow: hidden; }
   .hero-band a, .hero-band li:nth-child(odd) a { padding: 22px 0 22px 24px; }
   .hero-band li:first-child a { padding-left: 0; }
 }
-/* Narrow screens: the map sits behind the copy, dimmer */
+/* Narrow screens: the map sits behind the copy, dimmer. Dim the image, not
+   .hero-map: its load fade animates opacity and would end at 1. */
 @media (max-width: 899px) {
-  .hero-map { right: -60%; opacity: .4; }
+  .hero-map { right: -60%; }
+  .hero-map img { opacity: .4; }
 }
 
 /* About */
