@@ -274,7 +274,6 @@ UNCONFIRMED: tuple[str, ...] = (
     "受付時間（CONTACT_HOURS）",
     "社名の由来の文章（COMPANY_NAME_ORIGIN）",
     "プライバシーポリシー（専門家による確認を推奨）",
-    "書籍ページの著者紹介（BOOK_AUTHOR_BIO）: 勤務先・前職の社名の掲載可否、「シンガポール発」、「本書が初の著書」、Lead Japan での肩書き",
 )
 
 

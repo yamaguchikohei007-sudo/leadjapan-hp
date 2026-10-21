@@ -68,10 +68,13 @@ class BookPageTests(unittest.TestCase):
         for name in ("cover_front.webp", "cover_front.png", "og_image.png"):
             self.assertTrue((self.out / "static/img/book" / name).exists(), name)
 
-    def test_author_bio_still_to_be_confirmed(self):
+    def test_author_bio_confirmed_and_shown(self):
+        # confirmed by the author on 2026-10-21, as written in the book
         from sitegen.content import UNCONFIRMED
-        self.assertTrue(any("BOOK_AUTHOR_BIO" in u for u in UNCONFIRMED))
-        self.assertTrue(BOOK_AUTHOR_BIO)
+        self.assertFalse(any("BOOK_AUTHOR_BIO" in u for u in UNCONFIRMED))
+        b = body_book()
+        for para in BOOK_AUTHOR_BIO:
+            self.assertIn(para, b)
 
 
 class BonusPageTests(unittest.TestCase):
