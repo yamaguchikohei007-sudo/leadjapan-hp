@@ -6,7 +6,7 @@ import json
 from typing import Sequence
 from xml.sax.saxutils import escape as xml_escape
 
-from sitegen.content import PLACEHOLDER, SITE, SITE_URL
+from sitegen.content import BOOK, BOOK_AUTHOR, BOOK_SUBTITLE, BOOK_TITLE, PLACEHOLDER, SITE, SITE_URL
 from sitegen.render import esc
 
 # Shared image for pages (and articles) without their own.
@@ -62,9 +62,39 @@ def organization_jsonld(site_url: str = SITE_URL) -> str:
         data["url"] = page_url("index.html", site_url)
     if SITE["email"] != PLACEHOLDER:
         data["email"] = SITE["email"]
+    return _jsonld_script(data)
+
+
+def _jsonld_script(data: dict[str, object]) -> str:
     # "</" would end the script element early.
     text = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     return f'<script type="application/ld+json">{text}</script>'
+
+
+def book_jsonld(book: dict[str, str | None] = BOOK, site_url: str = SITE_URL) -> str:
+    """schema.org Book for pm-book.html. Values not decided yet (None) are left out."""
+    data: dict[str, object] = {
+        "@context": "https://schema.org",
+        "@type": "Book",
+        "name": BOOK_TITLE,
+        "alternateName": BOOK_SUBTITLE,
+        "author": {"@type": "Person", "name": BOOK_AUTHOR},
+        "publisher": {"@type": "Organization", "name": SITE["name"]},
+        "inLanguage": "ja",
+        "bookFormat": "https://schema.org/EBook",
+    }
+    if site_url:
+        data["image"] = site_url.rstrip("/") + "/static/img/book/cover_front.png"
+    if book.get("release_date"):
+        data["datePublished"] = book["release_date"]
+    if book.get("isbn"):
+        data["isbn"] = book["isbn"]
+    if book.get("amazon_url"):
+        offer: dict[str, object] = {"@type": "Offer", "url": book["amazon_url"]}
+        if book.get("price"):
+            offer.update(price=book["price"], priceCurrency="JPY")
+        data["offers"] = offer
+    return _jsonld_script(data)
 
 
 def sitemap_xml(entries: Sequence[tuple[str, datetime.date | None]], site_url: str = SITE_URL) -> str:
