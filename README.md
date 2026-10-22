@@ -23,7 +23,13 @@ Python 標準ライブラリだけで生成する静的サイトです。外部�
 ## 書籍ページと読者特典
 
 - `pm-book.html`（`/pm-book`）— 書籍『外資系プロジェクトマネージャー1年目の教科書』の紹介ページ。グローバルナビの「書籍」と、事業概要の「出版」から入れます。文章と設定は `sitegen/content.py` の `BOOK_*`（原稿は pm-book リポジトリの `06_HP紹介/HP書籍紹介_実装仕様.md`）。画像は `static/img/book/`。
-- 発売したら `sitegen/content.py` の `BOOK` を書き換えます（`"status": "on_sale"`、`amazon_url`、決まった `release_date`・`price`）。`None` の項目は表示されません。
+- 書籍ページは書籍専用のヘッダー・フッター（ページ内リンクと発行元だけ）で表示します（`sitegen/render.py` の `layout="book"`）。特典ページも同じです。
+- 後から入れる値は `sitegen/content.py` の `BOOK` にまとめています。`None` の項目は表示されません。
+  - 発売のお知らせの窓口：`x_url`（X）、`line_url`（LINE公式の友だち追加 URL）、`newsletter_url`（メール登録フォームの URL）。入れたものだけボタンが出ます。全部 `None` のあいだは「発売日が決まりしだいお知らせします」と表示します。
+  - 購入ボタン：`kindle_url`・`paperback_url`（Amazon の商品ページ。予約ページでも可）。入れた版のボタンが出ます。価格は `kindle_price`・`paperback_price`、ISBN は `isbn`。
+  - 発売したら `"status": "on_sale"` にします（「好評発売中」になり、お知らせ欄の代わりに購入ボタンを大きく出します）。
+- 表紙横の帯（`BOOK_BADGES`）には事実だけを書きます。ランキングや推薦は、実際にあったときに足してください。
+- 特典セクションの画面写真（`static/img/book/bonus-screen-*.webp`）は、特典ツールにサンプルデータを入れて撮ったものです。ツールの見た目を変えたら撮り直します。
 - `pm-book-bonus.html`（`/pm-book-bonus`）— 読者特典のパスワード入力ページ（検索エンジンには載せません）。フォームは `functions/pm-book-bonus/download.js`（Cloudflare Pages Functions）に送られ、パスワードが正しければ特典のHTMLファイルがダウンロードされます。間違っていれば `pm-book-bonus-error.html` に戻ります。
 - 特典ファイルの原本は `bonus/pm-book-gantt-tool.html` です。`static/` には置かないので、公開サイトから直接は取得できません。差し替えたら `python3 tools/bonus_module.py` を実行して `bonus/pm-book-gantt-tool.js`（関数に組み込まれる形）を作り直します。
 - 読者パスワードは、サイトにもリポジトリにも書きません（本の中だけで案内）。`bonus/download.js` にはハッシュ値だけを置いています。全角・前後の空白・大文字小文字の違いは許容します。パスワードを変えるときは、`bonus/download.js` の冒頭にあるコマンドで新しいハッシュ値を作り、`PASSWORD_SHA256` を置き換えます。

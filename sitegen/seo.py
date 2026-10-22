@@ -81,7 +81,7 @@ def book_jsonld(book: dict[str, str | None] = BOOK, site_url: str = SITE_URL) ->
         "author": {"@type": "Person", "name": BOOK_AUTHOR},
         "publisher": {"@type": "Organization", "name": SITE["name"]},
         "inLanguage": "ja",
-        "bookFormat": "https://schema.org/EBook",
+        "bookFormat": ["https://schema.org/EBook", "https://schema.org/Paperback"],
     }
     if site_url:
         data["image"] = site_url.rstrip("/") + "/static/img/book/cover_front.png"
@@ -89,11 +89,15 @@ def book_jsonld(book: dict[str, str | None] = BOOK, site_url: str = SITE_URL) ->
         data["datePublished"] = book["release_date"]
     if book.get("isbn"):
         data["isbn"] = book["isbn"]
-    if book.get("amazon_url"):
-        offer: dict[str, object] = {"@type": "Offer", "url": book["amazon_url"]}
-        if book.get("price"):
-            offer.update(price=book["price"], priceCurrency="JPY")
-        data["offers"] = offer
+    offers: list[dict[str, object]] = []
+    for url_key, price_key in (("kindle_url", "kindle_price"), ("paperback_url", "paperback_price")):
+        if book.get(url_key):
+            offer: dict[str, object] = {"@type": "Offer", "url": book[url_key]}
+            if book.get(price_key):
+                offer.update(price=book[price_key], priceCurrency="JPY")
+            offers.append(offer)
+    if offers:
+        data["offers"] = offers
     return _jsonld_script(data)
 
 

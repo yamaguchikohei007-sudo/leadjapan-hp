@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import html
 
-from sitegen.content import COPYRIGHT, FOOTER_CONTACT, FOOTER_DESCRIPTION, NAV, PLACEHOLDER, SITE
+from sitegen.content import BOOK, COPYRIGHT, FOOTER_CONTACT, FOOTER_DESCRIPTION, NAV, PLACEHOLDER, SITE
 
 # Only the weights style.css uses (400, 500, 700): each extra weight is another download.
 FONTS_URL = (
@@ -52,8 +52,52 @@ def _nav_links(current: str | None) -> str:
     return "\n".join(items)
 
 
+# Book landing page (pm-book.html and its reader-bonus pages): a header of its own with
+# in-page links, so the page reads as the book's site rather than a company subpage.
+BOOK_NAV: tuple[tuple[str, str], ...] = (
+    ("about", "内容"),
+    ("contents", "構成"),
+    ("bonus", "読者特典"),
+    ("author", "著者"),
+    ("info", "書籍情報"),
+)
+
+
+def _book_header() -> str:
+    links = "\n".join(f'<a href="/pm-book.html#{slug}">{esc(label)}</a>' for slug, label in BOOK_NAV)
+    if BOOK["status"] == "on_sale":
+        cta = '<a class="book-header-cta" href="/pm-book.html#hero">購入する</a>'
+    else:
+        # the second half is dropped on narrow phones, so the header keeps to two rows
+        cta = '<a class="book-header-cta" href="/pm-book.html#notify">発売通知<span class="cta-more">を受け取る</span></a>'
+    return f"""<header class="book-header">
+<div class="container book-header-inner">
+<a class="book-brand" href="/pm-book.html"><span class="book-brand-sub">外資系プロジェクトマネージャー</span><span class="book-brand-main">1年目の教科書</span></a>
+<nav class="book-nav" aria-label="書籍ページ内のリンク">
+{links}
+</nav>
+{cta}
+</div>
+</header>"""
+
+
+def _book_footer() -> str:
+    return f"""<footer class="book-footer">
+<div class="container book-footer-inner">
+<a class="book-footer-brand" href="/">{LOGO_MARK}<span>発行 {esc(SITE["name"])}</span></a>
+<nav class="book-footer-nav" aria-label="発行元">
+<a href="/company.html">会社紹介</a>
+<a href="/contact.html">お問い合わせ</a>
+<a href="/privacy.html">プライバシーポリシー</a>
+</nav>
+<p class="copyright">{esc(COPYRIGHT)}</p>
+</div>
+</footer>"""
+
+
 def render_layout(*, title: str, description: str, body: str, current: str,
-                  head_extra: str = "") -> str:
+                  head_extra: str = "", layout: str = "site") -> str:
+    """layout: "site" (company header and footer) or "book" (the book's landing page)."""
     nav = _nav_links(current)
     footer_links = "\n".join(
         f'<a href="{esc(url(f))}">{esc(label)}</a>' for f, label in NAV
@@ -74,9 +118,20 @@ def render_layout(*, title: str, description: str, body: str, current: str,
 <link rel="stylesheet" href="/static/css/motion.css">
 {head_extra}
 </head>
-<body>
+<body{' class="layout-book"' if layout == "book" else ""}>
 <a class="skip-link" href="#main">本文へスキップ</a>
-<header class="site-header">
+{_book_header() if layout == "book" else _site_header(nav)}
+<main id="main">
+{body}
+</main>
+{_book_footer() if layout == "book" else _site_footer(footer_links)}
+</body>
+</html>
+"""
+
+
+def _site_header(nav: str) -> str:
+    return f"""<header class="site-header">
 <div class="container header-inner">
 <a class="logo" href="/" aria-label="{esc(SITE["name"])}">{LOGO_MARK}<span class="logo-text">Lead Japan <small>合同会社</small></span></a>
 <button type="button" class="nav-toggle" popovertarget="global-nav"><span class="visually-hidden">メニュー</span><span class="nav-toggle-bars" aria-hidden="true"></span></button>
@@ -86,11 +141,11 @@ def render_layout(*, title: str, description: str, body: str, current: str,
 {nav}
 </nav>
 </div>
-</header>
-<main id="main">
-{body}
-</main>
-<footer class="site-footer">
+</header>"""
+
+
+def _site_footer(footer_links: str) -> str:
+    return f"""<footer class="site-footer">
 <div class="container">
 <div class="footer-grid">
 <div class="footer-company">
@@ -118,7 +173,4 @@ def render_layout(*, title: str, description: str, body: str, current: str,
 <a href="/privacy.html">プライバシーポリシー</a>
 </div>
 </div>
-</footer>
-</body>
-</html>
-"""
+</footer>"""
