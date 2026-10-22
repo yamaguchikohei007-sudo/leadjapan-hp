@@ -34,6 +34,7 @@ def build(out_dir: pathlib.Path, pages: Sequence[Page] | None = None) -> list[pa
             body=page.body(),
             current=page.nav_current or page.filename,
             head_extra=page.head_extra,
+            layout=page.layout,
         )
         path = out_dir / page.filename
         path.write_text(html, encoding="utf-8")

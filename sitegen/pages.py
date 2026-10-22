@@ -6,10 +6,11 @@ from dataclasses import dataclass
 from typing import Callable, Sequence
 
 from sitegen.content import (
-    BOOK, BOOK_ABOUT, BOOK_AUTHOR, BOOK_AUTHOR_BIO, BOOK_AUTHOR_NAME, BOOK_BONUS_ERROR, BOOK_BONUS_HOWTO,
-    BOOK_BONUS_INTRO, BOOK_BONUS_TEXT, BOOK_BONUS_TITLE, BOOK_CATCH, BOOK_COLUMNS_NOTE, BOOK_COMING_SOON_NOTE,
-    BOOK_COVER_ALT, BOOK_FOR_YOU, BOOK_LEAD, BOOK_OG_DESCRIPTION, BOOK_PARTS, BOOK_SUBTITLE, BOOK_TITLE,
-    BOOK_TRADEMARK_NOTE, ABOUT_LEAD, ABOUT_TEXT, BUSINESSES, COMPANY_NAME_ORIGIN, CONTACT_CATEGORIES, CONTACT_HOURS, CONTACT_INTRO, CTA_LEAD,
+    BOOK, BOOK_ABOUT, BOOK_AUTHOR, BOOK_AUTHOR_BIO, BOOK_AUTHOR_NAME, BOOK_BADGES, BOOK_BONUS_ERROR,
+    BOOK_BONUS_FEATURES, BOOK_BONUS_HOWTO, BOOK_BONUS_INTRO, BOOK_BONUS_TEXT, BOOK_BONUS_TITLE, BOOK_CATCH,
+    BOOK_CLOSING_TITLE, BOOK_COLUMNS, BOOK_COLUMNS_LEAD, BOOK_COMING_SOON_NOTE, BOOK_COVER_ALT, BOOK_FORMATS,
+    BOOK_FOR_YOU, BOOK_LEAD, BOOK_NOTIFY_TEXT, BOOK_NOTIFY_TITLE, BOOK_OG_DESCRIPTION, BOOK_PARTS, BOOK_SUBTITLE,
+    BOOK_TITLE, BOOK_TRADEMARK_NOTE, ABOUT_LEAD, ABOUT_TEXT, BUSINESSES, COMPANY_NAME_ORIGIN, CONTACT_CATEGORIES, CONTACT_HOURS, CONTACT_INTRO, CTA_LEAD,
     HERO_LEAD, HERO_SUB, MESSAGE, MESSAGE_EXCERPT, MESSAGE_TITLE, NEWS, NOT_FOUND_TEXT, PAGE_META, PLACEHOLDER,
     PRIVACY, PRIVACY_ENACTED, SECTION_DISPLAY, SITE, SITE_URL, NewsItem,
 )
@@ -28,6 +29,7 @@ class Page:
     head_extra: str = ""
     indexable: bool = True  # listed in sitemap.xml
     lastmod: datetime.date | None = None
+    layout: str = "site"  # "book": the book's landing-page header and footer (sitegen/render.py)
 
 
 def news_page_filename(item: NewsItem) -> str:
@@ -406,112 +408,203 @@ def body_contact() -> str:
 BOOK_BONUS_ACTION = "/pm-book-bonus/download"  # functions/pm-book-bonus/download.js
 
 
+def _book_head(title: str, lead: str = "") -> str:
+    """Section heading on the book page: Japanese only, with a short yellow rule (no English label)."""
+    lead_html = f'<p class="book-head-lead">{esc(lead)}</p>' if lead else ""
+    return f'<div class="book-head reveal"><h2>{esc(title)}</h2>{lead_html}</div>'
+
+
+_ICON = ('<svg class="icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" '
+         'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">')
+BOOK_ICONS: dict[str, str] = {
+    "x": '<svg class="icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" '
+         'fill="currentColor"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8L17.8 3Zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5Z"/></svg>',
+    "line": _ICON + '<path d="M21 11c0-4.4-4-8-9-8s-9 3.6-9 8c0 4 3.2 7.3 7.6 7.9.3.1.7.2.8.5l-.2 1.9c0 .4.3.6.6.4 2.6-1.4 6.4-4.2 8-6.6.8-1.2 1.2-2.6 1.2-4.1Z"/></svg>',
+    "mail": _ICON + '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>',
+    "cart": _ICON + '<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.5L21 8H6"/></svg>',
+    "check": _ICON + '<path d="m5 12 5 5L20 7"/></svg>',
+    "browser": _ICON + '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/></svg>',
+    "lock": _ICON + '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+    "chart": _ICON + '<path d="M4 6h9M8 12h10M6 18h7"/><path d="M4 3v18"/></svg>',
+}
+BONUS_FEATURE_ICONS = ("browser", "lock", "chart")
+
+# (BOOK key, label, icon)
+BUY_LINKS = (("kindle_url", "Kindle版をAmazonで見る"), ("paperback_url", "ペーパーバックをAmazonで見る"))
+NOTIFY_LINKS = (("x_url", "Xでフォロー", "x"), ("line_url", "LINEで受け取る", "line"),
+                ("newsletter_url", "メールで受け取る", "mail"))
+
+
+def _buy_buttons(book: dict[str, str | None], extra_class: str = "") -> str:
+    links = [
+        f'<a class="btn book-btn{extra_class}" href="{esc(book[key])}" target="_blank" rel="noopener">'
+        f'{BOOK_ICONS["cart"]}{esc(label)}</a>'
+        for key, label in BUY_LINKS if book.get(key)
+    ]
+    return f'<div class="book-buy">{"".join(links)}</div>' if links else ""
+
+
+def _notify_panel(book: dict[str, str | None], *, panel_id: str = "") -> str:
+    """Where to hear about the release. Channels without a URL are left out; with none, a note."""
+    links = "".join(
+        f'<a class="book-notify-btn" href="{esc(book[key])}" target="_blank" rel="noopener">'
+        f'{BOOK_ICONS[icon]}{esc(label)}</a>'
+        for key, label, icon in NOTIFY_LINKS if book.get(key)
+    )
+    id_attr = f' id="{panel_id}"' if panel_id else ""
+    body = (f'<p class="book-notify-text">{esc(BOOK_NOTIFY_TEXT)}</p><div class="book-notify-links">{links}</div>'
+            if links else f'<p class="book-notify-text">{esc(BOOK_COMING_SOON_NOTE)}</p>')
+    return f'<div class="book-notify"{id_attr}><p class="book-notify-title">{esc(BOOK_NOTIFY_TITLE)}</p>{body}</div>'
+
+
+def _book_actions(book: dict[str, str | None], *, panel_id: str = "") -> str:
+    """Buy buttons once there is a product page; the release notice while it is coming soon."""
+    actions = _buy_buttons(book)
+    if book["status"] != "on_sale":
+        actions += _notify_panel(book, panel_id=panel_id)
+    return actions
+
+
+def _price(value: str | None) -> str | None:
+    return f"{int(value):,}円（税込）" if value else None
+
+
 def body_book(book: dict[str, str | None] = BOOK) -> str:
     on_sale = book["status"] == "on_sale"
     label = "好評発売中" if on_sale else book["release_label"]
-    if on_sale and book.get("amazon_url"):
-        buy = (f'<a class="btn book-btn" href="{esc(book["amazon_url"])}" target="_blank" rel="noopener">'
-               "Amazonで購入する</a>")
-        note = ""
-    else:
-        buy = ""
-        note = f'<p class="book-hero-note">{esc(BOOK_COMING_SOON_NOTE)}</p>'
+    badges = "".join(f"<li>{esc(b)}</li>" for b in BOOK_BADGES)
     about = "\n".join(f"<p>{esc(p)}</p>" for p in BOOK_ABOUT)
-    for_you = "".join(f"<li>{esc(t)}</li>" for t in BOOK_FOR_YOU)
+    for_you = "".join(f'<li class="reveal" style="--d: {i}">{BOOK_ICONS["check"]}<span>{esc(t)}</span></li>'
+                      for i, t in enumerate(BOOK_FOR_YOU))
     parts = "\n".join(
-        '<article class="book-part reveal">'
-        f'<span class="book-part-label">{esc(part.label)}</span>'
+        f'<article class="book-part reveal" style="--d: {i % 2}">'
+        f'<div class="book-part-top"><span class="book-part-label">{esc(part.label)}</span>'
+        f'<p class="book-part-count" aria-hidden="true"><span>{esc(part.count)}</span>{esc(part.count_unit)}</p></div>'
         f'<h3>{esc(part.title)}</h3>'
-        f"<p>{esc(part.summary)}</p>"
+        f'<p class="book-part-summary">{esc(part.summary)}</p>'
         + (f'<p class="book-part-note">{esc(part.note)}</p>' if part.note else "")
-        + "<ul>" + "".join(f"<li>{esc(h)}</li>" for h in part.headings) + "</ul>"
-        "</article>"
-        for part in BOOK_PARTS
+        + '<ul class="book-part-list">'
+        + "".join(f'<li>{BOOK_ICONS["check"]}<span>{esc(h)}</span></li>' for h in part.headings)
+        + "</ul></article>"
+        for i, part in enumerate(BOOK_PARTS)
     )
+    columns = "".join(f"<li>{esc(c)}</li>" for c in BOOK_COLUMNS)
     bonus = "\n".join(f"<p>{esc(p)}</p>" for p in BOOK_BONUS_TEXT)
+    features = "".join(
+        f'<li>{BOOK_ICONS[icon]}<div><strong>{esc(title)}</strong><span>{esc(text)}</span></div></li>'
+        for (title, text), icon in zip(BOOK_BONUS_FEATURES, BONUS_FEATURE_ICONS)
+    )
     bio = "\n".join(f"<p>{esc(p)}</p>" for p in BOOK_AUTHOR_BIO)
+    buy_links = " ／ ".join(
+        f'<a href="{esc(book[key])}" target="_blank" rel="noopener">{esc(label.removesuffix("をAmazonで見る"))}（Amazon）</a>'
+        for key, label in BUY_LINKS if book.get(key)
+    )
     rows = [
-        ("書名", BOOK_TITLE),
-        ("副題", BOOK_SUBTITLE),
-        ("著者", BOOK_AUTHOR),
-        ("発行・発売", SITE["name"]),
-        ("形態", book["format"]),
-        ("発売日", book.get("release_date")),
-        ("価格", f"{int(book['price']):,}円" if book.get("price") else None),
-        ("ISBN", book.get("isbn")),
+        ("書名", esc(BOOK_TITLE)),
+        ("副題", esc(BOOK_SUBTITLE)),
+        ("著者", esc(BOOK_AUTHOR)),
+        ("発行・発売", esc(SITE["name"])),
+        ("形態", esc(BOOK_FORMATS)),
+        ("発売日", esc(book["release_date"]) if book.get("release_date") else None),
+        ("価格（Kindle版）", esc(_price(book.get("kindle_price"))) if book.get("kindle_price") else None),
+        ("価格（ペーパーバック）", esc(_price(book.get("paperback_price"))) if book.get("paperback_price") else None),
+        ("ISBN", esc(book["isbn"]) if book.get("isbn") else None),
+        ("購入", buy_links or None),
     ]
-    info = "\n".join(f'<tr><th scope="row">{esc(k)}</th><td>{esc(v)}</td></tr>' for k, v in rows if v)
+    info = "\n".join(f'<tr><th scope="row">{k}</th><td>{v}</td></tr>' for k, v in rows if v)
     return f"""<section class="book-hero" id="hero">
 <div class="container book-hero-inner">
+<div class="book-cover-wrap">
 <picture class="book-cover">
 <source srcset="/static/img/book/cover_front.webp" type="image/webp">
 <img src="/static/img/book/cover_front.png" alt="{esc(BOOK_COVER_ALT)}" width="1000" height="1422" fetchpriority="high">
 </picture>
+<p class="book-seal">{esc(label)}</p>
+</div>
 <div class="book-hero-text">
-<p class="book-status">{esc(label)}</p>
 <h1 class="book-title"><span>外資系プロジェクトマネージャー</span><span class="book-title-main">1年目の教科書</span></h1>
 <p class="book-subtitle">{esc(BOOK_SUBTITLE)}</p>
-<p class="book-author">{esc(BOOK_AUTHOR)} 著</p>
+<p class="book-author">{esc(BOOK_AUTHOR)} 著<span class="book-format">{esc(BOOK_FORMATS)}</span></p>
 <p class="book-catch">{esc(BOOK_CATCH)}</p>
 <p class="book-lead">{esc(BOOK_LEAD)}</p>
-{note}<p class="book-actions">{buy}<a class="btn book-btn-outline" href="#contents">本書の構成を見る</a></p>
+<ul class="book-badges" aria-label="この本の特長">{badges}</ul>
+{_book_actions(book, panel_id="notify")}
+<p class="book-more"><a href="#contents">本書の構成を見る</a></p>
 </div>
 </div>
 </section>
-<div class="container"><nav class="breadcrumb" aria-label="パンくずリスト"><a href="/">ホーム</a> / <span>書籍</span></nav></div>
 
-<section class="section book-section" id="about">
+<section class="book-section" id="about">
 <div class="container book-narrow">
-{_section_head("About", "この本について")}
+{_book_head("この本について")}
 <div class="book-prose reveal">
 {about}
 </div>
 </div>
 </section>
 
-<section class="section alt book-section" id="for-you">
+<section class="book-section book-section-tint" id="for-you">
 <div class="container book-narrow">
-{_section_head("For you", "こんな方におすすめです")}
-<ul class="book-checklist reveal">{for_you}</ul>
+{_book_head("こんな方におすすめです")}
+<ul class="book-checklist">{for_you}</ul>
 </div>
 </section>
 
-<section class="section book-section" id="contents">
+<section class="book-section" id="contents">
 <div class="container book-narrow">
-{_section_head("Contents", "本書の構成")}
+{_book_head("本書の構成", "現場で使う「ルール」と、共通言語としての「知識」の二本立てです。")}
 <div class="book-parts">
 {parts}
 </div>
-<p class="book-columns reveal">{esc(BOOK_COLUMNS_NOTE)}</p>
+<div class="book-columns reveal"><p>{esc(BOOK_COLUMNS_LEAD)}</p><ul>{columns}</ul></div>
 </div>
 </section>
 
-<section class="section alt book-section" id="bonus">
+<section class="book-section book-section-tint" id="bonus">
 <div class="container book-narrow">
-{_section_head("Bonus", f"読者特典　{BOOK_BONUS_TITLE}")}
-<div class="book-prose reveal">
+{_book_head(f"読者特典　{BOOK_BONUS_TITLE}")}
+<div class="book-bonus">
+<div class="book-bonus-text reveal">
 {bonus}
-<p><a class="btn" href="/pm-book-bonus.html">特典ページへ</a></p>
+<ul class="book-bonus-features">{features}</ul>
+<p><a class="btn book-btn book-btn-large" href="/pm-book-bonus.html">特典ページへ</a></p>
+</div>
+<figure class="book-bonus-shots reveal" style="--d: 1">
+<img class="shot-main" src="/static/img/book/bonus-screen-chart.webp" alt="特典ツールのガントチャート画面。タスクの期間、依存関係、進み具合が表示されている" width="1280" height="760" loading="lazy">
+<img class="shot-sub" src="/static/img/book/bonus-screen-board.webp" alt="特典ツールのかんばん画面。未着手・進行中・完了の列にタスクが並んでいる" width="1280" height="470" loading="lazy">
+<figcaption>サンプルデータを入れた実際の画面</figcaption>
+</figure>
 </div>
 </div>
 </section>
 
-<section class="section book-section" id="author">
+<section class="book-section" id="author">
 <div class="container book-narrow">
-{_section_head("Author", "著者紹介")}
-<div class="book-prose reveal">
+{_book_head("著者紹介")}
+<div class="book-author-card reveal">
 <p class="book-author-name">{esc(BOOK_AUTHOR_NAME)}</p>
 {bio}
 </div>
 </div>
 </section>
 
-<section class="section alt book-section" id="info">
+<section class="book-section book-section-tint" id="info">
 <div class="container book-narrow">
-{_section_head("Information", "書籍情報")}
-<table class="company-table reveal">
+{_book_head("書籍情報")}
+<div class="book-info reveal">
+<table class="book-info-table">
 {info}
 </table>
+</div>
+</div>
+</section>
+
+<section class="book-closing">
+<div class="container book-narrow book-closing-inner">
+<p class="book-closing-label">{esc(label)}</p>
+<h2>{esc(BOOK_CLOSING_TITLE)}</h2>
+{_book_actions(book)}
+<p class="book-closing-bonus">読者特典の<a href="/pm-book-bonus.html">ガントチャート作成ツール</a>もご用意しています。</p>
 <p class="book-notes" id="notes">{esc(BOOK_TRADEMARK_NOTE)}</p>
 </div>
 </section>"""
@@ -525,8 +618,8 @@ def body_book_bonus(*, error: bool = False) -> str:
     )
     invalid = ' aria-invalid="true" aria-describedby="bonus-error"' if error else ""
     howto = "".join(f"<li>{esc(t)}</li>" for t in BOOK_BONUS_HOWTO)
-    crumbs = [("書籍", "pm-book.html"), ("読者特典", None)]
-    return f"""{page_hero("読者特典", "READER BONUS", crumbs)}
+    return f"""<section class="page-hero"><div class="container"><h1>読者特典</h1></div></section>
+<div class="container"><nav class="breadcrumb" aria-label="パンくずリスト"><a href="/pm-book.html">書籍トップ</a> / <span>読者特典</span></nav></div>
 <section class="section">
 <div class="container book-narrow">
 <div class="bonus-card reveal">
@@ -577,15 +670,18 @@ NOINDEX = ("404.html", "pm-book-bonus.html", "pm-book-bonus-error.html")
 
 def _fixed_page(name: str, body: Callable[[], str]) -> Page:
     title, description = PAGE_META[name]
-    current = "pm-book.html" if name.startswith("pm-book") else None
+    book = name.startswith("pm-book")  # the book's landing page and its reader-bonus pages
+    current = "pm-book.html" if book else None
+    layout = "book" if book else "site"
     if name in NOINDEX:
         # 404 is served for any missing URL: keep it (and the bonus pages) out of search results and the sitemap.
         return Page(name, title, description, body, nav_current=current,
-                    head_extra='<meta name="robots" content="noindex">', indexable=False)
+                    head_extra='<meta name="robots" content="noindex">', indexable=False, layout=layout)
     if name == "pm-book.html":
         head = head_meta(filename=name, title=BOOK_TITLE, description=BOOK_OG_DESCRIPTION, og_type="book",
                          image="static/img/book/og_image.png")
-        return Page(name, title, description, body, nav_current=current, head_extra=head + "\n" + book_jsonld())
+        return Page(name, title, description, body, nav_current=current, head_extra=head + "\n" + book_jsonld(),
+                    layout=layout)
     head = head_meta(filename=name, title=title, description=description)
     if name == "index.html":
         head += "\n" + organization_jsonld()
