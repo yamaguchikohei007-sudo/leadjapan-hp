@@ -458,7 +458,7 @@
             <button class="btn small icon-only" id="btnZoomOut" title="縮小" aria-label="縮小"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
             <span class="zoom-level-indicator" id="zoomLevelIndicator" title="ズームレベル（5段階）">3/5</span>
             <button class="btn small icon-only" id="btnZoomIn" title="拡大" aria-label="拡大"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
-            <button class="btn small" id="btnAutoFit" title="表示期間を画面幅に自動フィットさせます">画面に合わせる</button>
+            <button class="btn small toggle-on" id="btnAutoFit" title="表示期間を画面幅に自動フィットさせます">画面に合わせる</button>
           </div>
         </div>
       </div>
@@ -718,7 +718,7 @@
     scale: 'month',
     dayWidth: 32,
     zoomIndex: 2,
-    autoFit: false,
+    autoFit: true,
     colorMode: 'status',   // 'status' | 'assignee' | 'wbs' (WBS Lv1 group)
     search: '',
     editingId: null,
