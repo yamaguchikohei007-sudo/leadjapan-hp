@@ -68,7 +68,8 @@ def _book_header() -> str:
     if BOOK["status"] == "on_sale":
         cta = '<a class="book-header-cta" href="/pm-book.html#hero">購入する</a>'
     else:
-        cta = '<a class="book-header-cta" href="/pm-book.html#notify">発売通知を受け取る</a>'
+        # the second half is dropped on narrow phones, so the header keeps to two rows
+        cta = '<a class="book-header-cta" href="/pm-book.html#notify">発売通知<span class="cta-more">を受け取る</span></a>'
     return f"""<header class="book-header">
 <div class="container book-header-inner">
 <a class="book-brand" href="/pm-book.html"><span class="book-brand-sub">外資系プロジェクトマネージャー</span><span class="book-brand-main">1年目の教科書</span></a>

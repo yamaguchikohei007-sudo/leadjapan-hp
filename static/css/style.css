@@ -624,6 +624,10 @@ html:has(.global-nav:popover-open) { overflow: hidden; }
   }
   .book-nav::-webkit-scrollbar { display: none; }
 }
+@media (max-width: 419px) {
+  /* 320–360px phones: brand and a short button still share the first row */
+  .book-header-cta .cta-more { display: none; }
+}
 
 /* Hero */
 .book-hero {
