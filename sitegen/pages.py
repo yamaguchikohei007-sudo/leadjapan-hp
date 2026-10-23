@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Callable, Sequence
 
 from sitegen.content import (
-    ABOUT_LEAD, ABOUT_TEXT, AFTER, AUTOMATION_EXAMPLES, AUTOMATION_NOTE, BEFORE, BEFORE_AFTER_CLOSING, BOOK,
+    ABOUT_LEAD, ABOUT_TEXT, AFTER, AUTOMATION_EXAMPLES, AUTOMATION_NOTE, BEFORE, BEFORE_AFTER_CLOSING, BEFORE_AFTER_TITLE, BOOK,
     BOOK_ABOUT, BOOK_AUTHOR, BOOK_AUTHOR_BIO, BOOK_AUTHOR_NAME, BOOK_BADGES, BOOK_BONUS_ERROR, BOOK_BONUS_FEATURES,
     BOOK_BONUS_HOWTO, BOOK_BONUS_INTRO, BOOK_BONUS_TEXT, BOOK_BONUS_TITLE, BOOK_CATCH, BOOK_CLOSING_TITLE,
     BOOK_COLUMNS, BOOK_COLUMNS_LEAD, BOOK_COMING_SOON_NOTE, BOOK_COVER_ALT, BOOK_FORMATS, BOOK_FOR_YOU, BOOK_LEAD,
@@ -15,10 +15,10 @@ from sitegen.content import (
     CONSULT_BUTTON, CONSULT_LEAD, CONSULT_TITLE, CONSULTATION_TEXT, CONSULTATION_TITLE, CONTACT_ASK,
     CONTACT_CATEGORIES, CONTACT_HOURS, CONTACT_INTRO, CONTACT_PROCESS, CONTACT_TITLE, CTA_LEAD, FAQ, FIT, FIT_NOTE,
     FOUNDER_TEXT, FOUNDER_TITLE, HERO_LEAD, HERO_SUB, MESSAGE, MESSAGE_EXCERPT, MESSAGE_TITLE, NEWS,
-    NOT_FOUND_TEXT, PAGE_META, PAINS, PAINS_CLOSING, PLACEHOLDER, PRIVACY, PRIVACY_ENACTED, PROCESS_LEAD,
+    NOT_FOUND_TEXT, PAGE_META, PAINS, PAINS_CLOSING, PAINS_TITLE, PLACEHOLDER, PRIVACY, PRIVACY_ENACTED, PROCESS_LEAD,
     PROCESS_NOTE, PRODUCT_TEXT, PRODUCT_TITLE, PUBLISHING_TEXT, RESULT_FROM, RESULT_LABEL, RESULT_NOTE,
     RESULT_SHORT, RESULT_TEXT, RESULT_TO, SECTION_DISPLAY, SERVICES, SERVICES_LEAD, SERVICES_NOTE, SITE, SITE_URL,
-    SOLUTION_LEAD, SOLUTION_NOTE, SOLUTION_TITLE, STAGES, UNFIT, WHY, NewsItem,
+    SOLUTION_LEAD, SOLUTION_NOTE, SOLUTION_SUBTITLE, SOLUTION_TITLE, STAGES, UNFIT, WHY, NewsItem,
 )
 from sitegen.geo import MAP_HEIGHT, MAP_WIDTH, pin_xy
 from sitegen.render import esc, url
@@ -122,11 +122,10 @@ def stages_html() -> str:
     for st in STAGES:
         notes = "".join(f'<p class="stage-note">※{esc(n)}</p>' for n in st.notes)
         items_label = "成果物" if st.slug == "stage1" else "主な内容"
-        highlight = f'<p class="stage-highlight">{esc(st.highlight)}</p>' if st.highlight else ""
         rows.append(
             f'<li class="stage" id="{esc(st.slug)}">'
             f'<div class="stage-head"><span class="stage-label" lang="en">{esc(st.label)}</span>'
-            f'<h3 class="stage-title">{esc(st.title)}</h3><p class="stage-terms">{esc(st.terms)}</p>{highlight}</div>'
+            f'<h3 class="stage-title">{esc(st.title)}</h3><p class="stage-terms">{esc(st.terms)}</p></div>'
             f'<details class="stage-more"><summary>内容を見る</summary><div class="stage-body">{_paras(st.lead)}'
             f'<p class="stage-items-label">{items_label}</p>{_list(st.items, "stage-items")}{notes}</div></details></li>'
         )
@@ -393,8 +392,8 @@ def body_solution() -> str:
         f'</div><p class="closing">{esc(FIT_NOTE)}</p>'
     )
     folds = "\n".join((
-        _fold("こんな状態になっていませんか", _list(PAINS, "check-list") + f'<p class="closing">{esc(PAINS_CLOSING)}</p>'),
-        _fold("目指す状態（Before / After）", before_after),
+        _fold(PAINS_TITLE, _list(PAINS, "check-list") + f'<p class="closing">{esc(PAINS_CLOSING)}</p>'),
+        _fold(BEFORE_AFTER_TITLE, before_after),
         _fold("30%から5%へ：実績の詳細", _paras(RESULT_TEXT)),
         _fold("自動化・効率化の対象例", examples_html()),
         _fold("なぜ、Lead Japanがやるのか", f'<ol class="why-list">{why}</ol>'
@@ -411,18 +410,19 @@ def body_solution() -> str:
     return f"""{_business_hero(solution)}
 <section class="section section-dark solution-head">
 <div class="container">
-<h2 class="solution-title"><span>{esc(SOLUTION_TITLE[0])}</span><span class="hero-accent">{esc(SOLUTION_TITLE[1])}</span></h2>
+<h2 class="solution-title">{esc(SOLUTION_TITLE).replace(chr(10), "<br>")}</h2>
 <div class="hero-lead">{lead}</div>
 <p class="hero-note">{esc(SOLUTION_NOTE)}</p>
+<p class="hero-actions">{consult_button("btn btn-light")}<a class="btn btn-outline-light" href="#process">料金・進め方を見る</a></p>
 <div class="hero-result">{_result_figure()}<p class="hero-result-note">{esc(RESULT_SHORT)}</p></div>
 <p class="result-note">{esc(RESULT_NOTE)}</p>
-<p class="hero-actions">{consult_button("btn btn-light")}<a class="btn btn-outline-light" href="#process">進め方と料金を見る</a></p>
+<p class="solution-subtitle">{esc(SOLUTION_SUBTITLE)}</p>
 </div>
 </section>
 
 <section class="section" id="service">
 <div class="container">
-{_section_head("Service", "理解から定着まで、一貫して支援します。")}
+{_section_head("Service", "業務の見直しから定着まで、一貫して支援します。")}
 <p class="section-lead">{esc(SERVICES_LEAD)}</p>
 <ol class="service-list">{services}</ol>
 {_fold("提供内容の詳細", services_detail)}
@@ -431,7 +431,7 @@ def body_solution() -> str:
 
 <section class="section alt" id="process">
 <div class="container">
-{_section_head("Process", "まずは1ヶ月の診断から。")}
+{_section_head("Process", "いきなり長期契約は、提案しません。\nまずは1ヶ月の診断から。")}
 <p class="section-lead">{esc(PROCESS_LEAD)}</p>
 {stages_html()}
 </div>

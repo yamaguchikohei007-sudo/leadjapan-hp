@@ -72,7 +72,7 @@ Python 標準ライブラリだけで生成する静的サイトです。外部�
 | `sitegen/content.py` の `PRIVACY`（プライバシーポリシー） | 草案の文面 | 専門家による確認を推奨 |
 | `sitegen/content.py` の `BUSINESSES`（3事業） | トップの帯とカード、事業・サービス（`/business`）のカード3枚。カードから事業ごとのページ（`/solution`・`/product`・`/publishing`）へ進む | 事業を増減したら、そのページの関数と `PAGE_META`、`ICONS`（`sitegen/pages.py`）も合わせる |
 | `sitegen/content.py` の `RESULT_*`（管理業務 30%→5%） | 代表個人の実績。AI駆動ソリューション（`/solution`）と代表挨拶に表示 | 外資系日本法人の数字を公開してよいか（社内ルール）。必ず `RESULT_NOTE` の注記を添える |
-| `sitegen/content.py` の `STAGES`・`FAQ`（料金） | Stage 1 一律30万円、Stage 2 見積もり制、Stage 3 月額50万円（すべて税別） | 料金を変えたら `STAGES` と `FAQ`、`CONTACT_PROCESS` をそろえて直す |
+| `sitegen/content.py` の `STAGES`・`FAQ`（料金） | Stage 1 30万円、Stage 2 見積もり制、Stage 3 月額50万円（すべて税別）。期間の目安は Stage 2 まで4〜6ヶ月、Stage 3 を加えて7〜9ヶ月 | 料金・期間を変えたら `STAGES`・`PROCESS_NOTE`・`FAQ`・`CONTACT_PROCESS` をそろえて直す。診断料の充当は起算日が決まるまで載せない |
 | `sitegen/content.py` の `PRODUCT_*` | 開発中のプロジェクト管理SaaS（短い紹介のみ） | 名前・機能・提供開始時期が決まったら追記。先行案内の登録窓口ができたらボタンを足す |
 | ニュース（管理画面） | 『外資系PM1年目の教科書』の刊行予定のお知らせの日付（推定値 2026-06-01）、サイト公開のお知らせの日付（2026-10-19） | 実際の日付に直し、管理画面から「サイトに反映」 |
 
