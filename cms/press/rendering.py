@@ -11,8 +11,8 @@ def _is_safe(url: str) -> bool:
     return bool(_SAFE_LINK.match(url)) or not _HAS_SCHEME.match(url)
 
 
-def _drop_unsafe_links(state) -> None:
-    """Unwrap links with disallowed schemes so only their text remains."""
+def _sanitize_inline_tokens(state) -> None:
+    """Unwrap unsafe links and replace all body images with escaped alt text."""
     for block in state.tokens:
         if block.type != "inline" or not block.children:
             continue
@@ -26,27 +26,15 @@ def _drop_unsafe_links(state) -> None:
             elif tok.type == "link_close":
                 if skipping.pop():
                     continue
-            elif tok.type == "image" and not _is_safe(tok.attrGet("src") or ""):
+            elif tok.type == "image":
                 tok.type, tok.tag, tok.attrs, tok.children = "text", "", {}, None
-                tok.content = tok.content
             kept.append(tok)
         block.children = kept
 
 
-def _images_to_alt_text(state) -> None:
-    """Body images are not supported (use the main image field): keep only the escaped alt text."""
-    for block in state.tokens:
-        if block.type != "inline" or not block.children:
-            continue
-        for tok in block.children:
-            if tok.type == "image":
-                tok.type, tok.tag, tok.attrs, tok.children = "text", "", {}, None
-
-
 _md = MarkdownIt("commonmark", {"html": False})
-_md.validateLink = lambda url: True  # unsafe URLs are unwrapped by _drop_unsafe_links
-_md.core.ruler.push("drop_unsafe_links", _drop_unsafe_links)
-_md.core.ruler.push("images_to_alt_text", _images_to_alt_text)
+_md.validateLink = lambda url: True  # unsafe URLs are unwrapped by _sanitize_inline_tokens
+_md.core.ruler.push("sanitize_inline_tokens", _sanitize_inline_tokens)
 
 
 def render_markdown(md: str) -> str:

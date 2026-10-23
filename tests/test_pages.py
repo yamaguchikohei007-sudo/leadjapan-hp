@@ -5,10 +5,14 @@ from pathlib import Path
 from tests.helpers import ROOT
 from unittest import mock
 
-from sitegen.content import BUSINESSES, NEWS, PLACEHOLDER, PRIVACY, SITE, NewsItem
+from sitegen.content import (ABOUT_LEAD, ABOUT_TEXT, BUSINESSES, CONSULT_BUTTON, CONTACT_CATEGORIES, CONTACT_HOURS,
+                             BOOK_TITLE, CTA_LEAD, FAQ, HERO_LEAD, MESSAGE, MESSAGE_EXCERPT, NEWS, PLACEHOLDER, PRIVACY,
+                             RESULT_NOTE, RESULT_SHORT, SECTION_DISPLAY, SERVICES, SITE, STAGES, NewsItem)
+from sitegen.geo import pin_xy
 from sitegen.render import esc
-from sitegen.pages import (PAGES, body_business, body_company, body_contact, body_index,
-                           body_message, body_news, body_news_article,
+from sitegen.pages import (PAGES, article_page_title, body_business, body_company, body_contact, body_index,
+                           body_message, body_news, body_news_article, body_product, body_publishing,
+                           body_solution,
                            body_privacy, article_pages, news_page_filename, news_list_html, og_tags,
                            page_hero)
 
@@ -20,20 +24,46 @@ class IndexPageTests(unittest.TestCase):
 
     def test_index_hero(self):
         b = body_index()
-        self.assertIn("<h1>日本を導き、世界へ。</h1>", b)
-        self.assertIn('src="static/img/hero-tokyo.jpg"', b)
-        self.assertIn('alt="東京タワーと東京の街並み"', b)
+        self.assertIn('<h1><span>日本を導き、</span><span class="hero-accent">世界へ。</span></h1>', b)
         self.assertIn("Lead Japan — Tokyo, Japan", b)
+        self.assertIn(esc(HERO_LEAD), b)
+        self.assertNotIn("SCROLL", b)
 
-    def test_hero_photo_is_light_enough(self):
+    def test_hero_map_and_visitor_pin_default_to_tokyo(self):
+        b = body_index()
+        self.assertIn('<img src="/static/img/japan-map.svg" alt=""', b)
+        x, y = pin_xy("13")
+        # functions/index.js rewrites this transform; as built, the dot is on Tokyo
+        self.assertEqual(b.count("data-visitor-pin"), 1)
+        self.assertIn(f'<g data-visitor-pin transform="translate({x} {y})">', b)
+        self.assertIn('<div class="hero-map" aria-hidden="true">', b)
+
+    def test_og_photo_is_light_enough(self):
+        # no longer on the page; still the default og:image for social shares
         photo = ROOT / "static/img/hero-tokyo.jpg"
         self.assertTrue(photo.exists())
         self.assertLess(photo.stat().st_size, 800 * 1024)
 
-    def test_index_links_all_businesses(self):
+    def test_index_section_copy(self):
+        b = body_index()
+        for text in (ABOUT_LEAD, MESSAGE_EXCERPT, CTA_LEAD, CONTACT_HOURS, *SECTION_DISPLAY.values()):
+            self.assertIn(esc(text), b)
+        self.assertIn(MESSAGE_EXCERPT, " ".join(MESSAGE))
+        self.assertIn(esc(ABOUT_TEXT), b)
+        self.assertIn(ABOUT_TEXT, SITE["philosophy"])  # excerpt of the philosophy
+
+    def test_three_businesses_in_band_and_cards(self):
+        self.assertEqual([biz.title for biz in BUSINESSES], ["AI駆動ソリューション", "プロダクト", "出版"])
         b = body_index()
         for biz in BUSINESSES:
-            self.assertIn(f'href="business.html#{biz.slug}"', b)
+            # once in the hero band, once on the card: each business has a page of its own
+            self.assertEqual(b.count(f'href="/{biz.slug}.html"'), 2)
+        self.assertIn("<dt>事業領域</dt><dd>3</dd>", b)
+
+    def test_index_keeps_solution_details_on_the_business_page(self):
+        b = body_index()
+        self.assertNotIn("result-figure", b)
+        self.assertNotIn("<details", b)
 
     def test_index_shows_latest_three_news(self):
         self.assertEqual(body_index().count("<li><time"), min(3, len(NEWS)))
@@ -43,14 +73,14 @@ class IndexPageTests(unittest.TestCase):
 
     def test_index_links_sections(self):
         b = body_index()
-        for href in ("company.html", "message.html", "news.html", "contact.html"):
+        for href in ("/company.html", "/business.html", "/message.html", "/news.html", "/contact.html"):
             self.assertIn(f'href="{href}"', b)
 
     def test_skyline_svg_has_tower_and_no_script(self):
         svg = (ROOT / Path("static/img/tokyo-skyline.svg")).read_text(encoding="utf-8")
         self.assertIn('id="beacon"', svg)
         self.assertNotIn("<script", svg)
-        self.assertIn("#e8380d", svg.lower())
+        self.assertIn("#d71920", svg.lower())
         self.assertIn('viewBox="0 0 1600 600"', svg)
         self.assertLess(len(svg.encode("utf-8")), 60 * 1024)
 
@@ -62,7 +92,7 @@ class NewsListTests(unittest.TestCase):
         self.assertIn('<ul class="news-list">', out)
         self.assertIn('<li><time datetime="2026-01-05">2026.01.05</time>', out)
         self.assertIn('<span class="news-cat">A&amp;B</span>', out)
-        self.assertIn('<a href="news-s.html">&lt;x&gt;</a>', out)
+        self.assertIn('<a href="/news-s.html">&lt;x&gt;</a>', out)
         self.assertNotIn("<x>", out)
 
 
@@ -90,7 +120,7 @@ class NewsListLinkTests(unittest.TestCase):
     def test_news_list_links_article_pages(self):
         item = _item()
         out = news_list_html([item], with_summary=True)
-        self.assertIn('href="news-s.html"', out)
+        self.assertIn('href="/news-s.html"', out)
         self.assertIn('<p class="news-summary">sum</p>', out)
         self.assertNotIn("news-summary", news_list_html([item]))
 
@@ -102,12 +132,19 @@ class ArticleTests(unittest.TestCase):
         self.assertIn("<p><strong>x</strong></p>", out)
         self.assertIn("&lt;b&gt;", out)
         self.assertNotIn("<b>", out)
-        self.assertIn('<h2 class="article-title">', out)
-        self.assertIn('<figure class="article-image"><img src="static/img/news/a.png" alt="&quot;q&quot;"', out)
+        self.assertIn('<figure class="article-image"><img src="/static/img/news/a.png" alt="&quot;q&quot;"', out)
         self.assertIn('<div class="article-body">', out)
-        self.assertIn('<h1>ニュースルーム</h1>', out)
-        self.assertIn('<a href="news.html">ニュースルーム</a>', out)
-        self.assertIn('href="news.html">ニュース一覧へ戻る', out)
+        self.assertIn('<a href="/news.html">ニュースルーム</a>', out)
+        self.assertIn('href="/news.html">ニュース一覧へ戻る', out)
+
+    def test_article_title_is_the_only_h1(self):
+        out = body_news_article(_item(title="記事タイトル"))
+        self.assertEqual(out.count("<h1"), 1)
+        self.assertIn('<h1 class="article-title">記事タイトル</h1>', out)
+        self.assertIn('<p class="page-hero-title">ニュースルーム</p>', out)
+
+    def test_page_hero_has_h1_by_default(self):
+        self.assertIn("<h1>会社紹介</h1>", page_hero("会社紹介", "COMPANY"))
 
     def test_article_image_src_override_and_no_image(self):
         self.assertIn('src="preview.png"', body_news_article(_item(image="a.png"), image_src="preview.png"))
@@ -116,7 +153,7 @@ class ArticleTests(unittest.TestCase):
     def test_press_release_has_contact_block(self):
         out = body_news_article(_item(category="プレスリリース"))
         self.assertIn("本件に関するお問い合わせ", out)
-        self.assertIn('href="contact.html"', out)
+        self.assertIn('href="/contact.html"', out)
         self.assertIn(SITE["name"], out)
         self.assertNotIn("本件に関するお問い合わせ", body_news_article(_item(category="お知らせ")))
 
@@ -127,13 +164,26 @@ class ArticleTests(unittest.TestCase):
         self.assertIn('property="og:site_name" content="Lead Japan 合同会社"', out)
         self.assertNotIn("og:url", out)
         self.assertNotIn("og:image", out)
+        self.assertNotIn("canonical", out)
 
     def test_og_tags_with_site_url(self):
         out = og_tags(_item(slug="founding", image="static/img/news/a.png", title="<t>"), "https://x.pages.dev/")
-        self.assertIn('content="https://x.pages.dev/news-founding.html"', out)
+        # Cloudflare Pages serves news-founding.html as /news-founding
+        self.assertIn('<link rel="canonical" href="https://x.pages.dev/news-founding">', out)
+        self.assertIn('property="og:url" content="https://x.pages.dev/news-founding"', out)
         self.assertIn('property="og:image" content="https://x.pages.dev/static/img/news/a.png"', out)
         self.assertIn("&lt;t&gt;", out)
-        self.assertNotIn("og:image", og_tags(_item(), "https://x.pages.dev"))
+        self.assertIn('property="og:image" content="https://x.pages.dev/static/img/hero-tokyo.jpg"',
+                      og_tags(_item(), "https://x.pages.dev"))
+
+    def test_article_page_title_uses_site_name(self):
+        with mock.patch.dict("sitegen.pages.SITE", {"name": "X社"}):
+            self.assertEqual(article_page_title("T"), "T | X社")
+
+    def test_page_hero_title_aligns_with_breadcrumb(self):
+        # a flex item container shrinks and centres itself unless it is full width
+        css = (ROOT / "static/css/style.css").read_text(encoding="utf-8")
+        self.assertRegex(css, r"\.page-hero > \.container \{[^}]*width: 100%")
 
     def test_article_pages_metadata(self):
         pages = article_pages([_item()])
@@ -151,15 +201,81 @@ class SubPageTests(unittest.TestCase):
             self.assertIn(f'<th scope="row">{th}</th>', b)
         self.assertIn("Lead Japan 合同会社", b)
 
-    def test_business_sections_have_ids(self):
+    def test_business_page_is_just_three_cards(self):
         b = body_business()
+        self.assertEqual(b.count('<a class="biz-card'), 3)
         for biz in BUSINESSES:
-            self.assertIn(f'id="{biz.slug}"', b)
-        self.assertIn("スタートアップ向け業務システムの開発", b)
+            self.assertIn(f'href="/{biz.slug}.html"', b)
+        self.assertNotIn("<details", b)
+
+    def test_business_pages_registered_under_business(self):
+        pages = {p.filename: p for p in PAGES}
+        for biz in BUSINESSES:
+            page = pages[f"{biz.slug}.html"]
+            self.assertEqual(page.nav_current, "business.html")
+            self.assertTrue(page.indexable)
+        for body in (body_solution, body_product, body_publishing):
+            out = body()
+            self.assertIn('<a href="/business.html">事業・サービス</a>', out)  # breadcrumb
+            self.assertIn('href="/business.html">事業・サービス一覧へ戻る', out)
+
+    def test_solution_sections(self):
+        b = body_solution()
+        for sv in SERVICES:
+            self.assertIn(esc(sv.title), b)
+        for st in STAGES:
+            self.assertIn(f'id="{st.slug}"', b)
+            self.assertIn(esc(st.terms), b)
+        for section in ("service", "process", "more"):
+            self.assertIn(f'id="{section}"', b)
+
+    def test_solution_details_open_on_tap(self):
+        # phones: everything but the headline, result, services, stages and CTA starts closed
+        b = body_solution()
+        self.assertEqual(b.count('<details class="fold">'), 8)
+        self.assertEqual(b.count('<details class="stage-more">'), len(STAGES))
+        self.assertEqual(b.count('<details class="faq">'), len(FAQ))
+        self.assertNotIn("<details open", b)
+        self.assertNotIn("<script", b)
+
+    def test_solution_headline(self):
+        b = body_solution()
+        self.assertIn('<h2 class="solution-title">人を増やす前に、<br>今の人数で回る会社へ。</h2>', b)
+        self.assertIn('href="#process">料金・進め方を見る', b)
+        # the old headline stays as a supporting line, not a second big headline
+        self.assertIn('<p class="solution-subtitle">管理業務はAIに。人間は、事業を前に進めることに。</p>', b)
+
+    def test_result_shown_in_two_places_on_solution(self):
+        # the short figure under the headline, and the detail fold; why-us no longer repeats the number
+        b = body_solution()
+        self.assertEqual(b.count('class="result-figure'), 1)
+        self.assertEqual(b.count("実績の詳細"), 2)  # the fold, and the founder text pointing to it
+        why = b[b.index('<ol class="why-list">'):b.index("</ol>", b.index('<ol class="why-list">'))]
+        self.assertNotIn("30%", why)
+
+    def test_result_never_shown_without_its_note(self):
+        b = body_solution()
+        self.assertEqual(b.count('class="result-figure'), 1)
+        self.assertIn(esc(RESULT_SHORT), b)
+        self.assertIn(esc(RESULT_NOTE), b)
+        for body in (body_index(), body_business(), body_product(), body_publishing()):
+            self.assertNotIn("result-figure", body)
+
+    def test_consultation_button(self):
+        self.assertEqual(body_solution().count(f'href="/contact.html">{esc(CONSULT_BUTTON)}</a>'), 2)
+
+    def test_product_is_marked_in_development_without_signup(self):
+        b = body_product()
+        self.assertIn("開発中", b)
+        self.assertNotIn("先行案内に登録", b)
+
+    def test_publishing_links_the_book(self):
+        b = body_publishing()
+        self.assertIn('href="/pm-book.html"', b)
+        self.assertIn(esc(BOOK_TITLE), b)
 
     def test_business_text_is_escaped(self):
-        from unittest import mock
-        evil = BUSINESSES[0].__class__("ai", "01", "<b>X</b>", "E", "s&t", ("d",))
+        evil = BUSINESSES[0].__class__("solution", "01", "<b>X</b>", "E", "s&t")
         with mock.patch("sitegen.pages.BUSINESSES", (evil,)):
             b = body_business()
         self.assertIn("&lt;b&gt;X&lt;/b&gt;", b)
@@ -169,12 +285,12 @@ class SubPageTests(unittest.TestCase):
         self.assertIn("代表社員", body_message())
 
     def test_subpages_have_breadcrumb(self):
-        for fn in (body_company, body_business, body_message):
+        for fn in (body_company, body_business, body_solution, body_product, body_publishing, body_message):
             self.assertIn('aria-label="パンくずリスト"', fn())
 
     def test_pages_registered_in_order(self):
         self.assertEqual([p.filename for p in PAGES[:4]],
-                         ["index.html", "company.html", "business.html", "message.html"])
+                         ["index.html", "company.html", "business.html", "solution.html"])
         self.assertEqual(PAGES[1].title, "会社紹介 | Lead Japan 合同会社")
 
     def test_page_hero_escapes(self):
@@ -185,7 +301,7 @@ class NewsPrivacyContactTests(unittest.TestCase):
     def test_news_page_lists_summaries_and_article_links(self):
         b = body_news()
         for item in NEWS:
-            self.assertIn(f'href="news-{item.slug}.html"', b)
+            self.assertIn(f'href="/news-{item.slug}.html"', b)
             self.assertIn(esc(item.summary), b)
         self.assertNotIn('href="news.html#', b)
 
@@ -196,7 +312,7 @@ class NewsPrivacyContactTests(unittest.TestCase):
         self.assertIn("制定日：2026年10月19日", b)
 
     def test_privacy_links_to_contact_page(self):
-        self.assertIn('<a href="contact.html">お問い合わせページ</a>', body_privacy())
+        self.assertIn('<a href="/contact.html">お問い合わせページ</a>', body_privacy())
 
     def test_privacy_enactment_date_once(self):
         self.assertEqual(body_privacy().count("制定日"), 1)
@@ -210,10 +326,16 @@ class NewsPrivacyContactTests(unittest.TestCase):
     def test_contact_note_matches_privacy_purpose(self):
         self.assertIn("プライバシーポリシーに定める利用目的の範囲内で", body_contact())
 
+    def test_contact_lists_categories(self):
+        b = body_contact()
+        for cat in CONTACT_CATEGORIES:
+            self.assertIn(esc(cat), b)
+        self.assertIn('href="/solution.html#process"', b)
+
     def test_contact_no_form_post(self):
         b = body_contact()
         self.assertNotIn("<form", b)
-        self.assertIn('href="privacy.html"', b)
+        self.assertIn('href="/privacy.html"', b)
 
     def test_contact_placeholder_email_not_mailto(self):
         with mock.patch.dict("sitegen.pages.SITE", {"email": PLACEHOLDER}):
@@ -223,8 +345,9 @@ class NewsPrivacyContactTests(unittest.TestCase):
 
     def test_all_pages_registered(self):
         self.assertEqual([p.filename for p in PAGES],
-                         ["index.html", "company.html", "business.html", "message.html",
-                          "news.html", "privacy.html", "contact.html", "404.html"]
+                         ["index.html", "company.html", "business.html", "solution.html", "product.html",
+                          "publishing.html", "message.html", "news.html", "privacy.html", "contact.html",
+                          "pm-book.html", "pm-book-bonus.html", "pm-book-bonus-error.html", "404.html"]
                          + [news_page_filename(n) for n in NEWS])
 
 

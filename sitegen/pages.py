@@ -1,15 +1,28 @@
 """Page registry. PAGES is filled by later tasks."""
 from __future__ import annotations
 
+import datetime
 from dataclasses import dataclass
 from typing import Callable, Sequence
 
 from sitegen.content import (
-    BUSINESSES, COMPANY_NAME_ORIGIN, CONTACT_CATEGORIES, CONTACT_HOURS, CONTACT_INTRO, HERO_SUB,
-    MESSAGE, MESSAGE_TITLE, NEWS, NOT_FOUND_TEXT, PAGE_META, PLACEHOLDER, PRIVACY, PRIVACY_ENACTED,
-    SITE, SITE_URL, NewsItem,
+    ABOUT_LEAD, ABOUT_TEXT, AFTER, AUTOMATION_EXAMPLES, AUTOMATION_NOTE, BEFORE, BEFORE_AFTER_CLOSING, BEFORE_AFTER_TITLE, BOOK,
+    BOOK_ABOUT, BOOK_AUTHOR, BOOK_AUTHOR_BIO, BOOK_AUTHOR_NAME, BOOK_BADGES, BOOK_BONUS_ERROR, BOOK_BONUS_FEATURES,
+    BOOK_BONUS_HOWTO, BOOK_BONUS_INTRO, BOOK_BONUS_TEXT, BOOK_BONUS_TITLE, BOOK_CATCH, BOOK_CLOSING_TITLE,
+    BOOK_COLUMNS, BOOK_COLUMNS_LEAD, BOOK_COMING_SOON_NOTE, BOOK_COVER_ALT, BOOK_FORMATS, BOOK_FOR_YOU, BOOK_LEAD,
+    BOOK_NOTIFY_TEXT, BOOK_NOTIFY_TITLE, BOOK_OG_DESCRIPTION, BOOK_PARTS, BOOK_SUBTITLE, BOOK_TITLE,
+    BOOK_TRADEMARK_NOTE, BUSINESSES, COMPANY_ACTIVITIES, COMPANY_NAME_ORIGIN, COMPANY_PHILOSOPHY_TEXT,
+    CONSULT_BUTTON, CONSULT_LEAD, CONSULT_TITLE, CONSULTATION_TEXT, CONSULTATION_TITLE, CONTACT_ASK,
+    CONTACT_CATEGORIES, CONTACT_HOURS, CONTACT_INTRO, CONTACT_PROCESS, CONTACT_TITLE, CTA_LEAD, FAQ, FIT, FIT_NOTE,
+    FOUNDER_TEXT, FOUNDER_TITLE, HERO_LEAD, HERO_SUB, MESSAGE, MESSAGE_EXCERPT, MESSAGE_TITLE, NEWS,
+    NOT_FOUND_TEXT, PAGE_META, PAINS, PAINS_CLOSING, PAINS_TITLE, PLACEHOLDER, PRIVACY, PRIVACY_ENACTED, PROCESS_LEAD,
+    PROCESS_NOTE, PRODUCT_TEXT, PRODUCT_TITLE, PUBLISHING_TEXT, RESULT_FROM, RESULT_LABEL, RESULT_NOTE,
+    RESULT_SHORT, RESULT_TEXT, RESULT_TO, SECTION_DISPLAY, SERVICES, SERVICES_LEAD, SERVICES_NOTE, SITE, SITE_URL,
+    SOLUTION_LEAD, SOLUTION_NOTE, SOLUTION_SUBTITLE, SOLUTION_TITLE, STAGES, UNFIT, WHY, NewsItem,
 )
-from sitegen.render import esc
+from sitegen.geo import MAP_HEIGHT, MAP_WIDTH, pin_xy
+from sitegen.render import esc, url
+from sitegen.seo import book_jsonld, head_meta, organization_jsonld
 
 
 @dataclass(frozen=True)
@@ -20,6 +33,9 @@ class Page:
     body: Callable[[], str]
     nav_current: str | None = None
     head_extra: str = ""
+    indexable: bool = True  # listed in sitemap.xml
+    lastmod: datetime.date | None = None
+    layout: str = "site"  # "book": the book's landing-page header and footer (sitegen/render.py)
 
 
 def news_page_filename(item: NewsItem) -> str:
@@ -35,100 +51,211 @@ def news_list_html(items: Sequence[NewsItem], *, with_summary: bool = False) -> 
         rows.append(
             f'<li><time datetime="{item.date:%Y-%m-%d}">{item.date:%Y.%m.%d}</time>'
             f'<span class="news-cat">{esc(item.category)}</span>'
-            f'<a href="{esc(news_page_filename(item))}">{esc(item.title)}</a>{summary}</li>'
+            f'<a href="{esc(url(news_page_filename(item)))}">{esc(item.title)}</a>{summary}</li>'
         )
     return '<ul class="news-list">\n' + "\n".join(rows) + "\n</ul>"
 
 
-def _section_head(label: str, title: str, extra: str = "") -> str:
+def _section_head(label: str, title: str, extra: str = "", display: str = "") -> str:
+    """display: optional large English heading shown between the label and the title.
+    A newline in title becomes a line break."""
+    display_html = f'<p class="section-display" lang="en">{esc(display)}</p>' if display else ""
     return (
         f'<div class="section-head reveal{extra}">'
         f'<span class="section-label">{esc(label)}</span>'
-        f'<h2 class="section-title">{esc(title)}</h2>'
+        f"{display_html}"
+        f'<h2 class="section-title">{esc(title).replace(chr(10), "<br>")}</h2>'
         "</div>"
     )
 
 
-def body_index() -> str:
-    cards = "\n".join(
-        f'<a class="card biz-card reveal" style="--d: {i}" href="business.html#{esc(b.slug)}">'
-        f'<span class="biz-num">{esc(b.number)}</span>'
-        f'<h3 class="biz-title">{esc(b.title)}</h3>'
-        f'<span class="biz-en">{esc(b.title_en)}</span>'
-        f'<p class="biz-summary">{esc(b.summary)}</p>'
-        f'<span class="biz-more">詳しく見る</span>'
-        "</a>"
-        for i, b in enumerate(BUSINESSES)
+def _more_link(href: str, label: str) -> str:
+    return f'<a class="link-more" href="{esc(href)}">{esc(label)}</a>'
+
+
+def _hero_map() -> str:
+    """Map of Japan and the visitor's dot. The dot starts on Tokyo; on Cloudflare,
+    functions/index.js moves it (data-visitor-pin) to the visitor's prefecture."""
+    x, y = pin_xy()
+    return (
+        '<div class="hero-map" aria-hidden="true">'
+        f'<img src="/static/img/japan-map.svg" alt="" width="{MAP_WIDTH}" height="{MAP_HEIGHT}" fetchpriority="high">'
+        f'<svg class="hero-pin" viewBox="0 0 {MAP_WIDTH} {MAP_HEIGHT}" focusable="false">'
+        f'<g data-visitor-pin transform="translate({x} {y})">'
+        '<circle class="pin-wave" r="20"/><circle class="pin-dot" r="6"/></g></svg>'
+        "</div>"
     )
+
+
+def _list(items: Sequence[str], cls: str) -> str:
+    return f'<ul class="{cls}">' + "".join(f"<li>{esc(i)}</li>" for i in items) + "</ul>"
+
+
+def _paras(texts: Sequence[str]) -> str:
+    return "\n".join(f"<p>{esc(t)}</p>" for t in texts)
+
+
+def _result_figure(extra: str = "") -> str:
+    """30% → 5%: the founder's own result (always shown with RESULT_SHORT or RESULT_NOTE)."""
+    return (
+        f'<p class="result-figure{extra}"><span class="result-label">{esc(RESULT_LABEL)}</span>'
+        f'<span class="result-nums"><span class="result-from">{esc(RESULT_FROM)}</span>'
+        f'<span class="result-arrow" aria-hidden="true">→</span><span class="visually-hidden">から</span>'
+        f'<strong class="result-to">{esc(RESULT_TO)}</strong></span></p>'
+    )
+
+
+def _fold(title: str, body: str, *, open_: bool = False) -> str:
+    """A section that opens on tap (<details>: no JavaScript). Keeps solution.html short on phones."""
+    return (f'<details class="fold"{" open" if open_ else ""}><summary><h3 class="fold-title">{esc(title)}</h3></summary>'
+            f'<div class="fold-body">{body}</div></details>')
+
+
+def stages_html() -> str:
+    """Free consultation, then Stage 1–3: period and price always shown, the rest opens on tap."""
+    rows = [
+        '<li class="stage stage-entry">'
+        '<div class="stage-head"><span class="stage-label">入口</span>'
+        f'<h3 class="stage-title">{esc(CONSULTATION_TITLE)}</h3><p class="stage-terms">無料</p></div>'
+        f'<div class="stage-body"><p>{esc(CONSULTATION_TEXT)}</p></div></li>'
+    ]
+    for st in STAGES:
+        notes = "".join(f'<p class="stage-note">※{esc(n)}</p>' for n in st.notes)
+        items_label = "成果物" if st.slug == "stage1" else "主な内容"
+        rows.append(
+            f'<li class="stage" id="{esc(st.slug)}">'
+            f'<div class="stage-head"><span class="stage-label" lang="en">{esc(st.label)}</span>'
+            f'<h3 class="stage-title">{esc(st.title)}</h3><p class="stage-terms">{esc(st.terms)}</p></div>'
+            f'<details class="stage-more"><summary>内容を見る</summary><div class="stage-body">{_paras(st.lead)}'
+            f'<p class="stage-items-label">{items_label}</p>{_list(st.items, "stage-items")}{notes}</div></details></li>'
+        )
+    return (
+        '<ol class="stage-list">\n' + "\n".join(rows) + "\n</ol>\n"
+        f'<p class="process-note">※{esc(PROCESS_NOTE)}</p>'
+    )
+
+
+def examples_html() -> str:
+    return (_list(AUTOMATION_EXAMPLES, "example-list reveal")
+            + f'\n<p class="process-note">※{esc(AUTOMATION_NOTE)}</p>')
+
+
+def faq_html() -> str:
+    # <details>: opens and closes without JavaScript
+    return '<div class="faq-list">\n' + "\n".join(
+        f'<details class="faq"><summary>{esc(q)}</summary><p>{esc(a)}</p></details>' for q, a in FAQ
+    ) + "\n</div>"
+
+
+def consult_button(cls: str = "btn") -> str:
+    return f'<a class="{cls}" href="/contact.html">{esc(CONSULT_BUTTON)}</a>'
+
+
+def body_index() -> str:
+    band = "".join(
+        f'<li><a href="/{esc(b.slug)}.html"><span class="hero-band-num">{esc(b.number)}</span>'
+        f"{esc(b.title)}</a></li>"
+        for b in BUSINESSES
+    )
+    facts = (
+        ("設立", SITE["founded"][:4]),
+        ("事業領域", str(len(BUSINESSES))),
+        ("拠点", "Tokyo"),
+    )
+    facts_html = "".join(f"<div><dt>{esc(k)}</dt><dd>{esc(v)}</dd></div>" for k, v in facts)
+    contact_cats = "".join(f"<li>{esc(c)}</li>" for c in CONTACT_CATEGORIES[:-1])
     return f"""<section class="section hero">
-<!-- Photo: Louie Martinez / Unsplash (Unsplash License) https://unsplash.com/photos/IocJwyqRv3M -->
-<img class="hero-skyline" src="static/img/hero-tokyo.jpg" alt="東京タワーと東京の街並み" width="1920" height="1278" fetchpriority="high">
-<div class="hero-sky" aria-hidden="true"></div>
+<div class="hero-grid" aria-hidden="true"></div>
+{_hero_map()}
+<p class="hero-word" aria-hidden="true">LEAD JAPAN</p>
 <div class="container hero-inner">
-<p class="hero-kicker reveal">{esc(SITE["name_en"])}</p>
-<h1>{esc(SITE["tagline"])}</h1>
-<p class="hero-sub reveal" style="--d: 1">{esc(HERO_SUB)}</p>
+<p class="hero-kicker reveal">{esc(HERO_SUB)}</p>
+<h1><span>日本を導き、</span><span class="hero-accent">世界へ。</span></h1>
+<p class="hero-sub reveal" style="--d: 1">{esc(HERO_LEAD)}</p>
+<p class="hero-actions"><a class="btn btn-light" href="/business.html">事業を見る</a><a class="btn btn-outline-light" href="/contact.html">お問い合わせ</a></p>
 </div>
-<a class="scroll-cue" href="#about" aria-label="下へスクロール"><span>SCROLL</span></a>
+<nav class="hero-band" aria-label="事業"><ul class="container">{band}</ul></nav>
 </section>
 
 <section class="section top-about" id="about">
 <div class="container about-grid">
-{_section_head("About", "会社紹介", " reveal--left")}
+{_section_head("About", "会社紹介", " reveal--left", SECTION_DISPLAY["about"])}
 <div class="about-body reveal" style="--d: 1">
-<p class="lead-text">{esc(SITE["philosophy"])}</p>
-<a class="btn" href="company.html">会社紹介を見る</a>
+<p class="about-lead">{esc(ABOUT_LEAD)}</p>
+<p>{esc(ABOUT_TEXT)}</p>
+{_more_link("/company.html", "会社紹介を見る")}
+<dl class="about-facts">{facts_html}</dl>
 </div>
 </div>
 </section>
 
 <section class="section alt top-business" id="business">
 <div class="container">
-{_section_head("Business", "事業概要")}
-<div class="biz-grid">
-{cards}
+<div class="head-row">
+{_section_head("Business", "事業・サービス", display=SECTION_DISPLAY["business"])}
+{_more_link("/business.html", "事業・サービスを見る")}
+</div>
+{_business_cards("h3")}
+</div>
+</section>
+
+<section class="section section-dark top-message" id="message">
+<div class="container message-grid">
+{_section_head("Message", "代表挨拶", " reveal--left", SECTION_DISPLAY["message"])}
+<div class="reveal" style="--d: 1">
+<blockquote class="message-excerpt"><p>{esc(MESSAGE_EXCERPT)}</p></blockquote>
+<p class="message-sign">{esc(SITE["name"])} 代表社員 <strong>{esc(SITE["representative"])}</strong></p>
+<a class="btn btn-outline-light" href="/message.html">代表挨拶を読む</a>
 </div>
 </div>
 </section>
 
-<section class="section top-message" id="message">
-<div class="container message-inner">
-{_section_head("Message", "代表挨拶")}
-<blockquote class="message-excerpt reveal reveal--zoom" style="--d: 1"><p>{esc(MESSAGE[0])}</p></blockquote>
-<a class="btn reveal" style="--d: 2" href="message.html">代表挨拶を読む</a>
+<section class="section top-news" id="news">
+<div class="container">
+<div class="head-row">
+{_section_head("News", "ニュースルーム", display=SECTION_DISPLAY["news"])}
+{_more_link("/news.html", "ニュース一覧へ")}
 </div>
-</section>
-
-<section class="section alt top-news" id="news">
-<div class="container news-grid">
-{_section_head("News", "ニュースルーム", " reveal--left")}
-<div class="news-body reveal reveal--right" style="--d: 1">
+<div class="news-body reveal" style="--d: 1">
 {news_list_html(NEWS[:3])}
-<a class="btn" href="news.html">ニュース一覧へ</a>
 </div>
 </div>
 </section>
 
-<section class="section cta-band" id="contact">
-<div class="container cta-inner reveal">
+<section class="section alt cta-band" id="contact">
+<div class="container">
+<div class="cta-card reveal">
+<div class="cta-main">
 <span class="section-label">Contact</span>
-<a class="cta-link" href="contact.html">お問い合わせはこちら</a>
+<p class="section-display" lang="en">{esc(SECTION_DISPLAY["contact"])}</p>
+<h2 class="section-title">お問い合わせ</h2>
+<p class="cta-lead">{esc(CTA_LEAD)}</p>
+<ul class="cta-tags">{contact_cats}</ul>
+</div>
+<div class="cta-box">
+<dl><dt>受付時間</dt><dd>{esc(CONTACT_HOURS)}</dd><dt>所在地</dt><dd>{esc(SITE["address"])}</dd></dl>
+<a class="btn btn-light btn-block" href="/contact.html">お問い合わせはこちら</a>
+</div>
+</div>
 </div>
 </section>"""
 
 
 def page_hero(
-    title: str, label_en: str, crumbs: Sequence[tuple[str, str | None]] | None = None
+    title: str, label_en: str, crumbs: Sequence[tuple[str, str | None]] | None = None,
+    *, heading: bool = True,
 ) -> str:
-    """crumbs: (label, href-or-None) after ホーム; default is just the page title."""
+    """crumbs: (label, href-or-None) after ホーム; default is just the page title.
+    heading=False when the page's own <h1> is further down (news articles)."""
     trail = crumbs if crumbs is not None else [(title, None)]
-    parts = ['<a href="index.html">ホーム</a>']
+    parts = ['<a href="/">ホーム</a>']
     for label, href in trail:
-        parts.append(f'<a href="{esc(href)}">{esc(label)}</a>' if href else f"<span>{esc(label)}</span>")
+        parts.append(f'<a href="{esc(url(href))}">{esc(label)}</a>' if href else f"<span>{esc(label)}</span>")
+    title_html = f"<h1>{esc(title)}</h1>" if heading else f'<p class="page-hero-title">{esc(title)}</p>'
     return (
         '<section class="page-hero"><div class="container">'
         f'<span class="section-label">{esc(label_en)}</span>'
-        f'<h1>{esc(title)}</h1>'
+        f"{title_html}"
         "</div></section>\n"
         '<div class="container"><nav class="breadcrumb" aria-label="パンくずリスト">'
         + " / ".join(parts)
@@ -142,26 +269,34 @@ _SVG = (
 )
 
 ICONS: dict[str, str] = {
-    "ai": _SVG
+    "solution": _SVG
     + '<circle cx="60" cy="22" r="9"/><circle cx="24" cy="60" r="9"/><circle cx="96" cy="60" r="9"/>'
     '<circle cx="42" cy="98" r="9"/><circle cx="78" cy="98" r="9"/><circle cx="60" cy="60" r="7"/>'
     '<path d="M54 29 29 52M66 29l25 23M33 60h20M67 60h20M56 66 46 90M64 66l10 24M51 98h18"/></svg>',
-    "consulting": _SVG
-    + '<circle cx="60" cy="60" r="44"/><circle cx="60" cy="60" r="4"/>'
-    '<path d="m82 38-12 28-28 16 12-28z"/><path d="M60 10v8M60 102v8M10 60h8M102 60h8"/></svg>',
-    "system": _SVG
-    + '<rect x="14" y="14" width="64" height="46" rx="3"/><path d="M14 26h64"/>'
-    '<rect x="34" y="40" width="64" height="46" rx="3"/><path d="M34 52h64"/>'
-    '<rect x="54" y="66" width="52" height="40" rx="3"/><path d="M54 78h52"/></svg>',
+    "product": _SVG
+    + '<rect x="14" y="20" width="92" height="72" rx="6"/><path d="M14 36h92M24 28h4M34 28h4"/>'
+    '<path d="M28 52h22M28 64h40M28 76h30"/><rect x="74" y="48" width="20" height="32" rx="2"/></svg>',
     "publishing": _SVG
     + '<path d="M60 36C48 26 30 24 12 28v62c18-4 36-2 48 8 12-10 30-12 48-8V28c-18-4-36-2-48 8z"/>'
     '<path d="M60 36v62M24 46c10-2 22 0 28 5M24 62c10-2 22 0 28 5M96 46c-10-2-22 0-28 5M96 62c-10-2-22 0-28 5"/></svg>',
+    "analysis": _SVG
+    + '<circle cx="60" cy="60" r="44"/><circle cx="60" cy="60" r="4"/>'
+    '<path d="m82 38-12 28-28 16 12-28z"/><path d="M60 10v8M60 102v8M10 60h8M102 60h8"/></svg>',
+    "data": _SVG
+    + '<ellipse cx="60" cy="26" rx="36" ry="12"/><path d="M24 26v68c0 6.6 16 12 36 12s36-5.4 36-12V26"/>'
+    '<path d="M24 49c0 6.6 16 12 36 12s36-5.4 36-12M24 72c0 6.6 16 12 36 12s36-5.4 36-12"/></svg>',
+    "development": _SVG
+    + '<rect x="14" y="14" width="64" height="46" rx="3"/><path d="M14 26h64"/>'
+    '<rect x="34" y="40" width="64" height="46" rx="3"/><path d="M34 52h64"/>'
+    '<rect x="54" y="66" width="52" height="40" rx="3"/><path d="M54 78h52"/></svg>',
+    "adoption": _SVG
+    + '<path d="M98 60a38 38 0 1 1-11-27"/><path d="M90 16v18H72"/><path d="m42 60 13 13 25-27"/></svg>',
 }
 
 
 def body_company() -> str:
     name_origin = "\n".join(f"<p>{esc(p)}</p>" for p in COMPANY_NAME_ORIGIN)
-    biz_list = "<ul>" + "".join(f"<li>{esc(b.title)}</li>" for b in BUSINESSES) + "</ul>"
+    biz_list = "<ul>" + "".join(f"<li>{esc(a)}</li>" for a in COMPANY_ACTIVITIES) + "</ul>"
     rows = [
         ("商号", esc(SITE["name"])),
         ("英文社名", esc(SITE["name_en"])),
@@ -177,6 +312,7 @@ def body_company() -> str:
 <div class="container">
 {_section_head("Philosophy", "企業理念")}
 <blockquote class="philosophy reveal reveal--zoom"><p>{esc(SITE["philosophy"])}</p></blockquote>
+<p class="philosophy-text reveal">{esc(COMPANY_PHILOSOPHY_TEXT)}</p>
 </div>
 </section>
 
@@ -199,27 +335,169 @@ def body_company() -> str:
 </section>"""
 
 
+def _business_cards(heading: str) -> str:
+    """The three business cards; each opens its own page. heading: "h2" on business.html, "h3" on the top page."""
+    return '<div class="biz-grid biz-grid--3">\n' + "\n".join(
+        f'<a class="biz-card reveal" style="--d: {i}" href="/{esc(b.slug)}.html">'
+        f'<span class="biz-card-top"><span class="biz-icon-wrap">{ICONS.get(b.slug, "")}</span>'
+        f'<span class="biz-num">{esc(b.number)}</span></span>'
+        f'<span class="biz-en" lang="en">{esc(b.title_en)}</span>'
+        f'<{heading} class="biz-title">{esc(b.title)}</{heading}>'
+        f'<p class="biz-summary">{esc(b.summary)}</p>'
+        f'<span class="biz-more">詳しく見る</span>'
+        "</a>"
+        for i, b in enumerate(BUSINESSES)
+    ) + "\n</div>"
+
+
+def _business_hero(b) -> str:
+    return page_hero(b.title, b.title_en.upper(), [("事業・サービス", "business.html"), (b.title, None)])
+
+
+def _back_to_business() -> str:
+    return f'<p class="business-back">{_more_link("/business.html", "事業・サービス一覧へ戻る")}</p>'
+
+
 def body_business() -> str:
-    items = []
-    for i, b in enumerate(BUSINESSES):
-        side = "reveal--left" if i % 2 == 0 else "reveal--right"
-        details = "".join(f"<li>{esc(d)}</li>" for d in b.details)
-        icon = ICONS.get(b.slug, "")
-        items.append(
-            f'<section id="{esc(b.slug)}" class="business-item reveal {side}">\n'
-            f'<div class="business-visual">{icon}</div>\n'
-            '<div class="business-text">'
-            f'<span class="biz-num">{esc(b.number)}</span>'
-            f'<h2>{esc(b.title)}</h2>'
-            f'<span class="biz-en">{esc(b.title_en)}</span>'
-            f'<p>{esc(b.summary)}</p>'
-            f'<ul>{details}</ul>'
-            "</div>\n</section>"
-        )
-    return f"""{page_hero("事業概要", "BUSINESS")}
-<div class="container business-list">
-{chr(10).join(items)}
-</div>"""
+    return f"""{page_hero("事業・サービス", "BUSINESS")}
+<section class="section business-cards">
+<div class="container">
+<p class="section-lead reveal">Lead Japanは、3つの事業を通じて、日本の企業が世界で力を発揮するための土台をつくります。</p>
+{_business_cards("h2")}
+</div>
+</section>"""
+
+
+def body_solution() -> str:
+    services = "".join(
+        f'<li class="service reveal"><span class="service-icon">{ICONS.get(sv.slug, "")}</span>'
+        f'<div><span class="biz-num">{esc(sv.number)}</span><h3 class="service-title">{esc(sv.title)}</h3>'
+        f"<p>{esc(sv.summary)}</p></div></li>"
+        for sv in SERVICES
+    )
+    before_after = (
+        '<div class="ba-grid">'
+        f'<div class="ba-col ba-before"><p class="ba-label" lang="en">Before</p>{_list(BEFORE, "ba-list")}</div>'
+        f'<div class="ba-col ba-after"><p class="ba-label" lang="en">After</p>{_list(AFTER, "ba-list")}</div>'
+        f'</div><p class="closing">{esc(BEFORE_AFTER_CLOSING)}</p>'
+    )
+    why = "".join(
+        f'<li class="why-item"><span class="why-num">{i + 1:02d}</span><h4>{esc(t)}</h4><p>{esc(d)}</p></li>'
+        for i, (t, d) in enumerate(WHY)
+    )
+    fit = (
+        '<div class="fit-grid">'
+        f'<div class="fit-col"><h4>こんな会社に向いています</h4>{_list(FIT, "check-list")}</div>'
+        f'<div class="fit-col fit-col--no"><h4>こんな場合は、向いていないかもしれません</h4>{_list(UNFIT, "cross-list")}</div>'
+        f'</div><p class="closing">{esc(FIT_NOTE)}</p>'
+    )
+    folds = "\n".join((
+        _fold(PAINS_TITLE, _list(PAINS, "check-list") + f'<p class="closing">{esc(PAINS_CLOSING)}</p>'),
+        _fold(BEFORE_AFTER_TITLE, before_after),
+        _fold("30%から5%へ：実績の詳細", _paras(RESULT_TEXT)),
+        _fold("自動化・効率化の対象例", examples_html()),
+        _fold("なぜ、Lead Japanがやるのか", f'<ol class="why-list">{why}</ol>'
+              f'<p class="founder-title">{esc(FOUNDER_TITLE)}</p>{_paras(FOUNDER_TEXT)}'
+              + _more_link("/message.html", "代表挨拶を読む")),
+        _fold("向いている会社・向いていない会社", fit),
+        _fold("よくある質問", faq_html()),
+    ))
+    services_detail = "".join(
+        f"<h4>{esc(sv.title)}</h4>{_list(sv.details, 'stage-items')}" for sv in SERVICES
+    ) + f'<p class="package-note">{esc(SERVICES_NOTE)}</p>'
+    lead = "".join(f'<p class="hero-sub">{esc(t)}</p>' for t in SOLUTION_LEAD)
+    solution = BUSINESSES[0]
+    return f"""{_business_hero(solution)}
+<section class="section section-dark solution-head">
+<div class="container">
+<h2 class="solution-title">{esc(SOLUTION_TITLE).replace(chr(10), "<br>")}</h2>
+<div class="hero-lead">{lead}</div>
+<p class="hero-note">{esc(SOLUTION_NOTE)}</p>
+<p class="hero-actions">{consult_button("btn btn-light")}<a class="btn btn-outline-light" href="#process">料金・進め方を見る</a></p>
+<div class="hero-result">{_result_figure()}<p class="hero-result-note">{esc(RESULT_SHORT)}</p></div>
+<p class="result-note">{esc(RESULT_NOTE)}</p>
+<p class="solution-subtitle">{esc(SOLUTION_SUBTITLE)}</p>
+</div>
+</section>
+
+<section class="section" id="service">
+<div class="container">
+{_section_head("Service", "業務の見直しから定着まで、一貫して支援します。")}
+<p class="section-lead">{esc(SERVICES_LEAD)}</p>
+<ol class="service-list">{services}</ol>
+{_fold("提供内容の詳細", services_detail)}
+</div>
+</section>
+
+<section class="section alt" id="process">
+<div class="container">
+{_section_head("Process", "いきなり長期契約は、提案しません。\nまずは1ヶ月の診断から。")}
+<p class="section-lead">{esc(PROCESS_LEAD)}</p>
+{stages_html()}
+</div>
+</section>
+
+<section class="section" id="more">
+<div class="container">
+{_section_head("More", "もっと詳しく")}
+<div class="fold-list">
+{folds}
+</div>
+</div>
+</section>
+
+<section class="section alt cta-band">
+<div class="container">
+<div class="cta-card reveal">
+<div class="cta-main">
+<span class="section-label">Contact</span>
+<h2 class="section-title">{esc(CONSULT_TITLE)}</h2>
+<p class="cta-lead">{esc(CONSULT_LEAD)}</p>
+</div>
+<div class="cta-box">{consult_button("btn btn-light btn-block")}</div>
+</div>
+{_back_to_business()}
+</div>
+</section>"""
+
+
+def body_product() -> str:
+    return f"""{_business_hero(BUSINESSES[1])}
+<section class="section">
+<div class="container split">
+<div class="section-head reveal reveal--left">
+<span class="section-label">Product</span>
+<h2 class="section-title">{esc(PRODUCT_TITLE).replace(chr(10), "<br>")}</h2>
+<p class="status-tag">開発中</p>
+</div>
+<div class="reveal" style="--d: 1">
+{_paras(PRODUCT_TEXT)}
+{_back_to_business()}
+</div>
+</div>
+</section>"""
+
+
+def body_publishing() -> str:
+    publishing = BUSINESSES[2]
+    return f"""{_business_hero(publishing)}
+<section class="section">
+<div class="container publishing">
+<a class="publishing-cover reveal" href="/pm-book.html"><picture>
+<source srcset="/static/img/book/cover_front.webp" type="image/webp">
+<img src="/static/img/book/cover_front.png" alt="{esc(BOOK_COVER_ALT)}" width="1000" height="1422" loading="lazy">
+</picture></a>
+<div class="reveal" style="--d: 1">
+<p>{esc(publishing.summary)}{esc(PUBLISHING_TEXT)}</p>
+<p class="publishing-status">{esc(BOOK["release_label"] or "")}</p>
+<h2 class="publishing-title">{esc(BOOK_TITLE)}</h2>
+<p class="publishing-sub">{esc(BOOK_SUBTITLE)}</p>
+<p>{esc(BOOK_LEAD)}</p>
+<p><a class="btn" href="/pm-book.html">書籍の紹介を見る</a></p>
+{_back_to_business()}
+</div>
+</div>
+</section>"""
 
 
 def body_message() -> str:
@@ -228,7 +506,7 @@ def body_message() -> str:
 <section class="section">
 <div class="container message-layout">
 <aside class="message-side reveal reveal--left" aria-hidden="true">
-<img src="static/img/tokyo-skyline.svg" alt="" width="1600" height="600">
+<img src="/static/img/tokyo-skyline.svg" alt="" width="1600" height="600">
 </aside>
 <article class="message-body reveal reveal--right" style="--d: 1">
 <h2>{esc(MESSAGE_TITLE)}</h2>
@@ -249,7 +527,7 @@ def body_news() -> str:
 
 
 def body_news_article(item: NewsItem, *, image_src: str | None = None) -> str:
-    src = image_src if image_src is not None else item.image
+    src = image_src if image_src is not None else (url(item.image) if item.image else None)
     figure = (
         f'<figure class="article-image"><img src="{esc(src)}" alt="{esc(item.image_alt)}"></figure>\n'
         if src
@@ -260,43 +538,30 @@ def body_news_article(item: NewsItem, *, image_src: str | None = None) -> str:
         contact = (
             '<aside class="press-contact">\n'
             "<h3>本件に関するお問い合わせ</h3>\n"
-            f'<p>{esc(SITE["name"])}<br><a href="contact.html">お問い合わせページ</a></p>\n'
+            f'<p>{esc(SITE["name"])}<br><a href="/contact.html">お問い合わせページ</a></p>\n'
             "</aside>\n"
         )
     crumbs = [("ニュースルーム", "news.html"), (item.title, None)]
-    return f"""{page_hero("ニュースルーム", "NEWSROOM", crumbs)}
+    return f"""{page_hero("ニュースルーム", "NEWSROOM", crumbs, heading=False)}
 <section class="section">
 <div class="container news-articles">
 <article class="news-article">
 <div class="news-meta"><time datetime="{item.date:%Y-%m-%d}">{item.date:%Y.%m.%d}</time><span class="news-cat">{esc(item.category)}</span></div>
-<h2 class="article-title">{esc(item.title)}</h2>
+<h1 class="article-title">{esc(item.title)}</h1>
 {figure}<div class="article-body">{item.body_html}</div>
 {contact}</article>
-<p class="article-back"><a href="news.html">ニュース一覧へ戻る</a></p>
+<p class="article-back"><a href="/news.html">ニュース一覧へ戻る</a></p>
 </div>
 </section>"""
 
 
 def og_tags(item: NewsItem, site_url: str) -> str:
-    def tag(prop: str, value: str) -> str:
-        return f'<meta property="{prop}" content="{esc(value)}">'
-
-    tags = [
-        tag("og:title", item.title),
-        tag("og:description", item.summary),
-        tag("og:type", "article"),
-        tag("og:site_name", "Lead Japan 合同会社"),
-    ]
-    if site_url:
-        base = site_url.rstrip("/") + "/"
-        tags.append(tag("og:url", base + news_page_filename(item)))
-        if item.image:
-            tags.append(tag("og:image", base + item.image))
-    return "\n".join(tags)
+    return head_meta(filename=news_page_filename(item), title=item.title, description=item.summary,
+                     og_type="article", image=item.image, site_url=site_url)
 
 
 CONTACT_LABEL = "お問い合わせページ"
-CONTACT_LINK = f'<a href="contact.html">{CONTACT_LABEL}</a>'
+CONTACT_LINK = f'<a href="/contact.html">{CONTACT_LABEL}</a>'
 
 
 def body_privacy() -> str:
@@ -322,18 +587,17 @@ def body_contact() -> str:
         email_html = esc(email)
     else:
         email_html = f'<a href="mailto:{esc(email)}">{esc(email)}</a>'
-    categories = "".join(
-        f"<li>{esc(c)}</li>" for c in CONTACT_CATEGORIES
-    )
     btn = (
-        f'<a class="btn" href="mailto:{esc(email)}">メールで問い合わせる</a>'
+        f'<a class="btn" href="mailto:{esc(email)}">メールで相談する</a>'
         if email != PLACEHOLDER
-        else '<span class="btn is-disabled" aria-disabled="true">メールで問い合わせる</span>'
+        else '<span class="btn is-disabled" aria-disabled="true">メールで相談する</span>'
     )
     return f"""{page_hero("お問い合わせ", "CONTACT")}
 <section class="section">
 <div class="container contact reveal">
+<h2 class="contact-title">{esc(CONTACT_TITLE)}</h2>
 <p>{esc(CONTACT_INTRO)}</p>
+{_list(CONTACT_ASK, "contact-cats")}
 <dl class="contact-info">
 <dt>メール</dt><dd>{email_html}</dd>
 <dt>所在地</dt><dd>{esc(SITE["address"])}</dd>
@@ -341,9 +605,248 @@ def body_contact() -> str:
 </dl>
 <p>{btn}</p>
 <!-- 無料の Google フォームを使う場合はここに埋め込みリンクを置く -->
-<h2 class="contact-sub">お問い合わせの例</h2>
-<ul class="contact-cats">{categories}</ul>
-<p class="contact-note">お預かりした個人情報は、プライバシーポリシーに定める利用目的の範囲内で利用します。詳しくは<a href="privacy.html">プライバシーポリシー</a>をご確認ください。</p>
+<p class="contact-note">メールの件名に、次のお問い合わせ種別をお書き添えください。</p>
+{_list(CONTACT_CATEGORIES, "contact-cats")}
+<h2 class="contact-sub">進め方について</h2>
+<p>{esc(CONTACT_PROCESS)}</p>
+{_more_link("/solution.html#process", "進め方と料金を見る")}
+<p class="contact-note">お預かりした個人情報は、プライバシーポリシーに定める利用目的の範囲内で利用します。詳しくは<a href="/privacy.html">プライバシーポリシー</a>をご確認ください。</p>
+</div>
+</section>"""
+
+
+BOOK_BONUS_ACTION = "/pm-book-bonus/download"  # functions/pm-book-bonus/download.js
+
+
+def _book_head(title: str, lead: str = "") -> str:
+    """Section heading on the book page: Japanese only, with a short yellow rule (no English label)."""
+    lead_html = f'<p class="book-head-lead">{esc(lead)}</p>' if lead else ""
+    return f'<div class="book-head reveal"><h2>{esc(title)}</h2>{lead_html}</div>'
+
+
+_ICON = ('<svg class="icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" '
+         'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">')
+BOOK_ICONS: dict[str, str] = {
+    "x": '<svg class="icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" '
+         'fill="currentColor"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8L17.8 3Zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5Z"/></svg>',
+    "line": _ICON + '<path d="M21 11c0-4.4-4-8-9-8s-9 3.6-9 8c0 4 3.2 7.3 7.6 7.9.3.1.7.2.8.5l-.2 1.9c0 .4.3.6.6.4 2.6-1.4 6.4-4.2 8-6.6.8-1.2 1.2-2.6 1.2-4.1Z"/></svg>',
+    "mail": _ICON + '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>',
+    "cart": _ICON + '<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.5L21 8H6"/></svg>',
+    "check": _ICON + '<path d="m5 12 5 5L20 7"/></svg>',
+    "browser": _ICON + '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/></svg>',
+    "lock": _ICON + '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+    "chart": _ICON + '<path d="M4 6h9M8 12h10M6 18h7"/><path d="M4 3v18"/></svg>',
+}
+BONUS_FEATURE_ICONS = ("browser", "lock", "chart")
+
+# (BOOK key, label, icon)
+BUY_LINKS = (("kindle_url", "Kindle版をAmazonで見る"), ("paperback_url", "ペーパーバックをAmazonで見る"))
+NOTIFY_LINKS = (("x_url", "Xでフォロー", "x"), ("line_url", "LINEで受け取る", "line"),
+                ("newsletter_url", "メールで受け取る", "mail"))
+
+
+def _buy_buttons(book: dict[str, str | None], extra_class: str = "") -> str:
+    links = [
+        f'<a class="btn book-btn{extra_class}" href="{esc(book[key])}" target="_blank" rel="noopener">'
+        f'{BOOK_ICONS["cart"]}{esc(label)}</a>'
+        for key, label in BUY_LINKS if book.get(key)
+    ]
+    return f'<div class="book-buy">{"".join(links)}</div>' if links else ""
+
+
+def _notify_panel(book: dict[str, str | None], *, panel_id: str = "") -> str:
+    """Where to hear about the release. Channels without a URL are left out; with none, a note."""
+    links = "".join(
+        f'<a class="book-notify-btn" href="{esc(book[key])}" target="_blank" rel="noopener">'
+        f'{BOOK_ICONS[icon]}{esc(label)}</a>'
+        for key, label, icon in NOTIFY_LINKS if book.get(key)
+    )
+    id_attr = f' id="{panel_id}"' if panel_id else ""
+    body = (f'<p class="book-notify-text">{esc(BOOK_NOTIFY_TEXT)}</p><div class="book-notify-links">{links}</div>'
+            if links else f'<p class="book-notify-text">{esc(BOOK_COMING_SOON_NOTE)}</p>')
+    return f'<div class="book-notify"{id_attr}><p class="book-notify-title">{esc(BOOK_NOTIFY_TITLE)}</p>{body}</div>'
+
+
+def _book_actions(book: dict[str, str | None], *, panel_id: str = "") -> str:
+    """Buy buttons once there is a product page; the release notice while it is coming soon."""
+    actions = _buy_buttons(book)
+    if book["status"] != "on_sale":
+        actions += _notify_panel(book, panel_id=panel_id)
+    return actions
+
+
+def _price(value: str | None) -> str | None:
+    return f"{int(value):,}円（税込）" if value else None
+
+
+def body_book(book: dict[str, str | None] = BOOK) -> str:
+    on_sale = book["status"] == "on_sale"
+    label = "好評発売中" if on_sale else book["release_label"]
+    badges = "".join(f"<li>{esc(b)}</li>" for b in BOOK_BADGES)
+    about = "\n".join(f"<p>{esc(p)}</p>" for p in BOOK_ABOUT)
+    for_you = "".join(f'<li class="reveal" style="--d: {i}">{BOOK_ICONS["check"]}<span>{esc(t)}</span></li>'
+                      for i, t in enumerate(BOOK_FOR_YOU))
+    parts = "\n".join(
+        f'<article class="book-part reveal" style="--d: {i % 2}">'
+        f'<div class="book-part-top"><span class="book-part-label">{esc(part.label)}</span>'
+        f'<p class="book-part-count" aria-hidden="true"><span>{esc(part.count)}</span>{esc(part.count_unit)}</p></div>'
+        f'<h3>{esc(part.title)}</h3>'
+        f'<p class="book-part-summary">{esc(part.summary)}</p>'
+        + (f'<p class="book-part-note">{esc(part.note)}</p>' if part.note else "")
+        + '<ul class="book-part-list">'
+        + "".join(f'<li>{BOOK_ICONS["check"]}<span>{esc(h)}</span></li>' for h in part.headings)
+        + "</ul></article>"
+        for i, part in enumerate(BOOK_PARTS)
+    )
+    columns = "".join(f"<li>{esc(c)}</li>" for c in BOOK_COLUMNS)
+    bonus = "\n".join(f"<p>{esc(p)}</p>" for p in BOOK_BONUS_TEXT)
+    features = "".join(
+        f'<li>{BOOK_ICONS[icon]}<div><strong>{esc(title)}</strong><span>{esc(text)}</span></div></li>'
+        for (title, text), icon in zip(BOOK_BONUS_FEATURES, BONUS_FEATURE_ICONS)
+    )
+    bio = "\n".join(f"<p>{esc(p)}</p>" for p in BOOK_AUTHOR_BIO)
+    buy_links = " ／ ".join(
+        f'<a href="{esc(book[key])}" target="_blank" rel="noopener">{esc(label.removesuffix("をAmazonで見る"))}（Amazon）</a>'
+        for key, label in BUY_LINKS if book.get(key)
+    )
+    rows = [
+        ("書名", esc(BOOK_TITLE)),
+        ("副題", esc(BOOK_SUBTITLE)),
+        ("著者", esc(BOOK_AUTHOR)),
+        ("発行・発売", esc(SITE["name"])),
+        ("形態", esc(BOOK_FORMATS)),
+        ("発売日", esc(book["release_date"]) if book.get("release_date") else None),
+        ("価格（Kindle版）", esc(_price(book.get("kindle_price"))) if book.get("kindle_price") else None),
+        ("価格（ペーパーバック）", esc(_price(book.get("paperback_price"))) if book.get("paperback_price") else None),
+        ("ISBN", esc(book["isbn"]) if book.get("isbn") else None),
+        ("購入", buy_links or None),
+    ]
+    info = "\n".join(f'<tr><th scope="row">{k}</th><td>{v}</td></tr>' for k, v in rows if v)
+    return f"""<section class="book-hero" id="hero">
+<div class="container book-hero-inner">
+<div class="book-cover-wrap">
+<picture class="book-cover">
+<source srcset="/static/img/book/cover_front.webp" type="image/webp">
+<img src="/static/img/book/cover_front.png" alt="{esc(BOOK_COVER_ALT)}" width="1000" height="1422" fetchpriority="high">
+</picture>
+<p class="book-seal">{esc(label)}</p>
+</div>
+<div class="book-hero-text">
+<h1 class="book-title"><span>外資系プロジェクトマネージャー</span><span class="book-title-main">1年目の教科書</span></h1>
+<p class="book-subtitle">{esc(BOOK_SUBTITLE)}</p>
+<p class="book-author">{esc(BOOK_AUTHOR)} 著<span class="book-format">{esc(BOOK_FORMATS)}</span></p>
+<p class="book-catch">{esc(BOOK_CATCH)}</p>
+<p class="book-lead">{esc(BOOK_LEAD)}</p>
+<ul class="book-badges" aria-label="この本の特長">{badges}</ul>
+{_book_actions(book, panel_id="notify")}
+<p class="book-more"><a href="#contents">本書の構成を見る</a></p>
+</div>
+</div>
+</section>
+
+<section class="book-section" id="about">
+<div class="container book-narrow">
+{_book_head("この本について")}
+<div class="book-prose reveal">
+{about}
+</div>
+</div>
+</section>
+
+<section class="book-section book-section-tint" id="for-you">
+<div class="container book-narrow">
+{_book_head("こんな方におすすめです")}
+<ul class="book-checklist">{for_you}</ul>
+</div>
+</section>
+
+<section class="book-section" id="contents">
+<div class="container book-narrow">
+{_book_head("本書の構成", "現場で使う「ルール」と、共通言語としての「知識」の二本立てです。")}
+<div class="book-parts">
+{parts}
+</div>
+<div class="book-columns reveal"><p>{esc(BOOK_COLUMNS_LEAD)}</p><ul>{columns}</ul></div>
+</div>
+</section>
+
+<section class="book-section book-section-tint" id="bonus">
+<div class="container book-narrow">
+{_book_head(f"読者特典　{BOOK_BONUS_TITLE}")}
+<div class="book-bonus">
+<div class="book-bonus-text reveal">
+{bonus}
+<ul class="book-bonus-features">{features}</ul>
+<p><a class="btn book-btn book-btn-large" href="/pm-book-bonus.html">特典ページへ</a></p>
+</div>
+<figure class="book-bonus-shots reveal" style="--d: 1">
+<img class="shot-main" src="/static/img/book/bonus-screen-chart.webp" alt="特典ツールのガントチャート画面。タスクの期間、依存関係、進み具合が表示されている" width="1280" height="760" loading="lazy">
+<img class="shot-sub" src="/static/img/book/bonus-screen-board.webp" alt="特典ツールのかんばん画面。未着手・進行中・完了の列にタスクが並んでいる" width="1280" height="470" loading="lazy">
+<figcaption>サンプルデータを入れた実際の画面</figcaption>
+</figure>
+</div>
+</div>
+</section>
+
+<section class="book-section" id="author">
+<div class="container book-narrow">
+{_book_head("著者紹介")}
+<div class="book-author-card reveal">
+<p class="book-author-name">{esc(BOOK_AUTHOR_NAME)}</p>
+{bio}
+</div>
+</div>
+</section>
+
+<section class="book-section book-section-tint" id="info">
+<div class="container book-narrow">
+{_book_head("書籍情報")}
+<div class="book-info reveal">
+<table class="book-info-table">
+{info}
+</table>
+</div>
+</div>
+</section>
+
+<section class="book-closing">
+<div class="container book-narrow book-closing-inner">
+<p class="book-closing-label">{esc(label)}</p>
+<h2>{esc(BOOK_CLOSING_TITLE)}</h2>
+{_book_actions(book)}
+<p class="book-closing-bonus">読者特典の<a href="/pm-book-bonus.html">ガントチャート作成ツール</a>もご用意しています。</p>
+<p class="book-notes" id="notes">{esc(BOOK_TRADEMARK_NOTE)}</p>
+</div>
+</section>"""
+
+
+def body_book_bonus(*, error: bool = False) -> str:
+    """Password form for the reader bonus. The form posts to a Pages Function, which
+    sends the file or redirects to the error version of this page (no JavaScript)."""
+    alert = (
+        f'<p class="bonus-error" id="bonus-error" role="alert">{esc(BOOK_BONUS_ERROR)}</p>\n' if error else ""
+    )
+    invalid = ' aria-invalid="true" aria-describedby="bonus-error"' if error else ""
+    howto = "".join(f"<li>{esc(t)}</li>" for t in BOOK_BONUS_HOWTO)
+    return f"""<section class="page-hero"><div class="container"><h1>読者特典</h1></div></section>
+<div class="container"><nav class="breadcrumb" aria-label="パンくずリスト"><a href="/pm-book.html">書籍トップ</a> / <span>読者特典</span></nav></div>
+<section class="section">
+<div class="container book-narrow">
+<div class="bonus-card reveal">
+<p class="bonus-book">『{esc(BOOK_TITLE)}』</p>
+<h2 class="bonus-title">{esc(BOOK_BONUS_TITLE)}</h2>
+<p>{esc(BOOK_BONUS_INTRO)}</p>
+{alert}<form class="bonus-form" method="post" action="{BOOK_BONUS_ACTION}">
+<label for="bonus-password">読者パスワード</label>
+<div class="bonus-row">
+<input id="bonus-password" name="password" type="password" required maxlength="64" autocomplete="off" autocapitalize="off" spellcheck="false"{invalid}>
+<button class="btn" type="submit">ダウンロード</button>
+</div>
+</form>
+<h3 class="bonus-sub">ご利用にあたって</h3>
+<ul class="bonus-howto">{howto}</ul>
+</div>
+<p class="article-back"><a href="/pm-book.html">書籍の紹介へ戻る</a></p>
 </div>
 </section>"""
 
@@ -353,7 +856,7 @@ def body_404() -> str:
 <section class="section">
 <div class="container">
 <p>{esc(NOT_FOUND_TEXT)}</p>
-<p><a class="btn" href="index.html">トップページへ戻る</a></p>
+<p><a class="btn" href="/">トップページへ戻る</a></p>
 </div>
 </section>"""
 
@@ -362,17 +865,52 @@ _BODIES: dict[str, Callable[[], str]] = {
     "index.html": body_index,
     "company.html": body_company,
     "business.html": body_business,
+    "solution.html": body_solution,
+    "product.html": body_product,
+    "publishing.html": body_publishing,
     "message.html": body_message,
     "news.html": body_news,
     "privacy.html": body_privacy,
     "contact.html": body_contact,
+    "pm-book.html": body_book,
+    "pm-book-bonus.html": body_book_bonus,
+    "pm-book-bonus-error.html": lambda: body_book_bonus(error=True),
     "404.html": body_404,
 }
 
-PAGES: list[Page] = [
-    Page(filename=name, title=PAGE_META[name][0], description=PAGE_META[name][1], body=body)
-    for name, body in _BODIES.items()
-]
+BUSINESS_PAGES = tuple(f"{b.slug}.html" for b in BUSINESSES)
+
+# Reader-bonus pages: only for readers of the book, so kept out of search results.
+NOINDEX = ("404.html", "pm-book-bonus.html", "pm-book-bonus-error.html")
+
+def _fixed_page(name: str, body: Callable[[], str]) -> Page:
+    title, description = PAGE_META[name]
+    book = name.startswith("pm-book")  # the book's landing page and its reader-bonus pages
+    current = "pm-book.html" if book else None
+    layout = "book" if book else "site"
+    if name in NOINDEX:
+        # 404 is served for any missing URL: keep it (and the bonus pages) out of search results and the sitemap.
+        return Page(name, title, description, body, nav_current=current,
+                    head_extra='<meta name="robots" content="noindex">', indexable=False, layout=layout)
+    if name == "pm-book.html":
+        head = head_meta(filename=name, title=BOOK_TITLE, description=BOOK_OG_DESCRIPTION, og_type="book",
+                         image="static/img/book/og_image.png")
+        return Page(name, title, description, body, nav_current=current, head_extra=head + "\n" + book_jsonld(),
+                    layout=layout)
+    head = head_meta(filename=name, title=title, description=description)
+    if name == "index.html":
+        head += "\n" + organization_jsonld()
+    # each business page sits under 事業・サービス in the navigation
+    current = "business.html" if name in BUSINESS_PAGES else None
+    return Page(name, title, description, body, nav_current=current, head_extra=head)
+
+
+PAGES: list[Page] = [_fixed_page(name, body) for name, body in _BODIES.items()]
+
+
+def article_page_title(title: str) -> str:
+    """<title> of a news article page (also used by the admin preview and its checks)."""
+    return f"{title} | {SITE['name']}"
 
 
 def article_pages(items: Sequence[NewsItem] | None = None) -> list[Page]:
@@ -381,11 +919,12 @@ def article_pages(items: Sequence[NewsItem] | None = None) -> list[Page]:
     return [
         Page(
             filename=news_page_filename(item),
-            title=f"{item.title} | Lead Japan 合同会社",
+            title=article_page_title(item.title),
             description=item.summary,
             body=lambda item=item: body_news_article(item),
             nav_current="news.html",
             head_extra=og_tags(item, SITE_URL),
+            lastmod=item.date,
         )
         for item in items
     ]

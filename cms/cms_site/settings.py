@@ -56,7 +56,9 @@ TIME_ZONE = "Asia/Tokyo"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "/static/"
+# The admin's own assets move aside: /static/ serves the site's static/ so the
+# preview can use the same root-relative paths as the published pages.
+STATIC_URL = "/admin-static/"
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

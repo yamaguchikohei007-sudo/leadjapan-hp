@@ -1,0 +1,2874 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ガントチャート作成ツール | Lead Japan 合同会社</title>
+<meta name="description" content="書籍読者特典：Lead Japan 合同会社のガントチャート作成ツール">
+<meta name="theme-color" content="#10366B">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-20 -30 294 254'%3E%3Cpolygon points='0,179 57,179 178,0 123,0' fill='%2310366B'/%3E%3Cpolygon points='140,104 168,67 254,194 208,194' fill='%2310366B'/%3E%3Ccircle cx='129' cy='165' r='26' fill='%23D71920'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* =========================================================
+     Lead Japan — ガントチャート作成ツール
+     Brand: Deep Navy #10366B / Japan Red #D71920
+     ========================================================= */
+  :root{
+    --navy:#10366B;
+    --navy-700:#0B2850;
+    --navy-50:#F0F4FA;
+    --navy-100:#DDE6F2;
+    --red:#D71920;
+    --red-700:#B3141A;
+    --red-50:#FDF0F0;
+
+    --accent:var(--navy);
+    --accent-dark:var(--navy-700);
+    --bg:#FFFFFF;
+    --bg-alt:#F7F8FA;
+    --panel:#ffffff;
+    --border:#E6E8EC;
+    --border-strong:#D3D7DE;
+    --line:#F0F1F4;
+    --text:#16191F;
+    --text-2:#3D4350;
+    --muted:#6B7280;
+    --todo:#9CA3AF;
+    --doing:var(--navy);
+    --done:#1F8A5B;
+    --danger:var(--red);
+    --warn:#A16207;
+    --radius:10px;
+    --shadow-sm:0 1px 2px rgba(16,24,40,.05);
+    --shadow-pop:0 4px 16px rgba(16,24,40,.08),0 1px 3px rgba(16,24,40,.06);
+    --font:"Plus Jakarta Sans","Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--font);
+    background:var(--bg);
+    color:var(--text);
+    font-size:15px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+  button,input,select{font-family:inherit;}
+  ::selection{background:var(--navy-100);}
+
+  /* ---------- Brand bar ---------- */
+  .brandbar{border-bottom:1px solid var(--border);background:#fff;}
+  .brandbar-inner{display:flex;align-items:center;gap:16px;padding:0 32px;height:60px;}
+  .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--navy);flex-shrink:0;}
+  .brand svg{width:34px;height:26px;}
+  .brand-word{display:flex;flex-direction:column;line-height:1;}
+  .brand-name{font-size:17px;font-weight:700;letter-spacing:-.01em;}
+  .brand-sub{font-size:10px;letter-spacing:.4em;margin-top:4px;font-weight:500;}
+  .brand-divider{width:1px;height:22px;background:var(--border);}
+  .brand-product{font-size:14px;font-weight:600;color:var(--text-2);}
+  .bonus-badge{display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:999px;border:1px solid rgba(215,25,32,.3);color:var(--red-700);font-weight:700;font-size:12px;white-space:nowrap;}
+  .bonus-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--red);}
+  .bonus-badge .en{font-size:11px;letter-spacing:.12em;color:var(--muted);font-weight:600;}
+
+  #app{margin:0 auto;padding:28px 32px 40px;}
+
+  /* ---------- Page header ---------- */
+  .page-head{margin-bottom:20px;}
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px 24px;flex-wrap:wrap;margin-bottom:20px;}
+  .eyebrow{font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--muted);margin-bottom:4px;}
+  .title-row{display:flex;align-items:center;gap:4px;}
+  .project-title-input{font-family:inherit;font-size:26px;font-weight:700;letter-spacing:-.015em;line-height:1.3;color:var(--text);border:1px solid transparent;background:transparent;padding:2px 8px;margin-left:-9px;border-radius:8px;width:min(640px,80vw);transition:background .15s,border-color .15s;}
+  .project-title-input::placeholder{color:#B4BAC4;}
+  .project-title-input:hover{background:var(--bg-alt);}
+  .project-title-input:focus{background:#fff;outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(16,54,107,.1);}
+  .title-edit-hint{display:inline-flex;color:#B4BAC4;flex-shrink:0;}
+  .title-edit-hint svg{width:16px;height:16px;}
+  header.top p{margin:2px 0 0;color:var(--muted);font-size:14px;}
+
+  .project-start-row{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:8px;padding:3px 4px 3px 12px;background:#fff;}
+  .project-start-row label{font-size:13px;color:var(--muted);font-weight:600;margin-right:4px;}
+  .project-start-row input[type=date]{border:none;background:transparent;color:var(--text);font-size:14px;padding:4px 2px;font-variant-numeric:tabular-nums;}
+  .project-start-row input[type=date]:focus{outline:none;}
+  .project-start-row:focus-within{border-color:var(--navy);box-shadow:0 0 0 3px rgba(16,54,107,.1);}
+  .project-start-row .btn{border:none;padding:4px 8px;color:var(--muted);font-weight:600;}
+
+  .stats-bar{display:flex;flex-wrap:wrap;border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+  .stat-card{flex:1 1 160px;padding:14px 20px;border-left:1px solid var(--border);min-width:0;}
+  .stat-card:first-child{border-left:none;padding-left:0;}
+  .stat-card .num{font-size:24px;font-weight:700;line-height:1.2;letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--text);}
+  .stat-card .label{font-size:13px;color:var(--muted);margin-top:2px;}
+  .stat-card.overdue .num{color:var(--red);}
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 -32px 12px;padding:10px 32px;background:rgba(255,255,255,.96);}
+  .toolbar .sep{width:1px;height:20px;align-self:center;background:var(--border);margin:0 4px;}
+  .search-wrap{position:relative;display:flex;align-items:center;}
+  .search-wrap svg{position:absolute;left:10px;width:16px;height:16px;color:var(--muted);pointer-events:none;}
+  .toolbar input[type=text]{border:1px solid var(--border);background:#fff;border-radius:8px;padding:7px 12px 7px 34px;font-size:14px;width:260px;color:var(--text);transition:border-color .15s,box-shadow .15s;}
+  .toolbar input[type=text]::placeholder{color:#9CA3AF;}
+  .toolbar input[type=text]:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(16,54,107,.1);}
+  .btn{border:1px solid var(--border);background:#fff;color:var(--text-2);border-radius:8px;padding:7px 14px;font-size:14px;font-weight:600;line-height:1.3;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:background .15s,border-color .15s,color .15s;}
+  .btn svg{width:16px;height:16px;flex-shrink:0;}
+  .btn:hover{background:var(--bg-alt);color:var(--text);}
+  .btn:focus-visible,.view-toggle button:focus-visible,.menu-item:focus-visible{outline:2px solid var(--navy);outline-offset:2px;}
+  .btn.primary{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .btn.primary:hover{background:var(--navy-700);border-color:var(--navy-700);color:#fff;}
+  .btn.ghost{background:transparent;border-color:transparent;}
+  .btn.ghost:hover{background:var(--bg-alt);}
+  .btn.danger{color:var(--red);border-color:rgba(215,25,32,.3);}
+  .btn.danger:hover{background:var(--red-50);color:var(--red-700);}
+  .btn.small{padding:6px 10px;font-size:13px;}
+  .btn.icon-only{padding:6px 8px;}
+  .btn:disabled{opacity:.35;cursor:not-allowed;}
+  .btn:disabled:hover{background:#fff;color:var(--text-2);}
+  .btn.ghost:disabled:hover{background:transparent;}
+  .btn.toggle-on{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .btn .chev{width:14px;height:14px;color:var(--muted);transition:transform .15s;}
+  .menu-wrap.open > .btn .chev{transform:rotate(180deg);}
+  .menu-wrap.open > .btn{background:var(--bg-alt);color:var(--text);}
+  .view-toggle{display:inline-flex;background:var(--bg-alt);border:1px solid var(--border);border-radius:8px;padding:2px;gap:2px;}
+  .view-toggle button{border:none;background:transparent;padding:5px 12px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--muted);font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:color .15s,background .15s;}
+  .view-toggle button svg{width:15px;height:15px;}
+  .view-toggle button:hover{color:var(--text);}
+  .view-toggle button.active{background:#fff;color:var(--navy);box-shadow:0 1px 2px rgba(16,24,40,.08);}
+  .spacer{flex:1;}
+
+  /* dropdown menus */
+  .menu-wrap{position:relative;}
+  .menu-panel{display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:60;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-pop);padding:6px;min-width:220px;}
+  .menu-wrap.open > .menu-panel{display:block;animation:menuIn .12s ease-out;}
+  @keyframes menuIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+  .menu-item{display:flex;align-items:center;gap:10px;width:100%;border:none;background:transparent;padding:8px 10px;border-radius:6px;font-size:14px;color:var(--text-2);cursor:pointer;text-align:left;white-space:nowrap;}
+  .menu-item svg{width:16px;height:16px;color:var(--muted);flex-shrink:0;}
+  .menu-item:hover,.menu-item:focus{background:var(--bg-alt);color:var(--text);outline:none;}
+  .menu-item .menu-hint{margin-left:auto;padding-left:16px;font-size:12px;color:var(--muted);}
+  .menu-item.danger,.menu-item.danger svg{color:var(--red);}
+  .menu-item.danger:hover,.menu-item.danger:focus{background:var(--red-50);color:var(--red-700);}
+  .menu-divider{height:1px;background:var(--border);margin:6px 4px;}
+  .view-panel{padding:14px 16px;min-width:340px;}
+  .view-panel .view-toggle button{white-space:nowrap;padding:5px 10px;}
+  .menu-section + .menu-section{margin-top:14px;}
+  .menu-label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:6px;}
+  .view-panel .view-toggle{display:flex;}
+  .view-panel .view-toggle button{flex:1;justify-content:center;}
+  .zoom-row{display:flex;align-items:center;gap:6px;}
+  .zoom-row #btnAutoFit{margin-left:auto;}
+  .zoom-level-indicator{font-size:13px;font-weight:600;color:var(--text-2);min-width:34px;text-align:center;user-select:none;font-variant-numeric:tabular-nums;}
+
+  /* collapsible operation guide */
+  .toolbar-hint{font-size:13px;color:var(--muted);margin:0 0 12px;}
+  .toolbar-hint summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px;padding:2px 0;font-weight:600;color:var(--muted);user-select:none;}
+  .toolbar-hint summary:hover{color:var(--text);}
+  .toolbar-hint summary::-webkit-details-marker{display:none;}
+  .toolbar-hint summary svg{width:15px;height:15px;transition:transform .15s;}
+  .toolbar-hint[open] summary svg{transform:rotate(90deg);}
+  .toolbar-hint ul{margin:8px 0 4px;padding:12px 16px 12px 34px;background:var(--bg-alt);border-radius:8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:4px 32px;line-height:1.7;}
+  .toolbar-hint b{color:var(--text-2);font-weight:600;}
+  .toolbar-hint kbd{font-family:inherit;font-size:12px;background:#fff;border:1px solid var(--border);border-radius:4px;padding:0 5px;color:var(--text-2);}
+
+  .legend-row{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin:0 0 12px;font-size:13px;color:var(--muted);}
+  .legend-row .swatch{display:inline-flex;align-items:center;gap:6px;}
+  .legend-row .swatch .dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex-shrink:0;}
+
+  /* ---------- Gantt ---------- */
+  .gantt-container{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+  .gantt-scroll{display:flex;overflow:auto;max-height:70vh;background:var(--panel);}
+  .gantt-left{flex:0 0 290px;position:sticky;left:0;z-index:3;background:var(--panel);border-right:1px solid var(--border);isolation:isolate;}
+  .gantt-left-header{position:sticky;top:0;z-index:4;height:56px;background:var(--bg-alt);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;font-weight:600;font-size:13px;color:var(--muted);}
+  .gantt-left-row{height:48px;display:flex;flex-direction:column;justify-content:center;padding:0 12px;border-bottom:1px solid var(--line);position:relative;cursor:pointer;background:var(--panel);line-height:1.35;}
+  .gantt-left-row:hover{background:var(--bg-alt);}
+  .gantt-left-row.drop-target{background:var(--navy-50);box-shadow:inset 0 0 0 2px var(--navy);}
+  .gantt-left-row .name-wrap{display:flex;align-items:center;gap:6px;min-width:0;}
+  .gantt-left-row .row-drag-handle{width:13px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);cursor:grab;opacity:0;letter-spacing:-2px;transition:opacity .15s;}
+  .gantt-left-row:hover .row-drag-handle{opacity:.5;}
+  .gantt-left-row .row-drag-handle:hover{opacity:1;color:var(--navy);}
+  .gantt-left-row .row-drag-handle:active{cursor:grabbing;}
+  .gantt-left-row.dragging-row{opacity:.4;}
+  .gantt-left-row.reorder-child-target{background:var(--navy-50);box-shadow:inset 0 0 0 2px var(--navy);}
+  .reorder-indicator{position:absolute;left:0;right:0;height:0;border-top:2px solid var(--navy);pointer-events:none;z-index:6;}
+  .gantt-left-row .toggle-btn{width:14px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);cursor:pointer;}
+  .gantt-left-row .toggle-btn:hover{color:var(--text);}
+  .level-badge{font-size:12px;font-weight:600;color:var(--text-2);background:var(--bg-alt);border:1px solid var(--border);border-radius:4px;padding:0 5px;line-height:17px;flex-shrink:0;font-variant-numeric:tabular-nums;}
+  .level-badge.l1{color:var(--navy);border-color:var(--navy-100);background:var(--navy-50);}
+  .gantt-left-row .name{font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
+  .gantt-left-row.group-row .name{font-weight:700;}
+  .gantt-left-row .meta{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;}
+  .gantt-left-row .row-actions{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:none;gap:4px;background:inherit;}
+  .gantt-left-row:hover .row-actions{display:flex;}
+  .row-actions button{border:1px solid var(--border);background:#fff;border-radius:6px;width:24px;height:24px;font-size:12px;cursor:pointer;color:var(--muted);}
+  .row-actions button:hover{color:var(--navy);border-color:var(--navy-100);background:var(--navy-50);}
+
+  .gantt-right{position:relative;border-left:1px solid var(--border);isolation:isolate;}
+  .gantt-right-header{position:sticky;top:0;z-index:4;background:var(--bg-alt);}
+  .month-row{height:26px;display:flex;border-bottom:1px solid var(--border);}
+  .month-cell{border-right:1px solid var(--border);font-size:12px;color:var(--text-2);display:flex;align-items:center;padding-left:8px;font-weight:600;white-space:nowrap;overflow:hidden;}
+  .day-row{height:30px;display:flex;border-bottom:1px solid var(--border);}
+  /* nowrap: a narrow week column must never break "12/31" across two lines */
+  .day-cell{border-right:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .day-cell.weekend{color:#A0A6B1;}
+  .day-cell.today-col{color:var(--red);font-weight:700;}
+  .day-cell.week-cell{font-size:12px;}
+
+  .gantt-right-body{position:relative;background:var(--panel);}
+  .bg-grid{position:absolute;top:0;left:0;bottom:0;background:var(--panel);}
+  .bg-col{position:absolute;top:0;bottom:0;border-right:1px solid #F5F6F8;}
+  .bg-col.weekend{background:#FAFAFB;}
+  .bg-col.today-col{background:transparent;}
+  .gantt-row-line{position:absolute;left:0;right:0;border-bottom:1px solid var(--line);}
+  .month-divider{position:absolute;top:0;bottom:0;width:0;border-left:1px solid var(--border);pointer-events:none;z-index:1;}
+  /* z-index:2 puts bars above the dependency-arrow layer (z-index:1) */
+  .gantt-bar{position:absolute;height:28px;border-radius:6px;background:#DCE5F2;border:none;cursor:grab;display:flex;align-items:center;overflow:visible;user-select:none;z-index:2;transition:box-shadow .15s;}
+  .gantt-bar:hover{box-shadow:0 1px 3px rgba(16,24,40,.12);}
+  .gantt-bar-pending{position:absolute;left:0;border-radius:6px;border:1px dashed var(--border-strong);display:flex;align-items:center;padding:0 10px;font-size:12px;color:var(--muted);cursor:crosshair;background:var(--bg-alt);user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .gantt-bar-pending:hover{border-color:var(--navy);color:var(--navy);}
+  .gantt-bar:active{cursor:grabbing;}
+  /* progress = a strip along the bar's bottom edge, so the label always sits on the
+     light bar tint and stays readable in every color mode */
+  .gantt-bar .fill{position:absolute;left:0;bottom:0;top:auto;height:4px;background:var(--navy);border-radius:0 2px 2px 6px;overflow:hidden;}
+  .gantt-bar .label{position:relative;padding:0 10px 2px;font-size:12px;font-weight:600;white-space:nowrap;z-index:1;color:var(--text);pointer-events:none;overflow:hidden;text-overflow:ellipsis;}
+  .gantt-bar.status-done{background:#D6EEE1;}
+  .gantt-bar.status-done .fill{background:var(--done);}
+  .gantt-bar.status-todo{background:#E8EAEE;}
+  .gantt-bar.status-todo .fill{background:#8B93A1;}
+  .gantt-bar.group-bar{background:#E3E6EB;border-radius:3px;}
+  .gantt-bar.group-bar .fill{height:3px;background:#2F3846;border-radius:0 0 0 3px;}
+  .gantt-bar.group-bar .label{line-height:1;padding:0 6px 3px;color:var(--text-2);}
+  .gantt-bar .handle{position:absolute;top:0;bottom:0;width:8px;cursor:ew-resize;z-index:2;}
+  .gantt-bar .handle.left{left:0;}
+  .gantt-bar .handle.right{right:0;}
+  .conn-dot{position:absolute;top:50%;width:10px;height:10px;border-radius:50%;background:#fff;border:1.5px solid var(--border-strong);transform:translateY(-50%);cursor:crosshair;z-index:5;opacity:0;transition:opacity .12s;}
+  .gantt-bar:hover .conn-dot,.gantt-milestone:hover .conn-dot{opacity:1;}
+  .conn-dot:hover{opacity:1;background:var(--navy);border-color:var(--navy);}
+  .conn-dot.left{left:-6px;}
+  .conn-dot.right{right:-6px;}
+
+  /* ---------- Milestones ---------- */
+  .gantt-milestone{position:absolute;display:flex;align-items:center;justify-content:center;cursor:grab;user-select:none;z-index:2;}
+  .gantt-milestone:active{cursor:grabbing;}
+  .milestone-icon{line-height:1;text-align:center;pointer-events:none;}
+  .milestone-label{position:absolute;left:100%;top:50%;transform:translateY(-50%);margin-left:6px;white-space:nowrap;font-weight:600;color:var(--text-2);background:rgba(255,255,255,.9);padding:0 4px;border-radius:4px;pointer-events:none;}
+  .milestone-legend-icon{font-size:13px;line-height:1;margin-right:2px;}
+  .today-line{position:absolute;top:0;bottom:0;width:1.5px;background:var(--red);z-index:1;pointer-events:none;}
+  svg.deps-layer{position:absolute;top:0;left:0;pointer-events:none;z-index:1;overflow:visible;}
+  svg.deps-overlay{position:absolute;top:0;left:0;pointer-events:none;z-index:6;overflow:visible;}
+  svg.deps-svg path.dep-visible{fill:none;stroke:#B8BEC8;stroke-width:1.25;pointer-events:none;}
+  svg.deps-svg path.dep-visible.selected{stroke:var(--navy);stroke-width:2;}
+  svg.deps-svg path.dep-hit{fill:none;stroke:transparent;stroke-width:12;pointer-events:stroke;cursor:pointer;}
+  svg.deps-svg path.temp-link-path{fill:none;stroke:var(--navy);stroke-width:1.5;stroke-dasharray:4 3;pointer-events:none;}
+  svg.deps-svg .edge-handle{fill:#fff;stroke:var(--navy);stroke-width:2;cursor:grab;pointer-events:all;}
+  svg.deps-svg .edge-bend-handle{fill:var(--navy);stroke:#fff;stroke-width:2;pointer-events:all;cursor:ew-resize;}
+  svg.deps-svg .edge-bend-handle[data-mode="y"]{cursor:ns-resize;}
+  svg.deps-svg .edge-bend-handle:hover{fill:var(--navy-700);}
+  svg.deps-svg .edge-delete-btn{cursor:pointer;pointer-events:all;}
+  svg.deps-svg .edge-delete-btn circle{fill:var(--red);}
+  svg.deps-svg .edge-delete-btn text{fill:#fff;font-size:11px;font-weight:700;text-anchor:middle;dominant-baseline:central;pointer-events:none;}
+
+  .empty-state{padding:80px 20px;text-align:center;color:var(--muted);font-size:14px;line-height:1.8;}
+
+  /* ---------- Kanban ---------- */
+  .kanban{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start;}
+  .kanban-col{background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius);min-height:240px;padding:12px;transition:background .15s,border-color .15s;}
+  .kanban-col h3{margin:2px 4px 12px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--text);}
+  .kanban-col h3 .dot{width:8px;height:8px;border-radius:50%;}
+  .kanban-col.todo h3 .dot{background:var(--todo);}
+  .kanban-col.doing h3 .dot{background:var(--navy);}
+  .kanban-col.done h3 .dot{background:var(--done);}
+  .kanban-col .count{margin-left:auto;color:var(--muted);font-weight:600;font-size:13px;font-variant-numeric:tabular-nums;}
+  .kanban-col.dragover{background:var(--navy-50);border-color:var(--navy);border-style:dashed;}
+  .kcard{background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:grab;box-shadow:var(--shadow-sm);transition:border-color .15s;}
+  .kcard:hover{border-color:var(--border-strong);}
+  .kcard:active{cursor:grabbing;}
+  .kcard .title{font-weight:600;font-size:14px;margin-bottom:6px;}
+  .kcard .sub{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;margin-bottom:10px;font-variant-numeric:tabular-nums;}
+  .kcard .avatar{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;margin-right:6px;}
+  .kcard .progress-bg{height:4px;border-radius:999px;background:var(--line);overflow:hidden;}
+  .kcard .progress-fg{height:100%;background:var(--navy);border-radius:999px;}
+  .kanban-col.done .kcard .progress-fg{background:var(--done);}
+  .kcard .deps-badge{display:inline-block;margin-top:10px;font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:0 6px;}
+  .kcard .parent-tag{font-size:12px;color:var(--muted);margin-top:6px;}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{position:fixed;inset:0;background:rgba(16,24,40,.35);display:none;align-items:center;justify-content:center;z-index:50;padding:16px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:#fff;border-radius:12px;width:520px;max-width:100%;max-height:88vh;overflow:auto;padding:28px 28px 22px;box-shadow:0 12px 32px rgba(16,24,40,.16);animation:modalIn .16s ease-out;}
+  @keyframes modalIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  .modal h2{margin:0 0 20px;font-size:19px;font-weight:700;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text-2);}
+  .field input[type=text],.field input[type=date],.field input[type=number],.field select{width:100%;border:1px solid var(--border-strong);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--text);background:#fff;transition:border-color .15s,box-shadow .15s;}
+  .field input[type=text]:focus,.field input[type=date]:focus,.field input[type=number]:focus,.field select:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(16,54,107,.1);}
+  .field input:disabled,.field select:disabled{background:var(--bg-alt);color:#9CA3AF;}
+  .field input[type=checkbox],.field input[type=radio],.dep-list input,.progress-input input[type=range]{accent-color:var(--navy);}
+  .field-row{display:flex;gap:12px;}
+  .field-row .field{flex:1;}
+  .progress-input{display:flex;align-items:center;gap:12px;}
+  .progress-input input[type=range]{flex:1;}
+  .progress-input .val{width:46px;text-align:right;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;}
+  .dep-list{max-height:140px;overflow:auto;border:1px solid var(--border-strong);border-radius:8px;padding:6px 12px;}
+  .dep-list label{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:400;padding:4px 0;cursor:pointer;color:var(--text);}
+  .modal-actions{display:flex;justify-content:space-between;align-items:center;margin-top:24px;gap:8px;}
+  .modal-actions .right{display:flex;gap:8px;}
+  .modal-actions .btn{padding:8px 18px;}
+  .error-msg{color:var(--red);font-size:13px;margin-top:-6px;margin-bottom:10px;min-height:14px;}
+  .hint{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.6;}
+  .hint.warn{color:var(--warn);}
+  #fDateHint{margin:-6px 0 16px;}
+
+  /* ---------- Footer ---------- */
+  .site-footer{border-top:1px solid var(--border);}
+  .site-footer .inner{display:flex;align-items:center;gap:12px 24px;flex-wrap:wrap;padding:20px 32px;}
+  .foot-brand{display:flex;align-items:center;gap:8px;color:var(--navy);font-weight:700;font-size:14px;text-decoration:none;}
+  .foot-brand svg{width:26px;height:20px;}
+  .foot-note{font-size:12px;color:var(--muted);flex:1;min-width:240px;}
+  .copyright{font-size:12px;color:var(--muted);}
+
+  ::-webkit-scrollbar{height:10px;width:10px;}
+  ::-webkit-scrollbar-thumb{background:#D3D7DE;border-radius:8px;border:2px solid transparent;background-clip:padding-box;}
+  ::-webkit-scrollbar-thumb:hover{background:#B4BAC4;background-clip:padding-box;border:2px solid transparent;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
+  @media (max-width:860px){
+    .brandbar-inner{padding:0 16px;gap:10px;}
+    .brand-divider,.brand-product,.bonus-badge .en{display:none;}
+    #app{padding:20px 16px 28px;}
+    .toolbar{margin:0 -16px 12px;padding:10px 16px;}
+    .project-title-input{font-size:22px;width:100%;}
+    .title-edit-hint,.toolbar .sep{display:none;}
+    .search-wrap{flex:1 1 100%;order:10;}
+    .toolbar input[type=text]{width:100%;}
+    .stat-card{flex:1 1 40%;padding:12px 14px;}
+    .stat-card:first-child{padding-left:14px;}
+    .stat-card:nth-child(odd){border-left:none;}
+    .kanban{grid-template-columns:1fr;}
+    .site-footer .inner{padding:18px 16px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important;animation:none !important;}
+  }
+
+  /* ---------- Print / PDF export ----------
+     Printed output is chart-only: brand bar, toolbar, guide, stats and footer are
+     hidden, leaving just the project title, the legend and the Gantt chart itself.
+     exportPdf() measures .title-row + legend + chart to fit A3 landscape. */
+  @media print{
+    @page{ size: A3 landscape; margin: 10mm; }
+    *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; color-adjust:exact !important; }
+    body{ background:#fff; }
+    .brandbar, .site-footer, .eyebrow{ display:none !important; }
+    .toolbar, .toolbar-hint, .title-edit-hint, .sep, #kanbanView{ display:none !important; }
+    .stats-bar, header.top p, .project-start-row{ display:none !important; }
+    .page-head{ margin:0 !important; }
+    header.top{ display:block; margin-bottom:6px; }
+    .project-title-input{ border:none !important; background:transparent !important; padding:0 !important; margin:0 !important; width:100% !important; }
+    .legend-row{ margin:0 0 8px 0; }
+    #app{ max-width:none; padding:0; }
+    .gantt-container{ border:none; overflow:visible !important; }
+    .gantt-scroll{ max-height:none !important; overflow:visible !important; }
+    .gantt-left, .gantt-left-header, .gantt-right-header{ position:static !important; }
+    .row-actions, .conn-dot{ display:none !important; }
+    .gantt-left-row{ break-inside:avoid; page-break-inside:avoid; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="lj-mark" viewBox="0 0 254 194">
+      <polygon points="0,179 57,179 178,0 123,0" fill="currentColor"/>
+      <polygon points="140,104 168,67 254,194 208,194" fill="currentColor"/>
+      <circle cx="129" cy="165" r="26" fill="#D71920"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="brandbar">
+  <div class="brandbar-inner">
+    <a class="brand" href="https://leadjapan-hp.pages.dev/" target="_blank" rel="noopener" aria-label="Lead Japan 合同会社 ホームページ">
+      <svg aria-hidden="true"><use href="#lj-mark"/></svg>
+      <span class="brand-word"><span class="brand-name">Lead Japan</span><span class="brand-sub">合同会社</span></span>
+    </a>
+    <span class="brand-divider"></span>
+    <span class="brand-product">ガントチャート作成ツール</span>
+    <span class="spacer"></span>
+    <span class="bonus-badge" title="本ツールは書籍の読者特典です">書籍読者特典<span class="en">READER'S BONUS</span></span>
+  </div>
+</header>
+
+<div id="app">
+  <section class="page-head">
+    <header class="top">
+      <div>
+        <div class="eyebrow">PROJECT</div>
+        <div class="title-row">
+          <input type="text" id="projectTitle" class="project-title-input" maxlength="60" placeholder="プロジェクト名を入力" aria-label="プロジェクト名">
+          <span class="title-edit-hint" title="クリックしてプロジェクト名を編集できます"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span>
+        </div>
+        <p>タスクの管理・進捗の可視化・依存関係の追跡ができます。データはこのブラウザ内に保存されます。</p>
+      </div>
+      <div class="project-start-row" title="ガントチャートの表示開始位置の基準になります">
+        <label for="projectStartDate">開始日</label>
+        <input type="date" id="projectStartDate">
+        <button class="btn small" id="btnClearProjectStart" title="設定を解除して自動判定（今日基準）に戻す">クリア</button>
+      </div>
+    </header>
+    <div class="stats-bar" id="statsBar"></div>
+  </section>
+
+  <div class="toolbar">
+    <button class="btn primary" id="btnAddTask"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>新規タスク</button>
+    <button class="btn ghost icon-only" id="btnUndo" title="元に戻す (Ctrl+Z)" aria-label="元に戻す"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+    <button class="btn ghost icon-only" id="btnRedo" title="やり直す (Ctrl+Y / Ctrl+Shift+Z)" aria-label="やり直す"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+    <div class="sep"></div>
+    <div class="view-toggle" role="group" aria-label="表示切替">
+      <button id="btnViewGantt" class="active">ガント</button>
+      <button id="btnViewKanban">かんばん</button>
+    </div>
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="text" id="searchInput" placeholder="タスク名・担当者で検索" aria-label="タスク検索">
+    </div>
+    <div class="spacer"></div>
+
+    <div class="menu-wrap" id="viewMenuWrap">
+      <button class="btn" data-menu-toggle aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>表示<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+      <div class="menu-panel view-panel" role="dialog" aria-label="表示設定">
+        <div class="menu-section">
+          <div class="menu-label">期間</div>
+          <div class="view-toggle" id="scaleToggle">
+            <button data-scale="month" class="active">1ヶ月</button>
+            <button data-scale="quarter">四半期</button>
+            <button data-scale="halfyear">半年</button>
+            <button data-scale="year">年間</button>
+          </div>
+        </div>
+        <div class="menu-section">
+          <div class="menu-label">色分け</div>
+          <div class="view-toggle" id="colorModeToggle">
+            <button data-colormode="status" class="active">ステータス</button>
+            <button data-colormode="assignee">担当者</button>
+            <button data-colormode="wbs" title="WBS Lv1（大分類）ごとに自動で色分けします">タスク別</button>
+          </div>
+        </div>
+        <div class="menu-section">
+          <div class="menu-label">ズーム</div>
+          <div class="zoom-row">
+            <button class="btn small icon-only" id="btnZoomOut" title="縮小" aria-label="縮小"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+            <span class="zoom-level-indicator" id="zoomLevelIndicator" title="ズームレベル（5段階）">3/5</span>
+            <button class="btn small icon-only" id="btnZoomIn" title="拡大" aria-label="拡大"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+            <button class="btn small toggle-on" id="btnAutoFit" title="表示期間を画面幅に自動フィットさせます">画面に合わせる</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="menu-wrap" id="moreMenuWrap">
+      <button class="btn icon-only" data-menu-toggle aria-haspopup="menu" aria-expanded="false" aria-label="その他の操作" title="その他の操作"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+      <div class="menu-panel" role="menu" aria-label="その他の操作">
+        <button class="menu-item" role="menuitem" id="btnExportPdf" title="ガントチャート全体をA3横のPDFとして出力します"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>PDFとして出力<span class="menu-hint">A3横</span></button>
+        <button class="menu-item" role="menuitem" id="btnExportCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>CSVをエクスポート</button>
+        <button class="menu-item" role="menuitem" id="btnImportCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>CSVをインポート</button>
+        <div class="menu-divider" role="separator"></div>
+        <button class="menu-item" role="menuitem" id="btnSample"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h6M7 13h10M7 17h4"/></svg>サンプルを読み込む</button>
+        <div class="menu-divider" role="separator"></div>
+        <button class="menu-item danger" role="menuitem" id="btnClearAll"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>すべてのタスクを削除</button>
+      </div>
+    </div>
+  </div>
+
+  <details class="toolbar-hint">
+    <summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>操作ガイド</summary>
+    <ul>
+      <li>バー端の<b>丸</b>をドラッグして別タスクにドロップすると<b>依存関係</b>を作成</li>
+      <li>矢印を<b>クリック</b>で選択、<kbd>Delete</kbd>で削除、端の白丸を<b>ドラッグ</b>で付け替え</li>
+      <li>中央の丸を<b>ドラッグ</b>で曲がり位置を調整、<b>ダブルクリック</b>で自動配置に戻す</li>
+      <li>行の「＋」で子タスクを追加すると<b>Lv3</b>まで階層化できます</li>
+      <li>行左端の<b>⠿</b>をドラッグで並び替え・階層移動（上下端で並び替え、中央で子として移動）</li>
+      <li><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd> で元に戻す・やり直し</li>
+      <li>編集画面で「マイルストーンにする」を有効にすると<b>★ ● ◆</b>の記号で表示</li>
+    </ul>
+  </details>
+  <div class="legend-row" id="legendRow" style="display:none"></div>
+  <input type="file" id="csvFileInput" accept=".csv" hidden>
+
+  <div id="ganttView"></div>
+  <div id="kanbanView" style="display:none"></div>
+</div>
+
+<footer class="site-footer">
+  <div class="inner">
+    <a class="foot-brand" href="https://leadjapan-hp.pages.dev/" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#lj-mark"/></svg>Lead Japan 合同会社</a>
+    <div class="foot-note">本ツールは書籍の読者特典として提供しています。入力データはお使いのブラウザ内にのみ保存され、外部へ送信されることはありません。</div>
+    <div class="copyright">&copy; 2026 Lead Japan 合同会社 All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+/* Toolbar dropdowns (表示 / その他). Pure UI: the buttons inside keep their original
+   ids, so the app's own click handlers stay bound to them unchanged. */
+(function(){
+  var wraps = Array.prototype.slice.call(document.querySelectorAll('.menu-wrap'));
+  function toggleOf(w){ return w.querySelector('[data-menu-toggle]'); }
+  function focusables(w){ return Array.prototype.slice.call(w.querySelectorAll('.menu-panel button:not([disabled])')); }
+  function close(w, refocus){
+    if(!w.classList.contains('open')) return;
+    w.classList.remove('open');
+    toggleOf(w).setAttribute('aria-expanded','false');
+    if(refocus) toggleOf(w).focus();
+  }
+  function closeAll(except){ wraps.forEach(function(w){ if(w!==except) close(w); }); }
+  wraps.forEach(function(w){
+    var btn = toggleOf(w);
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var willOpen = !w.classList.contains('open');
+      closeAll(w);
+      w.classList.toggle('open', willOpen);
+      btn.setAttribute('aria-expanded', String(willOpen));
+      if(willOpen && e.detail===0){ var f = focusables(w)[0]; if(f) f.focus(); }
+    });
+    // action items close the menu; the 表示 panel's toggles keep it open for repeated tweaks
+    w.querySelector('.menu-panel').addEventListener('click', function(e){
+      if(e.target.closest('.menu-item')) close(w);
+    });
+  });
+  document.addEventListener('click', function(e){
+    wraps.forEach(function(w){ if(!w.contains(e.target)) close(w); });
+  });
+  document.addEventListener('keydown', function(e){
+    var w = wraps.filter(function(x){ return x.classList.contains('open'); })[0];
+    if(!w) return;
+    if(e.key==='Escape'){ e.stopPropagation(); close(w, true); return; }
+    if(e.key==='ArrowDown' || e.key==='ArrowUp'){
+      var items = focusables(w); if(!items.length) return;
+      var i = items.indexOf(document.activeElement);
+      i = e.key==='ArrowDown' ? (i+1) % items.length : (i<=0 ? items.length-1 : i-1);
+      items[i].focus(); e.preventDefault();
+    }
+  }, true);
+})();
+</script>
+
+
+<div class="modal-overlay" id="taskModal">
+  <div class="modal">
+    <h2 id="modalTitle">新規タスク</h2>
+    <div class="field">
+      <label>タスク名 <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="fName" placeholder="例）要件定義">
+    </div>
+    <div class="field checkbox-field" id="fieldMilestoneCheckboxWrap">
+      <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;">
+        <input type="checkbox" id="fIsMilestone" style="width:auto;">
+        このタスクをマイルストーンにする（★/●/◆の印で表示）
+      </label>
+    </div>
+    <div id="fieldsAssigneeStatus">
+      <div class="field-row">
+        <div class="field">
+          <label>担当者</label>
+          <input type="text" id="fAssignee" placeholder="例）山口">
+        </div>
+        <div class="field">
+          <label>ステータス</label>
+          <select id="fStatus">
+            <option value="todo">未着手</option>
+            <option value="doing">進行中</option>
+            <option value="done">完了</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label>親タスク（任意・最大Lv3まで）</label>
+      <select id="fParent"></select>
+    </div>
+    <div id="fieldsDates">
+      <div class="field-row">
+        <div class="field">
+          <label>開始日</label>
+          <input type="date" id="fStart">
+        </div>
+        <div class="field">
+          <label>終了日</label>
+          <input type="date" id="fEnd">
+        </div>
+      </div>
+      <div class="hint" id="fDateHint" style="display:none">空欄のまま保存すると、あとでガントチャート上の希望の日付をクリックしてバーを配置できます。</div>
+    </div>
+    <div id="fieldsMilestoneDate" style="display:none">
+      <div class="field">
+        <label>マイルストーン日</label>
+        <input type="date" id="fMilestoneDate">
+        <div class="hint">空欄のまま保存すると、あとでガントチャート上の希望の日付をクリックして配置できます。</div>
+      </div>
+      <div class="field">
+        <label>アイコン</label>
+        <div class="icon-choice-row" style="display:flex;gap:14px;padding:4px 0;">
+          <label style="display:flex;align-items:center;gap:5px;font-weight:400;cursor:pointer;"><input type="radio" name="fMilestoneIcon" value="star" style="width:auto;"> <span style="color:#c99a2e;font-size:15px;">★</span> 星</label>
+          <label style="display:flex;align-items:center;gap:5px;font-weight:400;cursor:pointer;"><input type="radio" name="fMilestoneIcon" value="circle" style="width:auto;"> <span style="color:#D71920;font-size:15px;">●</span> 丸</label>
+          <label style="display:flex;align-items:center;gap:5px;font-weight:400;cursor:pointer;"><input type="radio" name="fMilestoneIcon" value="diamond" style="width:auto;" checked> <span style="color:#10366B;font-size:15px;">◆</span> ダイヤ</label>
+        </div>
+      </div>
+    </div>
+    <div id="fieldsProgress">
+      <div class="field">
+        <label>進捗率</label>
+        <div class="progress-input">
+          <input type="range" id="fProgressRange" min="0" max="100" step="5">
+          <span class="val" id="fProgressVal">0%</span>
+        </div>
+        <div class="hint warn" id="fRollupNote" style="display:none">この項目は子タスクの日程・進捗から自動計算されるため編集できません。</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>依存タスク（先行タスク）</label>
+      <div class="dep-list" id="depList"></div>
+      <div class="hint">選択したタスクが完了してから、このタスクが始まる想定として矢印表示されます</div>
+    </div>
+    <div class="error-msg" id="formError"></div>
+    <div class="modal-actions">
+      <div>
+        <button class="btn danger" id="btnDeleteTask" style="display:none">削除</button>
+      </div>
+      <div class="right">
+        <button class="btn ghost" id="btnCancelModal">キャンセル</button>
+        <button class="btn primary" id="btnSaveTask">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Utilities ---------------- */
+  function pad(n){return n<10?"0"+n:""+n;}
+  function toISO(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+  function parseISO(s){
+    var p=s.split("-").map(Number);
+    return new Date(p[0],p[1]-1,p[2]);
+  }
+  function addDays(d,n){var r=new Date(d.getTime());r.setDate(r.getDate()+n);return r;}
+  function dayDiff(a,b){
+    var da=new Date(a.getFullYear(),a.getMonth(),a.getDate());
+    var db=new Date(b.getFullYear(),b.getMonth(),b.getDate());
+    return Math.round((db-da)/86400000);
+  }
+  function todayDate(){var t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate());}
+  function genId(){return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+  function escapeHtml(s){
+    return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+  function hexToRgb(hex){
+    hex = String(hex||'').replace('#','');
+    if(hex.length===3){ hex = hex.split('').map(function(c){return c+c;}).join(''); }
+    var num = parseInt(hex,16) || 0;
+    return {r:(num>>16)&255, g:(num>>8)&255, b:num&255};
+  }
+  // mixes a hex color toward white (amt 0-1) — used to give assignee-colored bars a
+  // pale "not started yet" tone so an assigned-but-untouched (0% progress) task is
+  // still visibly tinted instead of falling back to plain grey.
+  function tintTowardWhite(hex, amt){
+    var c = hexToRgb(hex);
+    function mix(v){ return Math.round(v+(255-v)*amt); }
+    return 'rgb('+mix(c.r)+','+mix(c.g)+','+mix(c.b)+')';
+  }
+  function shadeTowardBlack(hex, amt){
+    var c = hexToRgb(hex);
+    function mix(v){ return Math.round(v*(1-amt)); }
+    return 'rgb('+mix(c.r)+','+mix(c.g)+','+mix(c.b)+')';
+  }
+
+  /* ---------------- State ---------------- */
+  var STORAGE_KEY = 'ganttAppData_v2';
+  var TITLE_KEY = 'ganttAppTitle_v1';
+  var PROJECT_START_KEY = 'ganttAppProjectStart_v1';
+  var DEFAULT_TITLE = 'マイプロジェクト';
+  var TITLE_SUFFIX = ' | ガントチャート作成ツール';
+  var SCALE_DAY_WIDTH = {month:32, quarter:11, halfyear:6, year:3.4};
+  var SCALE_MIN_DAYS = {month:35, quarter:93, halfyear:186, year:366};
+  // discrete zoom: 5 fixed multiplier levels applied on top of the current scale's base
+  // day-width; index 2 (the middle) is 1x — i.e. the scale's normal size.
+  var ZOOM_LEVELS = [0.5, 0.75, 1, 1.5, 2];
+  // base (1x) sizes for everything the zoom level also scales vertically: row height,
+  // bar height, and font sizes — so zooming affects the whole chart, not just day-width.
+  var ZOOM_BASE = {
+    rowH:48, barLeafH:28, barGroupH:18, leftHeaderH:56, monthRowH:26, dayRowH:30,
+    fontName:14, fontMeta:12, fontBarLabel:12, fontMonth:12, fontDay:12
+  };
+  var ASSIGNEE_PALETTE = ['#10366B','#2E7DAF','#1E8E5A','#7A4FA3','#C27C1E','#5B6B8C','#18929E','#A3485A','#6B8E23','#7C6A55'];
+  var UNASSIGNED_COLOR = '#9AA3B2';
+  // fixed shape→color mapping for milestones — deliberately not user-customizable so
+  // the same shape always means the same color everywhere in the app (list, chart, legend).
+  var MILESTONE_ICONS = {
+    star:    {glyph:'★', color:'#C99A2E', label:'星'},
+    circle:  {glyph:'●', color:'#D71920', label:'丸'},
+    diamond: {glyph:'◆', color:'#10366B', label:'ダイヤ'}
+  };
+  var state = {
+    tasks: [],
+    view: 'gantt',
+    scale: 'month',
+    dayWidth: 32,
+    zoomIndex: 2,
+    autoFit: true,
+    colorMode: 'status',   // 'status' | 'assignee' | 'wbs' (WBS Lv1 group)
+    search: '',
+    editingId: null,
+    collapsed: {},        // taskId -> true if collapsed
+    selectedEdge: null,    // {from, to} or null
+    projectStartDate: null // ISO date string or null — anchors computeRange()'s display start when set
+  };
+
+  function computeScaledDayWidth(){
+    var base = SCALE_DAY_WIDTH[state.scale] || 32;
+    var mult = zoomMult();
+    return clamp(base * mult, 2, 90);
+  }
+  function zoomMult(){
+    var m = ZOOM_LEVELS[state.zoomIndex];
+    return m !== undefined ? m : 1;
+  }
+  // vertical/font metrics for the current zoom level — kept in their own object so
+  // renderGantt() can read one thing instead of repeating clamp() math everywhere.
+  function computeZoomMetrics(){
+    var vz = zoomMult();
+    function px(base, min, max){ return clamp(Math.round(base*vz), min, max); }
+    function fs(base, min, max){ return clamp(Math.round(base*vz*10)/10, min, max); }
+    return {
+      rowH: px(ZOOM_BASE.rowH, 22, 92),
+      barLeafH: px(ZOOM_BASE.barLeafH, 12, 62),
+      barGroupH: px(ZOOM_BASE.barGroupH, 8, 40),
+      leftHeaderH: px(ZOOM_BASE.leftHeaderH, 36, 84),
+      monthRowH: px(ZOOM_BASE.monthRowH, 16, 48),
+      dayRowH: px(ZOOM_BASE.dayRowH, 18, 56),
+      fontName: fs(ZOOM_BASE.fontName, 10, 22),
+      fontMeta: fs(ZOOM_BASE.fontMeta, 8, 18),
+      fontBarLabel: fs(ZOOM_BASE.fontBarLabel, 8, 20),
+      fontMonth: fs(ZOOM_BASE.fontMonth, 8, 18),
+      fontDay: fs(ZOOM_BASE.fontDay, 8, 18)
+    };
+  }
+
+  function saveTasks(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks)); }catch(e){ /* ignore */ }
+    recordHistory();
+  }
+
+  /* ---------------- Undo / Redo ----------------
+     Every call to saveTasks() represents one "completed" change, so we snapshot
+     state.tasks right there. Undo/redo just walk a pointer through those snapshots.
+     isRestoring guards against undo/redo's own saveTasks() call re-recording itself. */
+  var isRestoring = false;
+  var MAX_HISTORY = 100;
+  function cloneTasks(tasks){ return JSON.parse(JSON.stringify(tasks)); }
+  function recordHistory(){
+    if(isRestoring) return;
+    if(!state.history){ state.history = []; state.historyIndex = -1; }
+    // drop any redo branch beyond the current point
+    state.history = state.history.slice(0, state.historyIndex+1);
+    state.history.push(cloneTasks(state.tasks));
+    if(state.history.length > MAX_HISTORY){
+      state.history.splice(0, state.history.length - MAX_HISTORY);
+    }
+    state.historyIndex = state.history.length - 1;
+    updateUndoRedoButtons();
+  }
+  function undo(){
+    if(!state.history || state.historyIndex<=0) return;
+    isRestoring = true;
+    state.historyIndex--;
+    state.tasks = cloneTasks(state.history[state.historyIndex]);
+    saveTasks();
+    isRestoring = false;
+    state.selectedEdge = null;
+    renderAll();
+    updateUndoRedoButtons();
+  }
+  function redo(){
+    if(!state.history || state.historyIndex >= state.history.length-1) return;
+    isRestoring = true;
+    state.historyIndex++;
+    state.tasks = cloneTasks(state.history[state.historyIndex]);
+    saveTasks();
+    isRestoring = false;
+    state.selectedEdge = null;
+    renderAll();
+    updateUndoRedoButtons();
+  }
+  function updateUndoRedoButtons(){
+    var u = document.getElementById('btnUndo');
+    var r = document.getElementById('btnRedo');
+    if(u) u.disabled = !state.history || state.historyIndex<=0;
+    if(r) r.disabled = !state.history || state.historyIndex>=state.history.length-1;
+  }
+  function loadTasks(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){ state.tasks = JSON.parse(raw); return true; }
+    }catch(e){}
+    return false;
+  }
+  function loadTitle(){
+    try{ return localStorage.getItem(TITLE_KEY); }catch(e){ return null; }
+  }
+  function saveTitle(v){
+    try{ localStorage.setItem(TITLE_KEY, v); }catch(e){}
+  }
+  function loadProjectStartDate(){
+    try{ return localStorage.getItem(PROJECT_START_KEY) || null; }catch(e){ return null; }
+  }
+  function saveProjectStartDate(v){
+    try{
+      if(v){ localStorage.setItem(PROJECT_START_KEY, v); }
+      else { localStorage.removeItem(PROJECT_START_KEY); }
+    }catch(e){}
+  }
+  function bindProjectTitle(){
+    var input = document.getElementById('projectTitle');
+    var saved = loadTitle();
+    input.value = saved || DEFAULT_TITLE;
+    document.title = input.value + TITLE_SUFFIX;
+    input.addEventListener('input', function(){
+      document.title = (this.value.trim() || DEFAULT_TITLE) + TITLE_SUFFIX;
+    });
+    input.addEventListener('blur', function(){
+      var v = this.value.trim();
+      if(!v){ v = DEFAULT_TITLE; this.value = v; }
+      saveTitle(v);
+      document.title = v + TITLE_SUFFIX;
+    });
+    input.addEventListener('keydown', function(e){
+      if(e.key==='Enter'){ this.blur(); }
+    });
+  }
+
+  function bindProjectStartDate(){
+    var input = document.getElementById('projectStartDate');
+    state.projectStartDate = loadProjectStartDate();
+    input.value = state.projectStartDate || '';
+    input.addEventListener('change', function(){
+      state.projectStartDate = this.value || null;
+      saveProjectStartDate(state.projectStartDate);
+      renderAll();
+    });
+    document.getElementById('btnClearProjectStart').addEventListener('click', function(){
+      state.projectStartDate = null;
+      input.value = '';
+      saveProjectStartDate(null);
+      renderAll();
+    });
+  }
+
+  function sampleData(){
+    var today = todayDate();
+    function d(offset){ return toISO(addDays(today, offset)); }
+    var t1 = genId();          // 要件定義 (L1)
+    var tDesign = genId();     // 設計フェーズ (L1, group)
+    var t2 = genId();          // 画面設計 (L2, group)
+    var t2a = genId();         // ワイヤーフレーム作成 (L3)
+    var t2b = genId();         // UIデザイン (L3)
+    var t3 = genId();          // API設計 (L2, leaf)
+    var t4 = genId();          // 実装 (L1)
+    var t5 = genId();          // テスト・リリース (L1)
+    var m1 = genId();          // キックオフ (milestone, star, already reached)
+    var m2 = genId();          // 本番リリース (milestone, diamond, upcoming)
+    return [
+      {id:t1, name:'要件定義', assignee:'山口', start:d(-6), end:d(-2), progress:100, status:'done', deps:[], parentId:null},
+      {id:m1, name:'キックオフ', start:d(-6), end:d(-6), status:'todo', progress:0, deps:[], parentId:null, isMilestone:true, milestoneIcon:'star'},
+      {id:tDesign, name:'設計フェーズ', assignee:'田中', start:d(-2), end:d(4), progress:0, status:'doing', deps:[t1], parentId:null},
+      {id:t2, name:'画面設計', assignee:'田中', start:d(-2), end:d(4), progress:0, status:'doing', deps:[], parentId:tDesign},
+      {id:t2a, name:'ワイヤーフレーム作成', assignee:'田中', start:d(-2), end:d(0), progress:100, status:'done', deps:[], parentId:t2},
+      {id:t2b, name:'UIデザイン', assignee:'鈴木', start:d(0), end:d(4), progress:50, status:'doing', deps:[t2a], parentId:t2},
+      {id:t3, name:'API設計', assignee:'佐藤', start:d(-1), end:d(3), progress:50, status:'doing', deps:[t1], parentId:tDesign},
+      {id:t4, name:'実装', assignee:'田中', start:d(4), end:d(11), progress:10, status:'todo', deps:[tDesign], parentId:null},
+      {id:t5, name:'テスト・リリース', assignee:'佐藤', start:d(11), end:d(15), progress:0, status:'todo', deps:[t4], parentId:null},
+      {id:m2, name:'本番リリース', start:d(15), end:d(15), status:'todo', progress:0, deps:[t5], parentId:null, isMilestone:true, milestoneIcon:'diamond'}
+    ];
+  }
+
+  /* ---------------- Init ---------------- */
+  function init(){
+    var had = loadTasks();
+    // an empty saved list means the user cleared every task: keep it empty
+    if(!had || !Array.isArray(state.tasks)){
+      state.tasks = sampleData();
+      saveTasks();
+    }
+    state.tasks.forEach(function(t){ if(t.parentId===undefined) t.parentId = null; });
+    state.history = [cloneTasks(state.tasks)];
+    state.historyIndex = 0;
+    state.dayWidth = computeScaledDayWidth();
+    bindProjectTitle();
+    bindProjectStartDate();
+    bindToolbar();
+    bindModal();
+    bindGlobalEdgeHandlers();
+    bindResizeAutoFit();
+    renderAll();
+    updateUndoRedoButtons();
+  }
+
+  /* ---------------- Derived helpers ---------------- */
+  function getTask(id){
+    for(var i=0;i<state.tasks.length;i++){ if(state.tasks[i].id===id) return state.tasks[i]; }
+    return null;
+  }
+  function hasChildren(id){
+    return state.tasks.some(function(t){ return t.parentId===id; });
+  }
+  function getChildren(id){
+    return state.tasks.filter(function(t){ return t.parentId===id; });
+  }
+  function getDescendantIds(id){
+    var result = [];
+    getChildren(id).forEach(function(t){
+      result.push(t.id);
+      result = result.concat(getDescendantIds(t.id));
+    });
+    return result;
+  }
+  function getAncestorIds(task){
+    var ids = [];
+    var cur = task;
+    var guard = 0;
+    while(cur && cur.parentId && guard < 12){
+      ids.push(cur.parentId);
+      cur = getTask(cur.parentId);
+      guard++;
+    }
+    return ids;
+  }
+  function levelOf(task){
+    var lvl = 1, cur = task, guard = 0;
+    while(cur && cur.parentId && guard < 12){
+      lvl++; cur = getTask(cur.parentId); guard++;
+    }
+    return lvl;
+  }
+  function subtreeHeight(task){
+    var children = getChildren(task.id);
+    if(children.length===0) return 0;
+    var maxH = 0;
+    children.forEach(function(c){ maxH = Math.max(maxH, subtreeHeight(c)); });
+    return 1 + maxH;
+  }
+  function leafTasks(){
+    return state.tasks.filter(function(t){ return !hasChildren(t.id); });
+  }
+  // human-readable hierarchy number, e.g. "1", "1.2", "1.2.1" — used in the UI badge and CSV output
+  // instead of internal task IDs, so parent/child structure is recognizable at a glance.
+  function computeWbsMap(){
+    var map = {};
+    var idx = buildChildrenIndex();
+    function assign(key, prefix){
+      (idx[key]||[]).forEach(function(t, i){
+        var num = prefix ? (prefix+'.'+(i+1)) : String(i+1);
+        map[t.id] = num;
+        assign(t.id, num);
+      });
+    }
+    assign('__root__', '');
+    return map;
+  }
+  // deterministic color per assignee name, sorted alphabetically so the same
+  // set of people always gets the same colors regardless of task order.
+  function getAssigneeColorMap(){
+    var names = {};
+    state.tasks.forEach(function(t){ if(t.assignee) names[t.assignee] = true; });
+    var sorted = Object.keys(names).sort();
+    var map = {};
+    sorted.forEach(function(n,i){ map[n] = ASSIGNEE_PALETTE[i % ASSIGNEE_PALETTE.length]; });
+    return map;
+  }
+  // Walks up the parent chain to the WBS Lv1 ancestor (the "1", "2", "3"… top-level
+  // task). A Lv1 task is its own root, so it shares a color with its whole subtree.
+  function rootAncestorOf(task){
+    var cur = task, guard = 0;
+    while(cur && cur.parentId && guard < 12){
+      var parent = getTask(cur.parentId);
+      if(!parent) break;
+      cur = parent; guard++;
+    }
+    return cur;
+  }
+  // Color map for the "タスク色分け" mode: every Lv1 group gets its own palette color
+  // and passes it down to all of its descendants, so each major work stream reads as
+  // one color band across the chart. Returns { byTask: {taskId:color}, groups:[{id,name,color}] }.
+  function getWbsGroupColorMap(){
+    var roots = state.tasks.filter(function(t){ return !t.parentId; });
+    var wbsMap = computeWbsMap();
+    var colorByRoot = {};
+    var groups = [];
+    roots.forEach(function(r,i){
+      var c = ASSIGNEE_PALETTE[i % ASSIGNEE_PALETTE.length];
+      colorByRoot[r.id] = c;
+      // Lv1 milestones are drawn as their own fixed-color icon rather than a colored
+      // bar, so listing them in the legend would show a swatch that never appears on
+      // the chart. They still take a palette slot, which keeps each group's color tied
+      // to its WBS position (and therefore stable as milestones are added/removed).
+      if(!r.isMilestone) groups.push({ id:r.id, name:r.name, color:c, wbs:(wbsMap[r.id]||String(i+1)) });
+    });
+    var byTask = {};
+    state.tasks.forEach(function(t){
+      var root = rootAncestorOf(t);
+      if(root && colorByRoot[root.id]) byTask[t.id] = colorByRoot[root.id];
+    });
+    return { byTask: byTask, groups: groups };
+  }
+  function getEffective(task){
+    var children = getChildren(task.id);
+    if(children.length===0){
+      if(task.isMilestone){
+        // milestones have no user-editable progress — derive it from whether the
+        // milestone date has passed yet, so parent rollups still get a sane number.
+        var achievedProg = (task.start && task.end && parseISO(task.end) <= todayDate()) ? 100 : 0;
+        return {start:task.start||null, end:task.end||null, progress:achievedProg};
+      }
+      return {start:task.start||null, end:task.end||null, progress: clamp(Number(task.progress)||0,0,100)};
+    }
+    var starts=[], ends=[], totalDur=0, weighted=0;
+    children.forEach(function(c){
+      var eff = getEffective(c);
+      if(!eff.start || !eff.end) return; // child hasn't been placed on the calendar yet
+      var s = parseISO(eff.start), e = parseISO(eff.end);
+      starts.push(s.getTime()); ends.push(e.getTime());
+      var dur = dayDiff(s,e)+1;
+      totalDur += dur;
+      weighted += dur*eff.progress;
+    });
+    if(starts.length===0){
+      return {start:null, end:null, progress:0};
+    }
+    var start = new Date(Math.min.apply(null, starts));
+    var end = new Date(Math.max.apply(null, ends));
+    return {start: toISO(start), end: toISO(end), progress: totalDur? Math.round(weighted/totalDur) : 0};
+  }
+
+  // dependency-graph helpers (independent from parent/child hierarchy)
+  function successorsOf(id){
+    return state.tasks.filter(function(t){ return (t.deps||[]).indexOf(id)>=0; }).map(function(t){ return t.id; });
+  }
+  function isReachable(startId, targetId){
+    var visited = {}, stack = [startId];
+    while(stack.length){
+      var cur = stack.pop();
+      if(cur===targetId) return true;
+      if(visited[cur]) continue;
+      visited[cur] = true;
+      successorsOf(cur).forEach(function(n){ if(!visited[n]) stack.push(n); });
+    }
+    return false;
+  }
+  function wouldCreateCycle(fromId, toId){
+    if(fromId===toId) return true;
+    return isReachable(toId, fromId);
+  }
+
+  function validParentOptions(excludeTaskId){
+    var excludeSet = {};
+    var selfHeight = 0;
+    if(excludeTaskId){
+      excludeSet[excludeTaskId] = true;
+      getDescendantIds(excludeTaskId).forEach(function(id){ excludeSet[id]=true; });
+      var selfTask = getTask(excludeTaskId);
+      if(selfTask) selfHeight = subtreeHeight(selfTask);
+    }
+    return state.tasks.filter(function(t){
+      if(excludeSet[t.id]) return false;
+      if(t.isMilestone) return false; // a point-in-time marker can't hold child tasks
+      var parentLevel = levelOf(t);
+      return (parentLevel + 1 + selfHeight) <= 3;
+    });
+  }
+
+  function filteredSearchMatch(t, q){
+    return (t.name||'').toLowerCase().indexOf(q)>=0 || (t.assignee||'').toLowerCase().indexOf(q)>=0;
+  }
+  function buildChildrenIndex(){
+    var idx = {};
+    state.tasks.forEach(function(t){
+      var key = t.parentId || '__root__';
+      (idx[key] = idx[key] || []).push(t);
+    });
+    return idx;
+  }
+  function orderedVisibleTasks(){
+    var idx = buildChildrenIndex();
+    var q = state.search.trim().toLowerCase();
+    var requiredIds = null;
+    if(q){
+      requiredIds = {};
+      state.tasks.filter(function(t){ return filteredSearchMatch(t,q); }).forEach(function(t){
+        requiredIds[t.id] = true;
+        getAncestorIds(t).forEach(function(id){ requiredIds[id]=true; });
+      });
+    }
+    var result = [];
+    function visit(key, level){
+      (idx[key]||[]).forEach(function(t){
+        if(requiredIds && !requiredIds[t.id]) return;
+        var childList = idx[t.id] || [];
+        var hc = childList.length>0;
+        result.push({task:t, level:level, hasChildren:hc});
+        if(hc && (requiredIds || !state.collapsed[t.id])){
+          visit(t.id, level+1);
+        }
+      });
+    }
+    visit('__root__', 1);
+    return result;
+  }
+  // leaf tasks that behave like "normal" tasks for status/progress purposes —
+  // milestones are leaves too, but have no status/progress of their own, so the
+  // Kanban board (status-column based) and the regular task stat cards exclude them.
+  function regularLeafTasks(){
+    return leafTasks().filter(function(t){ return !t.isMilestone; });
+  }
+  function filteredLeafTasks(){
+    var q = state.search.trim().toLowerCase();
+    var leaves = regularLeafTasks();
+    if(!q) return leaves;
+    return leaves.filter(function(t){ return filteredSearchMatch(t,q); });
+  }
+
+  function computeRange(){
+    var today = todayDate();
+    var leaves = leafTasks().filter(function(t){ return t.start && t.end; });
+    var projStart = state.projectStartDate ? parseISO(state.projectStartDate) : null;
+    var minS, maxE;
+    if(leaves.length===0){
+      if(projStart){
+        // no tasks yet — anchor the whole default window to the declared project
+        // start date instead of "today", so a not-yet-started project's timeline
+        // still begins where it's actually supposed to.
+        minS = projStart;
+        maxE = addDays(projStart, 24);
+      } else {
+        minS = addDays(today,-3);
+        maxE = addDays(today,21);
+      }
+    } else {
+      minS = null; maxE = null;
+      leaves.forEach(function(t){
+        var s = parseISO(t.start), e = parseISO(t.end);
+        if(minS===null || s<minS) minS = s;
+        if(maxE===null || e>maxE) maxE = e;
+      });
+      maxE = addDays(maxE,4);
+      if(projStart){
+        // the project start date is the basis for the display's left edge — only
+        // extend earlier than it if an actual task starts before it (so nothing
+        // gets clipped), never add the old "-3 day" today-relative padding.
+        if(projStart < minS) minS = projStart;
+      } else {
+        minS = addDays(minS,-3);
+        if(minS>addDays(today,-3)) minS = addDays(today,-3);
+      }
+      if(maxE<addDays(today,7)) maxE = addDays(today,7);
+    }
+    // widen to guarantee at least the selected scale's window is visible
+    // (e.g. 年間 always shows a full year of blank timeline to plan into)
+    var minWindow = SCALE_MIN_DAYS[state.scale] || 35;
+    if(dayDiff(minS,maxE)+1 < minWindow){
+      maxE = addDays(minS, minWindow-1);
+    }
+    return {start:minS, end:maxE};
+  }
+
+  // computes the day-width needed so the current date range fits exactly within
+  // the visible viewport width (no horizontal scrolling required).
+  function computeFitDayWidth(){
+    var range = computeRange();
+    var totalDays = dayDiff(range.start, range.end) + 1;
+    var viewEl = document.getElementById('ganttView');
+    var containerWidth = (viewEl && viewEl.clientWidth) ? viewEl.clientWidth : 1160;
+    var leftPanelWidth = 290;
+    var fudge = 18; // border + potential scrollbar allowance
+    var availWidth = containerWidth - leftPanelWidth - fudge;
+    if(availWidth < 100) availWidth = 100;
+    return clamp(availWidth / totalDays, 2, 90);
+  }
+  function bindResizeAutoFit(){
+    var t = null;
+    window.addEventListener('resize', function(){
+      clearTimeout(t);
+      t = setTimeout(function(){
+        if(state.autoFit) renderAll();
+      }, 150);
+    });
+  }
+
+  /* ---------------- Stats ---------------- */
+  function renderStats(){
+    var el = document.getElementById('statsBar');
+    var leaves = regularLeafTasks();
+    var total = leaves.length;
+    var done = leaves.filter(function(t){return t.status==='done';}).length;
+    var avgProgress = total? Math.round(leaves.reduce(function(s,t){return s+(clamp(Number(t.progress)||0,0,100));},0)/total) : 0;
+    var today = todayDate();
+    var overdue = leaves.filter(function(t){
+      return t.status!=='done' && t.end && parseISO(t.end) < today;
+    }).length;
+    var milestones = leafTasks().filter(function(t){ return t.isMilestone; });
+    var milestonesHtml = '';
+    if(milestones.length>0){
+      var reached = milestones.filter(function(t){ return t.end && parseISO(t.end) <= today; }).length;
+      milestonesHtml = statCard(reached+' / '+milestones.length,'マイルストーン（到達/全体）');
+    }
+    el.innerHTML =
+      statCard(total,'総タスク数（末端）') +
+      statCard(done,'完了タスク') +
+      statCard(avgProgress+'%','平均進捗率') +
+      statCard(overdue,'期限超過', overdue>0) +
+      milestonesHtml;
+  }
+  function statCard(num,label,danger){
+    return '<div class="stat-card'+(danger?' overdue':'')+'"><div class="num">'+num+'</div><div class="label">'+label+'</div></div>';
+  }
+
+  /* ---------------- Render dispatcher ---------------- */
+  function renderAll(){
+    if(state.selectedEdge){
+      var toT = getTask(state.selectedEdge.to);
+      if(!toT || (toT.deps||[]).indexOf(state.selectedEdge.from)<0){ state.selectedEdge = null; }
+    }
+    renderStats();
+    document.getElementById('ganttView').style.display = state.view==='gantt' ? '' : 'none';
+    document.getElementById('kanbanView').style.display = state.view==='kanban' ? '' : 'none';
+    document.getElementById('btnViewGantt').classList.toggle('active', state.view==='gantt');
+    document.getElementById('btnViewKanban').classList.toggle('active', state.view==='kanban');
+    ['scaleToggle','btnZoomOut','btnZoomIn','zoomLevelIndicator','btnAutoFit','ganttOnlySep1','ganttOnlySep2','ganttOnlySep3','ganttOnlySep4','colorModeToggle','viewMenuWrap'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.style.display = state.view==='gantt' ? '' : 'none';
+    });
+    if(state.view==='gantt'){
+      if(state.autoFit){ state.dayWidth = computeFitDayWidth(); }
+      var zoomIndicator = document.getElementById('zoomLevelIndicator');
+      if(zoomIndicator) zoomIndicator.textContent = (state.zoomIndex+1)+'/'+ZOOM_LEVELS.length;
+      var btnZoomIn = document.getElementById('btnZoomIn');
+      var btnZoomOut = document.getElementById('btnZoomOut');
+      if(btnZoomIn) btnZoomIn.disabled = state.autoFit || state.zoomIndex>=ZOOM_LEVELS.length-1;
+      if(btnZoomOut) btnZoomOut.disabled = state.autoFit || state.zoomIndex<=0;
+      renderGantt();
+    } else {
+      renderKanban();
+    }
+  }
+
+  function renderLegend(assigneeColorMap, hasMilestones, wbsColorMap){
+    var el = document.getElementById('legendRow');
+    var parts = [];
+    if(assigneeColorMap && Object.keys(assigneeColorMap).length>0){
+      var names = Object.keys(assigneeColorMap).sort();
+      parts = parts.concat(names.map(function(n){
+        return '<span class="swatch"><span class="dot" style="background:'+assigneeColorMap[n]+'"></span>'+escapeHtml(n)+'</span>';
+      }));
+      parts.push('<span class="swatch"><span class="dot" style="background:'+UNASSIGNED_COLOR+'"></span>未割当</span>');
+    }
+    if(wbsColorMap && wbsColorMap.groups.length>0){
+      parts = parts.concat(wbsColorMap.groups.map(function(g){
+        return '<span class="swatch"><span class="dot" style="background:'+g.color+'"></span>'+escapeHtml(g.wbs)+'. '+escapeHtml(g.name)+'</span>';
+      }));
+    }
+    if(hasMilestones){
+      Object.keys(MILESTONE_ICONS).forEach(function(key){
+        var ic = MILESTONE_ICONS[key];
+        parts.push('<span class="swatch"><span class="milestone-legend-icon" style="color:'+ic.color+'">'+ic.glyph+'</span>マイルストーン（'+ic.label+'）</span>');
+      });
+    }
+    if(parts.length===0){
+      el.style.display = 'none';
+      el.innerHTML = '';
+      return;
+    }
+    el.innerHTML = parts.join('');
+    el.style.display = '';
+  }
+
+  /* ================= GANTT ================= */
+  function renderGantt(){
+    var container = document.getElementById('ganttView');
+    var prevScrollEl = container.querySelector('.gantt-scroll');
+    var prevScrollTop = prevScrollEl ? prevScrollEl.scrollTop : 0;
+    var prevScrollLeft = prevScrollEl ? prevScrollEl.scrollLeft : 0;
+    var entries = orderedVisibleTasks();
+    var assigneeColorMap = state.colorMode==='assignee' ? getAssigneeColorMap() : null;
+    var wbsColorMap = state.colorMode==='wbs' ? getWbsGroupColorMap() : null;
+    var hasMilestones = state.tasks.some(function(t){ return t.isMilestone; });
+    renderLegend(assigneeColorMap, hasMilestones, wbsColorMap);
+
+    if(state.tasks.length===0){
+      container.innerHTML = '<div class="gantt-container"><div class="empty-state">タスクがまだありません。「＋ 新規タスク」から追加するか、「サンプルを読込」をお試しください。</div></div>';
+      return;
+    }
+    if(entries.length===0){
+      container.innerHTML = '<div class="gantt-container"><div class="empty-state">検索条件に一致するタスクがありません。</div></div>';
+      return;
+    }
+
+    var range = computeRange();
+    var totalDays = dayDiff(range.start, range.end) + 1;
+    var dw = state.dayWidth;
+    var zm = computeZoomMetrics();
+    var rowH = zm.rowH;
+    var today = todayDate();
+    var searching = !!state.search.trim();
+
+    // ---- Left panel ----
+    var wbsMap = computeWbsMap();
+    var leftHtml = '<div class="gantt-left-header" style="height:'+zm.leftHeaderH+'px">タスク（'+entries.length+'）</div>';
+    entries.forEach(function(entry){
+      var t = entry.task;
+      var eff = getEffective(t);
+      var lvl = Math.min(entry.level,3);
+      var indentPx = (entry.level-1)*18;
+      var toggle = entry.hasChildren
+        ? '<span class="toggle-btn" data-toggle="'+t.id+'">'+((state.collapsed[t.id] && !searching) ? '▶' : '▼')+'</span>'
+        : '<span class="toggle-btn"></span>';
+      var metaBits = [];
+      if(t.isMilestone){
+        var iconDefMeta = MILESTONE_ICONS[t.milestoneIcon] || MILESTONE_ICONS.diamond;
+        metaBits.push('マイルストーン');
+        metaBits.push(eff.end ? eff.end : '日付未設定（右側をクリックして配置）');
+      } else {
+        if(t.assignee) metaBits.push(t.assignee);
+        if(eff.start && eff.end){
+          metaBits.push(eff.start+' 〜 '+eff.end);
+          metaBits.push(eff.progress+'%');
+        } else {
+          metaBits.push('日付未設定（右側をクリックして配置）');
+        }
+      }
+      var canAddChild = levelOf(t) < 3 && !t.isMilestone;
+      var nameIconPrefix = '';
+      if(t.isMilestone){
+        var iconDefName = MILESTONE_ICONS[t.milestoneIcon] || MILESTONE_ICONS.diamond;
+        nameIconPrefix = '<span style="color:'+iconDefName.color+'">'+iconDefName.glyph+'</span> ';
+      }
+      leftHtml += '<div class="gantt-left-row'+(entry.hasChildren?' group-row':'')+'" data-id="'+t.id+'" style="padding-left:'+(12+indentPx)+'px;height:'+rowH+'px">'+
+        '<div class="name-wrap"><span class="row-drag-handle" title="ドラッグして並び替え・階層移動">⠿</span>'+toggle+'<span class="level-badge l'+lvl+'" title="階層Lv'+lvl+'">'+(wbsMap[t.id]||'')+'</span><span class="name" style="font-size:'+zm.fontName+'px">'+nameIconPrefix+escapeHtml(t.name)+'</span></div>'+
+        '<div class="meta" style="font-size:'+zm.fontMeta+'px">'+escapeHtml(metaBits.join(' ・ '))+'</div>'+
+        '<div class="row-actions">'+
+          (canAddChild? '<button data-act="addsub" title="子タスクを追加">＋</button>':'')+
+          '<button data-act="edit" title="編集">✎</button>'+
+          '<button data-act="del" title="削除">✕</button>'+
+        '</div>'+
+      '</div>';
+    });
+
+    // ---- Right header (month row + day/week row) ----
+    // Rough advance width of a string at a given font size, used to decide whether a
+    // header label actually fits its cell. ASCII (digits, "/") is about 0.55em in this
+    // font stack; CJK glyphs ("年", "月") are full-width, so ~1em.
+    function approxTextPx(str, fontPx){
+      var w = 0;
+      for(var ci=0; ci<str.length; ci++){
+        w += (str.charCodeAt(ci) > 0x2E80) ? 1 : 0.55;
+      }
+      return Math.ceil(w*fontPx);
+    }
+    var shortMonthLabel = (state.scale==='halfyear' || state.scale==='year');
+    var d = new Date(range.start.getTime());
+    var curMonth = null, curCount = 0, curLabel = '';
+    var monthsArr = [];
+    var firstMonth = true;
+    for(var i=0;i<totalDays;i++){
+      var m = d.getFullYear()+'-'+d.getMonth();
+      if(m!==curMonth){
+        if(curMonth!==null) monthsArr.push({label:curLabel, count:curCount});
+        curMonth = m; curCount = 1;
+        if(shortMonthLabel){
+          curLabel = (firstMonth || d.getMonth()===0) ? (d.getFullYear()+'年'+(d.getMonth()+1)+'月') : ((d.getMonth()+1)+'月');
+        } else {
+          curLabel = d.getFullYear()+'年'+(d.getMonth()+1)+'月';
+        }
+        firstMonth = false;
+      } else { curCount++; }
+      d = addDays(d,1);
+    }
+    monthsArr.push({label:curLabel, count:curCount});
+    var monthRowHtml = '<div class="month-row" style="height:'+zm.monthRowH+'px">';
+    monthsArr.forEach(function(m){
+      // .month-cell clips overflow, so a label that is too wide for its month would be
+      // cut mid-characters ("202…"). Fall back to the short form, then to no label at
+      // all, so the header degrades cleanly as the chart is zoomed out.
+      var cellW = m.count*dw;
+      var lbl = m.label;
+      if(cellW < approxTextPx(lbl, zm.fontMonth) + 8){
+        var shortLbl = lbl.replace(/^\d+年/, '');   // "2026年10月" -> "10月"
+        lbl = (cellW >= approxTextPx(shortLbl, zm.fontMonth) + 8) ? shortLbl : '';
+      }
+      monthRowHtml += '<div class="month-cell" style="width:'+cellW+'px;font-size:'+zm.fontMonth+'px">'+lbl+'</div>';
+    });
+    monthRowHtml += '</div>';
+
+    // month-boundary divider lines drawn into the body for readability at zoomed-out scales
+    var monthDividerHtml = '';
+    var cumX = 0;
+    monthsArr.forEach(function(m, mi){
+      if(mi>0){ monthDividerHtml += '<div class="month-divider" style="left:'+cumX+'px"></div>'; }
+      cumX += m.count*dw;
+    });
+
+    var dayMode = dw >= 18;
+    var showWeekendShading = dw >= 8;
+    var dayRowHtml, bgColsHtml;
+    if(dayMode){
+      dayRowHtml = '<div class="day-row" style="height:'+zm.dayRowH+'px">';
+      bgColsHtml = '';
+      d = new Date(range.start.getTime());
+      // A 2-digit day number needs a certain width; at high zoom the font grows too, so
+      // columns can still be narrower than their own label. Rather than dropping every
+      // number (an empty header row) or letting them collide, label every Nth day using
+      // a natural stride.
+      var dayNeedPx = approxTextPx('31', zm.fontDay) + 3;
+      var dayStep = 1;
+      if(dw < dayNeedPx){
+        var wanted = Math.ceil(dayNeedPx/dw);
+        var strides = [1,2,5,7,10,14];
+        dayStep = strides[strides.length-1];
+        for(var si=0; si<strides.length; si++){ if(strides[si] >= wanted){ dayStep = strides[si]; break; } }
+      }
+      for(var i2=0;i2<totalDays;i2++){
+        var isWeekend = showWeekendShading && (d.getDay()===0||d.getDay()===6);
+        var isToday = dayDiff(today,d)===0;
+        var cls = 'day-cell'+(isWeekend?' weekend':'')+(isToday?' today-col':'');
+        dayRowHtml += '<div class="'+cls+'" style="width:'+dw+'px;font-size:'+zm.fontDay+'px">'+((i2 % dayStep === 0)? d.getDate() : '')+'</div>';
+        bgColsHtml += '<div class="bg-col'+(isWeekend?' weekend':'')+(isToday?' today-col':'')+'" style="left:'+(i2*dw)+'px;width:'+dw+'px;"></div>';
+        d = addDays(d,1);
+      }
+      dayRowHtml += '</div>';
+    } else {
+      // week-bucket header: one cell per ~7 days, labeled with the bucket's start date
+      dayRowHtml = '<div class="day-row" style="height:'+zm.dayRowH+'px">';
+      bgColsHtml = '';
+      var wOffset = 0;
+      var wd = new Date(range.start.getTime());
+      // Zoomed out far enough, a week column becomes narrower than its own "12/31"
+      // label, and every label bleeds over its neighbours into an unreadable smear.
+      // Work out how many weeks apart labels have to be to leave clear space between
+      // them, and only label every Nth column — the remaining columns keep their tick
+      // line, so the grid stays intact while the dates stay legible.
+      var weekCellW = 7*dw;
+      var weekLabelNeedPx = approxTextPx('12/31', zm.fontDay) + 6;
+      var labelStep = weekCellW >= weekLabelNeedPx ? 1 : Math.ceil(weekLabelNeedPx/weekCellW);
+      var weekIdx = 0;
+      while(wOffset < totalDays){
+        var chunk = Math.min(7, totalDays-wOffset);
+        var label = (weekIdx % labelStep === 0) ? ((wd.getMonth()+1)+'/'+wd.getDate()) : '';
+        var containsToday = dayDiff(wd,today)>=0 && dayDiff(wd,today)<chunk;
+        dayRowHtml += '<div class="day-cell week-cell'+(containsToday?' today-col':'')+'" style="width:'+(chunk*dw)+'px;font-size:'+zm.fontDay+'px">'+label+'</div>';
+        bgColsHtml += '<div class="bg-col'+(containsToday?' today-col':'')+'" style="left:'+(wOffset*dw)+'px;width:'+(chunk*dw)+'px;"></div>';
+        wd = addDays(wd,7);
+        wOffset += 7;
+        weekIdx++;
+      }
+      dayRowHtml += '</div>';
+    }
+
+    var bodyWidth = totalDays*dw;
+    var bodyHeight = entries.length*rowH;
+    var leftTotalHeight = zm.leftHeaderH + bodyHeight;
+
+    var rowLinesHtml = '';
+    for(var r=0;r<entries.length;r++){
+      rowLinesHtml += '<div class="gantt-row-line" style="top:'+((r+1)*rowH-1)+'px"></div>';
+    }
+
+    var todayX = dayDiff(range.start, today)*dw;
+    var todayLineHtml = (todayX>=0 && todayX<=bodyWidth) ? '<div class="today-line" style="left:'+todayX+'px;height:'+bodyHeight+'px"></div>' : '';
+
+    // ---- bars ----
+    var barsHtml = '';
+    var barPos = {};
+    entries.forEach(function(entry, idx){
+      var t = entry.task;
+      var eff = getEffective(t);
+      var isGroup = entry.hasChildren;
+      var barHeight = isGroup ? zm.barGroupH : zm.barLeafH;
+      var y = idx*rowH + (rowH-barHeight)/2;
+      if(!eff.start || !eff.end){
+        // not placed on the calendar yet — invite a click anywhere in this row to set it
+        if(!isGroup){
+          barsHtml += '<div class="gantt-bar-pending" data-id="'+t.id+'" style="top:'+y+'px;height:'+barHeight+'px;width:'+bodyWidth+'px" title="クリックして期間を設定">クリックして日付を設定：'+escapeHtml(t.name)+'</div>';
+        }
+        return;
+      }
+      var s = parseISO(eff.start), e = parseISO(eff.end);
+
+      if(t.isMilestone && !isGroup){
+        // a single point in time — draw as a centered glyph instead of a duration bar.
+        var midX = dayDiff(range.start,s)*dw + dw/2;
+        var iconDef = MILESTONE_ICONS[t.milestoneIcon] || MILESTONE_ICONS.diamond;
+        var iconSize = clamp(Math.round(barHeight*1.05), 14, 60);
+        var achieved = e <= today;
+        barPos[t.id] = {x1: midX-iconSize/2, x2: midX+iconSize/2, yMid: idx*rowH + rowH/2, idx:idx};
+        barsHtml += '<div class="gantt-milestone" data-id="'+t.id+'" style="left:'+(midX-iconSize/2)+'px;top:'+(idx*rowH+(rowH-iconSize)/2)+'px;width:'+iconSize+'px;height:'+iconSize+'px;">'+
+          '<span class="milestone-icon" style="font-size:'+iconSize+'px;color:'+iconDef.color+';'+(achieved?'':'opacity:.5;')+'">'+iconDef.glyph+'</span>'+
+          '<span class="milestone-label" style="font-size:'+zm.fontBarLabel+'px">'+escapeHtml(t.name)+'</span>'+
+          '<div class="conn-dot left" data-id="'+t.id+'"></div>'+
+          '<div class="conn-dot right" data-id="'+t.id+'"></div>'+
+        '</div>';
+        return;
+      }
+
+      var x = dayDiff(range.start,s)*dw;
+      var w = (dayDiff(s,e)+1)*dw;
+      if(w<10) w=10;
+      barPos[t.id] = {x1:x, x2:x+w, yMid: idx*rowH + rowH/2, idx:idx};
+      var prog = clamp(Number(eff.progress)||0,0,100);
+      var statusClass = isGroup ? 'group-bar' : 'status-'+(t.status||'todo');
+      var fillStyleExtra = '', barStyleExtra = '';
+      // Both custom color modes paint the bar the same way — only the color source
+      // differs (assignee name vs. WBS Lv1 group), so they share one code path.
+      var col = null;
+      if(assigneeColorMap){
+        col = t.assignee ? (assigneeColorMap[t.assignee]||UNASSIGNED_COLOR) : UNASSIGNED_COLOR;
+      } else if(wbsColorMap){
+        col = wbsColorMap.byTask[t.id] || UNASSIGNED_COLOR;
+      }
+      if(col){
+        // whole bar gets a pale tint of the color (visible even at 0% / 未着手),
+        // and the progress fill uses the full-strength color on top.
+        barStyleExtra = 'background:'+tintTowardWhite(col,0.72)+' !important;border-color:'+shadeTowardBlack(col,0.12)+' !important;';
+        fillStyleExtra = 'background:'+col+' !important;';
+      }
+      barsHtml += '<div class="gantt-bar '+statusClass+'" data-id="'+t.id+'" style="left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+barHeight+'px;'+barStyleExtra+'">'+
+        '<div class="fill" style="width:'+prog+'%;'+fillStyleExtra+'"></div>'+
+        '<div class="label" style="font-size:'+zm.fontBarLabel+'px">'+escapeHtml(t.name)+' ('+prog+'%)</div>'+
+        (!isGroup? ('<div class="handle left" data-id="'+t.id+'"></div><div class="handle right" data-id="'+t.id+'"></div>') : '')+
+        '<div class="conn-dot left" data-id="'+t.id+'"></div>'+
+        '<div class="conn-dot right" data-id="'+t.id+'"></div>'+
+      '</div>';
+    });
+
+    // ---- dependency arrows ----
+    var svgPaths = '';
+    var svgExtras = '';
+    entries.forEach(function(entry){
+      var t = entry.task;
+      (t.deps||[]).forEach(function(depId){
+        var from = barPos[depId], to = barPos[t.id];
+        if(!from || !to) return;
+        var geo = computeEdgeGeometry(from, to, getEdgeBend(depId, t.id), rowH);
+        var isSel = state.selectedEdge && state.selectedEdge.from===depId && state.selectedEdge.to===t.id;
+        // Ordinary arrows go into the background layer (painted beneath the bars). The
+        // selected one moves to the overlay together with its handles, so the arrow you
+        // are actually editing stays visible and clickable on top of everything.
+        var into = isSel ? 'extras' : 'paths';
+        var markup =
+          '<path class="dep-hit" data-from="'+depId+'" data-to="'+t.id+'" d="'+geo.path+'"></path>'+
+          '<path class="dep-visible'+(isSel?' selected':'')+'" data-from="'+depId+'" data-to="'+t.id+'" d="'+geo.path+'" marker-end="url(#'+(isSel?'arrowhead-sel':'arrowhead')+')"></path>';
+        if(into === 'paths') svgPaths += markup; else svgExtras += markup;
+        if(isSel){
+          svgExtras += '<circle class="edge-handle from-handle" data-from="'+depId+'" data-to="'+t.id+'" cx="'+geo.x1+'" cy="'+geo.y1+'" r="6"></circle>';
+          svgExtras += '<circle class="edge-handle to-handle" data-from="'+depId+'" data-to="'+t.id+'" cx="'+geo.x2+'" cy="'+geo.y2+'" r="6"></circle>';
+          // PowerPoint-style elbow adjuster: drag it to move the connector's middle
+          // segment. Sits on the segment itself; the delete button is nudged aside so
+          // the two never overlap.
+          svgExtras += '<circle class="edge-bend-handle" data-from="'+depId+'" data-to="'+t.id+'" data-mode="'+geo.mode+'" cx="'+geo.bendX+'" cy="'+geo.bendY+'" r="6"><title>ドラッグで曲がりの位置を調整／ダブルクリックで自動配置に戻す</title></circle>';
+          svgExtras += '<g class="edge-delete-btn" data-from="'+depId+'" data-to="'+t.id+'" transform="translate('+(geo.bendX+24)+','+geo.bendY+')"><circle r="9"></circle><text x="0" y="1">×</text></g>';
+        }
+      });
+    });
+    // Two stacked SVGs rather than one: .deps-layer sits *below* the task bars so the
+    // connector lines never cut across them, while .deps-overlay sits above so the
+    // selected arrow and its drag handles stay reachable. Each layer carries only the
+    // marker it needs, which keeps the marker ids unique across the two.
+    var svgHtml =
+      '<svg class="deps-layer deps-svg" width="'+bodyWidth+'" height="'+bodyHeight+'">'+
+        '<defs><marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#AEB8C9"></path></marker></defs>'+
+        svgPaths+
+      '</svg>';
+    var svgOverlayHtml =
+      '<svg class="deps-overlay deps-svg" width="'+bodyWidth+'" height="'+bodyHeight+'">'+
+        '<defs><marker id="arrowhead-sel" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#10366B"></path></marker></defs>'+
+        svgExtras+
+      '</svg>';
+
+    container.innerHTML =
+      '<div class="gantt-container">'+
+        '<div class="gantt-scroll">'+
+          '<div class="gantt-left" style="height:'+leftTotalHeight+'px">'+leftHtml+'</div>'+
+          '<div class="gantt-right" style="width:'+bodyWidth+'px;height:'+leftTotalHeight+'px">'+
+            '<div class="gantt-right-header">'+monthRowHtml+dayRowHtml+'</div>'+
+            '<div class="gantt-right-body" style="height:'+bodyHeight+'px;width:'+bodyWidth+'px">'+
+              '<div class="bg-grid" style="height:'+bodyHeight+'px">'+bgColsHtml+'</div>'+
+              monthDividerHtml+
+              rowLinesHtml+
+              todayLineHtml+
+              svgHtml+
+              barsHtml+
+              svgOverlayHtml+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+
+    if(prevScrollTop || prevScrollLeft){
+      var newScrollEl = container.querySelector('.gantt-scroll');
+      if(newScrollEl){ newScrollEl.scrollTop = prevScrollTop; newScrollEl.scrollLeft = prevScrollLeft; }
+    }
+
+    attachGanttEvents(container, range, dw, rowH, barPos);
+  }
+
+  /* ---------------- Row drag reorder / reparent ----------------
+     Hold the ⠿ handle on a row and drag up/down:
+       - drop near the top/bottom edge of another row  -> reorder as its sibling (before/after)
+       - drop over the middle of another row           -> move as that task's child (if depth allows)
+     Uses plain mouse events (not native HTML5 drag/drop) to match the rest of the app's
+     custom-drag style (bar move/resize, dependency dots) and to keep full control over
+     the drop-zone math below. */
+  function bindRowDragHandles(container){
+    var leftPanel = container.querySelector('.gantt-left');
+    if(!leftPanel) return;
+    container.querySelectorAll('.row-drag-handle').forEach(function(handle){
+      handle.addEventListener('mousedown', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        var row = handle.closest('.gantt-left-row');
+        var taskId = row.getAttribute('data-id');
+        var dragged = getTask(taskId);
+        if(!dragged) return;
+        var descendantIds = getDescendantIds(taskId);
+        var selfHeight = subtreeHeight(dragged);
+        var allRows = Array.prototype.slice.call(container.querySelectorAll('.gantt-left-row'));
+        row.classList.add('dragging-row');
+
+        var indicator = document.createElement('div');
+        indicator.className = 'reorder-indicator';
+        leftPanel.appendChild(indicator);
+
+        var mode = null, targetId = null;
+
+        function clearHighlights(){
+          allRows.forEach(function(r){ r.classList.remove('reorder-child-target'); });
+          indicator.style.display = 'none';
+        }
+
+        function onMove(ev){
+          clearHighlights();
+          mode = null; targetId = null;
+          var hoverRow = null;
+          for(var i=0;i<allRows.length;i++){
+            var rect = allRows[i].getBoundingClientRect();
+            if(ev.clientY >= rect.top && ev.clientY < rect.bottom){ hoverRow = allRows[i]; break; }
+          }
+          if(!hoverRow) return;
+          var tId = hoverRow.getAttribute('data-id');
+          if(tId===taskId || descendantIds.indexOf(tId)>=0) return;
+          var target = getTask(tId);
+          if(!target) return;
+          var rect = hoverRow.getBoundingClientRect();
+          var ratio = (ev.clientY - rect.top) / rect.height;
+          var leftRect = leftPanel.getBoundingClientRect();
+          if(ratio < 0.25 || ratio > 0.75){
+            // sibling reorder: dragged ends up at the same level as target
+            if(levelOf(target) + selfHeight > 3) return;
+            mode = ratio < 0.25 ? 'before' : 'after';
+            targetId = tId;
+            indicator.style.display = 'block';
+            indicator.style.top = ((ratio<0.25? rect.top : rect.bottom) - leftRect.top) + 'px';
+          } else {
+            // reparent as a child of target
+            if(levelOf(target) + 1 + selfHeight > 3) return;
+            mode = 'child';
+            targetId = tId;
+            hoverRow.classList.add('reorder-child-target');
+          }
+        }
+
+        function onUp(){
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          row.classList.remove('dragging-row');
+          clearHighlights();
+          indicator.remove();
+          if(mode && targetId){ applyReorder(taskId, mode, targetId); }
+        }
+
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    });
+  }
+
+  function applyReorder(taskId, mode, targetId){
+    var task = getTask(taskId);
+    var target = getTask(targetId);
+    if(!task || !target || task===target) return;
+    if(mode==='child'){
+      task.parentId = target.id;
+    } else {
+      task.parentId = target.parentId || null;
+    }
+    var idx = state.tasks.indexOf(task);
+    if(idx<0) return;
+    state.tasks.splice(idx,1);
+    var targetIdx = state.tasks.indexOf(target);
+    if(mode==='before'){
+      state.tasks.splice(targetIdx,0,task);
+    } else {
+      state.tasks.splice(targetIdx+1,0,task);
+    }
+    saveTasks();
+    renderAll();
+  }
+
+  function attachGanttEvents(container, range, dw, rowH, barPos){
+    // ---- left panel: toggle / row click / row actions ----
+    container.querySelectorAll('.toggle-btn[data-toggle]').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        var id = btn.getAttribute('data-toggle');
+        if(state.collapsed[id]) delete state.collapsed[id]; else state.collapsed[id] = true;
+        renderAll();
+      });
+    });
+    container.querySelectorAll('.gantt-left-row').forEach(function(row){
+      row.addEventListener('click', function(e){
+        if(e.target.classList.contains('row-drag-handle')) return;
+        var act = e.target.getAttribute('data-act');
+        var id = row.getAttribute('data-id');
+        if(act==='del'){ e.stopPropagation(); confirmDelete(id); return; }
+        if(act==='addsub'){ e.stopPropagation(); openModal(null, id); return; }
+        openModal(id);
+      });
+    });
+
+    bindRowDragHandles(container);
+
+    // ---- click-to-place: newly added tasks with no dates yet ----
+    container.querySelectorAll('.gantt-bar-pending').forEach(function(el){
+      el.addEventListener('click', function(e){
+        var id = el.getAttribute('data-id');
+        var task = getTask(id);
+        if(!task) return;
+        var rect = el.getBoundingClientRect();
+        var clickX = e.clientX - rect.left;
+        var dayIndex = Math.max(0, Math.floor(clickX/dw));
+        var clickedDate = addDays(range.start, dayIndex);
+        task.start = toISO(clickedDate);
+        task.end = task.isMilestone ? toISO(clickedDate) : toISO(addDays(clickedDate, 2));
+        saveTasks();
+        renderAll();
+      });
+    });
+
+    // ---- milestone marker: drag to move the date, click to edit ----
+    container.querySelectorAll('.gantt-milestone').forEach(function(marker){
+      var id = marker.getAttribute('data-id');
+      var moved = false;
+
+      marker.addEventListener('mousedown', function(e){
+        if(e.target.classList.contains('conn-dot')) return;
+        e.preventDefault();
+        moved = false;
+        var startX = e.clientX;
+        var task = getTask(id);
+        var origStart = parseISO(task.start);
+        var origLeft = parseFloat(marker.style.left) || 0;
+
+        function onMove(ev){
+          var dx = ev.clientX - startX;
+          if(Math.abs(dx) > 3) moved = true;
+          var deltaDays = Math.round(dx/dw);
+          marker.style.left = (origLeft + deltaDays*dw) + 'px';
+          marker.setAttribute('data-pending-delta', deltaDays);
+        }
+        function onUp(){
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          var deltaDays = Number(marker.getAttribute('data-pending-delta')||0);
+          marker.removeAttribute('data-pending-delta');
+          if(moved && deltaDays!==0){
+            var newDate = toISO(addDays(origStart, deltaDays));
+            task.start = newDate; task.end = newDate;
+            saveTasks();
+            renderAll();
+          } else if(!moved){
+            openModal(id);
+          } else {
+            renderGantt();
+          }
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    });
+
+    // ---- bar drag (move) and resize (leaf bars only) ----
+    container.querySelectorAll('.gantt-bar').forEach(function(bar){
+      if(bar.classList.contains('group-bar')){
+        bar.addEventListener('click', function(e){
+          if(e.target.classList.contains('conn-dot')) return;
+          openModal(bar.getAttribute('data-id'));
+        });
+        return;
+      }
+      var id = bar.getAttribute('data-id');
+      var moved = false;
+
+      bar.addEventListener('mousedown', function(e){
+        if(e.target.classList.contains('handle') || e.target.classList.contains('conn-dot')) return;
+        e.preventDefault();
+        moved = false;
+        var startX = e.clientX;
+        var task = getTask(id);
+        var origStart = parseISO(task.start), origEnd = parseISO(task.end);
+
+        function onMove(ev){
+          var dx = ev.clientX - startX;
+          if(Math.abs(dx) > 3) moved = true;
+          var deltaDays = Math.round(dx/dw);
+          bar.style.left = (dayDiff(range.start, origStart)+deltaDays)*dw + 'px';
+          bar.setAttribute('data-pending-delta', deltaDays);
+        }
+        function onUp(){
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          var deltaDays = Number(bar.getAttribute('data-pending-delta')||0);
+          bar.removeAttribute('data-pending-delta');
+          if(moved && deltaDays!==0){
+            task.start = toISO(addDays(origStart, deltaDays));
+            task.end = toISO(addDays(origEnd, deltaDays));
+            saveTasks();
+            renderAll();
+          } else if(!moved){
+            openModal(id);
+          } else {
+            renderGantt();
+          }
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    });
+
+    container.querySelectorAll('.handle').forEach(function(handle){
+      var id = handle.getAttribute('data-id');
+      var isLeft = handle.classList.contains('left');
+      handle.addEventListener('mousedown', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        var startX = e.clientX;
+        var task = getTask(id);
+        var origStart = parseISO(task.start), origEnd = parseISO(task.end);
+        var bar = handle.parentElement;
+
+        function onMove(ev){
+          var dx = ev.clientX - startX;
+          var deltaDays = Math.round(dx/dw);
+          if(isLeft){
+            var newStart = addDays(origStart, deltaDays);
+            if(dayDiff(newStart, origEnd) < 0) newStart = addDays(origEnd,0);
+            var x = dayDiff(range.start,newStart)*dw;
+            var w = (dayDiff(newStart,origEnd)+1)*dw; if(w<10)w=10;
+            bar.style.left = x+'px'; bar.style.width = w+'px';
+            bar.setAttribute('data-pending-start', toISO(newStart));
+          } else {
+            var newEnd = addDays(origEnd, deltaDays);
+            if(dayDiff(origStart,newEnd) < 0) newEnd = addDays(origStart,0);
+            var w2 = (dayDiff(origStart,newEnd)+1)*dw; if(w2<10)w2=10;
+            bar.style.width = w2+'px';
+            bar.setAttribute('data-pending-end', toISO(newEnd));
+          }
+        }
+        function onUp(){
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          var ns = bar.getAttribute('data-pending-start');
+          var ne = bar.getAttribute('data-pending-end');
+          var changed = false;
+          if(ns){ task.start = ns; bar.removeAttribute('data-pending-start'); changed = true; }
+          if(ne){ task.end = ne; bar.removeAttribute('data-pending-end'); changed = true; }
+          if(changed){ saveTasks(); renderAll(); }
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    });
+
+    // ---- connector dots: click shouldn't bubble into bar/edit click ----
+    container.querySelectorAll('.conn-dot').forEach(function(dot){
+      dot.addEventListener('click', function(e){ e.stopPropagation(); });
+    });
+
+    // ---- create new dependency by dragging from a right connector dot ----
+    var leftRowsForDrag = container.querySelectorAll('.gantt-left-row');
+    container.querySelectorAll('.conn-dot.right').forEach(function(dot){
+      dot.addEventListener('mousedown', function(e){
+        e.preventDefault(); e.stopPropagation();
+        var fromId = dot.getAttribute('data-id');
+        var bodyEl = container.querySelector('.gantt-right-body');
+        var rect = bodyEl.getBoundingClientRect();
+        var svg = container.querySelector('svg.deps-overlay') || container.querySelector('svg.deps-layer'); // overlay: keep the drag line visible above the bars
+        var tempPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+        tempPath.setAttribute('class','temp-link-path');
+        svg.appendChild(tempPath);
+        var fromPos = barPos[fromId];
+        var didMove = false;
+
+        function onMove(ev){
+          didMove = true;
+          var x2 = ev.clientX - rect.left, y2 = ev.clientY - rect.top;
+          tempPath.setAttribute('d','M '+fromPos.x2+' '+fromPos.yMid+' L '+x2+' '+y2);
+          var idx = Math.floor(y2/rowH);
+          leftRowsForDrag.forEach(function(r,i){ r.classList.toggle('drop-target', i===idx); });
+        }
+        function onUp(ev){
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          tempPath.remove();
+          leftRowsForDrag.forEach(function(r){ r.classList.remove('drop-target'); });
+          if(!didMove) return;
+          var y2 = ev.clientY - rect.top;
+          var idx = Math.floor(y2/rowH);
+          var rows = Array.prototype.slice.call(leftRowsForDrag);
+          if(rows[idx]){
+            var toId = rows[idx].getAttribute('data-id');
+            tryAddDependency(fromId, toId);
+          }
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    });
+
+    // ---- select a dependency arrow ----
+    container.querySelectorAll('.dep-hit').forEach(function(p){
+      p.addEventListener('mousedown', function(e){ e.stopPropagation(); });
+      p.addEventListener('click', function(e){
+        e.stopPropagation();
+        if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+        state.selectedEdge = { from: p.getAttribute('data-from'), to: p.getAttribute('data-to') };
+        renderAll();
+      });
+    });
+
+    // ---- delete selected edge via × button ----
+    container.querySelectorAll('.edge-delete-btn').forEach(function(g){
+      g.addEventListener('mousedown', function(e){ e.stopPropagation(); });
+      g.addEventListener('click', function(e){
+        e.stopPropagation();
+        removeSelectedEdge();
+      });
+    });
+
+    // ---- drag the elbow of a selected edge (PowerPoint-style connector adjust) ----
+    container.querySelectorAll('.edge-bend-handle').forEach(function(h){
+      var fromId = h.getAttribute('data-from');
+      var toId = h.getAttribute('data-to');
+      var mode = h.getAttribute('data-mode');
+      h.addEventListener('dblclick', function(e){
+        e.preventDefault(); e.stopPropagation();
+        clearEdgeBend(fromId, toId);   // back to automatic routing
+        saveTasks();
+        renderAll();
+      });
+      h.addEventListener('mousedown', function(e){
+        e.preventDefault(); e.stopPropagation();
+        var fromP = barPos[fromId], toP = barPos[toId];
+        if(!fromP || !toP) return;
+        var bodyEl = container.querySelector('.gantt-right-body');
+        var rect = bodyEl.getBoundingClientRect();
+        var visPath = container.querySelector('path.dep-visible[data-from="'+fromId+'"][data-to="'+toId+'"]');
+        var hitPath = container.querySelector('path.dep-hit[data-from="'+fromId+'"][data-to="'+toId+'"]');
+        var delBtn = container.querySelector('.edge-delete-btn[data-from="'+fromId+'"][data-to="'+toId+'"]');
+        var pending = null, moved = false;
+
+        function onMove(ev){
+          moved = true;
+          var mx = ev.clientX - rect.left, my = ev.clientY - rect.top;
+          if(mode === 'x'){
+            var span = (toP.x1 - fromP.x2) || 1;
+            pending = { t: Math.max(0.02, Math.min(0.98, (mx - fromP.x2)/span)) };
+          } else {
+            pending = { v: Math.max(-8, Math.min(8, (my - fromP.yMid)/rowH)) };
+          }
+          // repaint just this arrow while dragging — a full re-render per mousemove
+          // would be far heavier and makes the drag feel laggy on a big chart
+          var g = computeEdgeGeometry(fromP, toP, pending, rowH);
+          if(visPath) visPath.setAttribute('d', g.path);
+          if(hitPath) hitPath.setAttribute('d', g.path);
+          h.setAttribute('cx', g.bendX);
+          h.setAttribute('cy', g.bendY);
+          if(delBtn) delBtn.setAttribute('transform', 'translate('+(g.bendX+24)+','+g.bendY+')');
+        }
+        function onUp(){
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          if(!moved || !pending) return;
+          setEdgeBend(fromId, toId, pending);
+          saveTasks();
+          renderAll();
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    });
+
+    // ---- rewire a selected edge by dragging its endpoint handles ----
+    container.querySelectorAll('.edge-handle').forEach(function(handle){
+      var isFromHandle = handle.classList.contains('from-handle');
+      handle.addEventListener('mousedown', function(e){
+        e.preventDefault(); e.stopPropagation();
+        var fromId = handle.getAttribute('data-from');
+        var toId = handle.getAttribute('data-to');
+        var bodyEl = container.querySelector('.gantt-right-body');
+        var rect = bodyEl.getBoundingClientRect();
+        var svg = container.querySelector('svg.deps-overlay') || container.querySelector('svg.deps-layer'); // overlay: keep the drag line visible above the bars
+        var tempPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+        tempPath.setAttribute('class','temp-link-path');
+        svg.appendChild(tempPath);
+        var fixedPos = isFromHandle ? barPos[toId] : barPos[fromId];
+        var fixedX = isFromHandle ? fixedPos.x1 : fixedPos.x2;
+        var fixedY = fixedPos.yMid;
+        var didMove = false;
+
+        function onMove(ev){
+          didMove = true;
+          var mx = ev.clientX - rect.left, my = ev.clientY - rect.top;
+          tempPath.setAttribute('d', isFromHandle ? ('M '+mx+' '+my+' L '+fixedX+' '+fixedY) : ('M '+fixedX+' '+fixedY+' L '+mx+' '+my));
+          var idx = Math.floor(my/rowH);
+          leftRowsForDrag.forEach(function(r,i){ r.classList.toggle('drop-target', i===idx); });
+        }
+        function onUp(ev){
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          tempPath.remove();
+          leftRowsForDrag.forEach(function(r){ r.classList.remove('drop-target'); });
+          if(!didMove) return;
+          var my = ev.clientY - rect.top;
+          var idx = Math.floor(my/rowH);
+          var rows = Array.prototype.slice.call(leftRowsForDrag);
+          if(rows[idx]){
+            var newId = rows[idx].getAttribute('data-id');
+            moveDependencyEndpoint({from:fromId,to:toId}, isFromHandle?'from':'to', newId);
+          }
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    });
+  }
+
+  /* ---------------- Dependency arrow routing ---------------- */
+  // Per-edge elbow adjustment, stored on the *target* task keyed by source id. Living
+  // on the task object means it is saved, undone/redone and cloned with everything else
+  // for free. Values are relative (a fraction of the gap / of a row height) rather than
+  // pixels, so a hand-placed bend keeps its position through zoom and scale changes.
+  function getEdgeBend(fromId, toId){
+    var t = getTask(toId);
+    return (t && t.depBends && t.depBends[fromId]) ? t.depBends[fromId] : null;
+  }
+  function setEdgeBend(fromId, toId, bend){
+    var t = getTask(toId);
+    if(!t) return;
+    t.depBends = t.depBends || {};
+    t.depBends[fromId] = bend;
+  }
+  function clearEdgeBend(fromId, toId){
+    var t = getTask(toId);
+    if(t && t.depBends){
+      delete t.depBends[fromId];
+      for(var k in t.depBends){ if(Object.prototype.hasOwnProperty.call(t.depBends,k)) return; }
+      delete t.depBends;
+    }
+  }
+  // Builds the elbow path plus the positions the on-screen handles attach to.
+  // Two routes: a 3-segment elbow when the target starts clear of the source, and a
+  // 5-segment detour when it starts at/behind the source and the line has to double
+  // back. MIN_GAP keeps the 3-segment form from doubling back on itself — the old code
+  // forced the corner 14px to the right of the source even when the target was only a
+  // few px away, producing a needless little S-shaped kink.
+  function computeEdgeGeometry(from, to, bend, rowH){
+    var x1 = from.x2, y1 = from.yMid, x2 = to.x1, y2 = to.yMid;
+    var MIN_GAP = 16, EDGE_PAD = 8, DETOUR = 14;
+    if(x2 - x1 >= MIN_GAP){
+      var tf = (bend && typeof bend.t === 'number') ? bend.t : 0.5;
+      var midX = x1 + tf*(x2-x1);
+      midX = Math.max(x1+EDGE_PAD, Math.min(midX, x2-EDGE_PAD));
+      return {
+        path: 'M '+x1+' '+y1+' L '+midX+' '+y1+' L '+midX+' '+y2+' L '+x2+' '+y2,
+        x1:x1, y1:y1, x2:x2, y2:y2,
+        mode: 'x', bendX: midX, bendY: (y1+y2)/2
+      };
+    }
+    var vf = (bend && typeof bend.v === 'number') ? bend.v : (y2>y1 ? 0.5 : -0.5);
+    var loopY = y1 + vf*rowH;
+    var xa = x1+DETOUR, xb = x2-DETOUR;
+    return {
+      path: 'M '+x1+' '+y1+' L '+xa+' '+y1+' L '+xa+' '+loopY+' L '+xb+' '+loopY+' L '+xb+' '+y2+' L '+x2+' '+y2,
+      x1:x1, y1:y1, x2:x2, y2:y2,
+      mode: 'y', bendX: (xa+xb)/2, bendY: loopY
+    };
+  }
+
+  /* ---------------- Dependency mutation helpers ---------------- */
+  function tryAddDependency(fromId, toId){
+    if(fromId===toId){ alert('同じタスクへの依存関係は作成できません。'); return false; }
+    var toTask = getTask(toId), fromTask = getTask(fromId);
+    if(!toTask || !fromTask) return false;
+    toTask.deps = toTask.deps || [];
+    if(toTask.deps.indexOf(fromId)>=0){
+      state.selectedEdge = {from:fromId, to:toId};
+      renderAll();
+      return false;
+    }
+    if(wouldCreateCycle(fromId, toId)){ alert('この依存関係は循環参照になるため作成できません。'); return false; }
+    toTask.deps.push(fromId);
+    saveTasks();
+    state.selectedEdge = {from:fromId, to:toId};
+    renderAll();
+    return true;
+  }
+  function moveDependencyEndpoint(edge, endpointType, newId){
+    var toTask = getTask(edge.to);
+    if(!toTask) return;
+    var oldFrom = edge.from, oldTo = edge.to;
+    // the edge is being re-pointed, so its hand-placed elbow no longer applies
+    clearEdgeBend(oldFrom, oldTo);
+    if(endpointType==='to'){
+      if(newId===oldTo){ state.selectedEdge = edge; renderAll(); return; }
+      var newToTask = getTask(newId);
+      if(!newToTask) return;
+      if(newId===oldFrom){ alert('同じタスクへの依存関係は作成できません。'); return; }
+      toTask.deps = (toTask.deps||[]).filter(function(id){ return id!==oldFrom; });
+      newToTask.deps = newToTask.deps || [];
+      if(newToTask.deps.indexOf(oldFrom)>=0){
+        saveTasks(); state.selectedEdge = {from:oldFrom, to:newId}; renderAll(); return;
+      }
+      if(wouldCreateCycle(oldFrom, newId)){
+        toTask.deps.push(oldFrom);
+        alert('この依存関係は循環参照になるため付け替えできません。');
+        renderAll();
+        return;
+      }
+      newToTask.deps.push(oldFrom);
+      saveTasks();
+      state.selectedEdge = {from:oldFrom, to:newId};
+      renderAll();
+    } else {
+      if(newId===oldFrom){ state.selectedEdge = edge; renderAll(); return; }
+      if(newId===oldTo){ alert('同じタスクへの依存関係は作成できません。'); return; }
+      var origDeps = toTask.deps || [];
+      toTask.deps = origDeps.filter(function(id){ return id!==oldFrom; });
+      if(toTask.deps.indexOf(newId)>=0){
+        saveTasks(); state.selectedEdge = {from:newId, to:oldTo}; renderAll(); return;
+      }
+      if(wouldCreateCycle(newId, oldTo)){
+        toTask.deps.push(oldFrom);
+        alert('この依存関係は循環参照になるため付け替えできません。');
+        renderAll();
+        return;
+      }
+      toTask.deps.push(newId);
+      saveTasks();
+      state.selectedEdge = {from:newId, to:oldTo};
+      renderAll();
+    }
+  }
+  function removeSelectedEdge(){
+    if(!state.selectedEdge) return;
+    var toTask = getTask(state.selectedEdge.to);
+    if(toTask){
+      toTask.deps = (toTask.deps||[]).filter(function(id){ return id!==state.selectedEdge.from; });
+      clearEdgeBend(state.selectedEdge.from, state.selectedEdge.to);  // don't leave an orphaned bend behind
+      saveTasks();
+    }
+    state.selectedEdge = null;
+    renderAll();
+  }
+  function bindGlobalEdgeHandlers(){
+    document.addEventListener('mousedown', function(e){
+      if(state.selectedEdge){
+        var t = e.target;
+        var onEdgeUI = t.closest && (t.closest('.dep-hit') || t.closest('.edge-handle') || t.closest('.edge-bend-handle') || t.closest('.edge-delete-btn'));
+        if(!onEdgeUI){
+          state.selectedEdge = null;
+          renderAll();
+        }
+      }
+    }, true);
+  }
+
+  /* ================= KANBAN ================= */
+  function renderKanban(){
+    var container = document.getElementById('kanbanView');
+    document.getElementById('legendRow').style.display = 'none';
+    var tasks = filteredLeafTasks();
+    var assigneeColorMap = getAssigneeColorMap();
+    var cols = [
+      {key:'todo', label:'未着手'},
+      {key:'doing', label:'進行中'},
+      {key:'done', label:'完了'}
+    ];
+    if(state.tasks.length===0){
+      container.innerHTML = '<div class="gantt-container"><div class="empty-state">タスクがまだありません。</div></div>';
+      return;
+    }
+    var html = '<div class="kanban">';
+    cols.forEach(function(col){
+      var colTasks = tasks.filter(function(t){ return (t.status||'todo')===col.key; });
+      html += '<div class="kanban-col '+col.key+'" data-status="'+col.key+'">'+
+        '<h3><span class="dot"></span>'+col.label+'<span class="count">'+colTasks.length+'</span></h3>'+
+        '<div class="kanban-cards">';
+      colTasks.forEach(function(t){
+        var initial = (t.assignee||'?').trim().charAt(0).toUpperCase();
+        var avatarColor = t.assignee ? (assigneeColorMap[t.assignee]||UNASSIGNED_COLOR) : UNASSIGNED_COLOR;
+        var parentTask = t.parentId ? getTask(t.parentId) : null;
+        html += '<div class="kcard" draggable="true" data-id="'+t.id+'">'+
+          '<div class="title">'+escapeHtml(t.name)+'</div>'+
+          '<div class="sub"><span>'+(t.assignee? '<span class="avatar" style="background:'+avatarColor+'">'+escapeHtml(initial)+'</span>'+escapeHtml(t.assignee) : '未割当')+'</span><span>'+t.start+' 〜 '+t.end+'</span></div>'+
+          '<div class="progress-bg"><div class="progress-fg" style="width:'+(t.progress||0)+'%"></div></div>'+
+          (t.deps&&t.deps.length? '<span class="deps-badge">依存 '+t.deps.length+'件</span>':'')+
+          (parentTask? '<div class="parent-tag">親: '+escapeHtml(parentTask.name)+'</div>' : '')+
+        '</div>';
+      });
+      html += '</div></div>';
+    });
+    html += '</div>';
+    container.innerHTML = html;
+    attachKanbanEvents(container);
+  }
+
+  function attachKanbanEvents(container){
+    container.querySelectorAll('.kcard').forEach(function(card){
+      card.addEventListener('click', function(){
+        openModal(card.getAttribute('data-id'));
+      });
+      card.addEventListener('dragstart', function(e){
+        e.dataTransfer.setData('text/plain', card.getAttribute('data-id'));
+        setTimeout(function(){ card.style.opacity='0.4'; },0);
+      });
+      card.addEventListener('dragend', function(){ card.style.opacity=''; });
+    });
+    container.querySelectorAll('.kanban-col').forEach(function(col){
+      col.addEventListener('dragover', function(e){ e.preventDefault(); col.classList.add('dragover'); });
+      col.addEventListener('dragleave', function(){ col.classList.remove('dragover'); });
+      col.addEventListener('drop', function(e){
+        e.preventDefault();
+        col.classList.remove('dragover');
+        var id = e.dataTransfer.getData('text/plain');
+        var task = getTask(id);
+        if(task){
+          task.status = col.getAttribute('data-status');
+          if(task.status==='done') task.progress = 100;
+          if(task.status==='todo' && task.progress===100) task.progress = 0;
+          saveTasks();
+          renderAll();
+        }
+      });
+    });
+  }
+
+  /* ---------------- Modal ---------------- */
+  function bindModal(){
+    document.getElementById('fProgressRange').addEventListener('input', function(){
+      document.getElementById('fProgressVal').textContent = this.value+'%';
+    });
+    document.getElementById('btnCancelModal').addEventListener('click', closeModal);
+    document.getElementById('taskModal').addEventListener('click', function(e){
+      if(e.target.id==='taskModal') closeModal();
+    });
+    document.getElementById('btnSaveTask').addEventListener('click', saveTaskFromModal);
+    document.getElementById('btnDeleteTask').addEventListener('click', function(){
+      if(state.editingId) confirmDelete(state.editingId);
+    });
+    document.getElementById('fIsMilestone').addEventListener('change', syncMilestoneFieldsVisibility);
+  }
+
+  // shows the single-date + icon fields and hides the assignee/status/date-range/
+  // progress fields (or vice versa) depending on the "マイルストーンにする" checkbox.
+  function syncMilestoneFieldsVisibility(){
+    var isMs = document.getElementById('fIsMilestone').checked;
+    document.getElementById('fieldsAssigneeStatus').style.display = isMs ? 'none' : '';
+    document.getElementById('fieldsDates').style.display = isMs ? 'none' : '';
+    document.getElementById('fieldsMilestoneDate').style.display = isMs ? '' : 'none';
+    document.getElementById('fieldsProgress').style.display = isMs ? 'none' : '';
+  }
+
+  function openModal(taskId, presetParentId){
+    state.editingId = taskId || null;
+    var task = taskId ? getTask(taskId) : null;
+    var parentPreset = task ? (task.parentId||'') : (presetParentId||'');
+    document.getElementById('modalTitle').textContent = task ? 'タスクを編集' : (presetParentId? '新規サブタスクを追加' : '新規タスク');
+    document.getElementById('formError').textContent = '';
+    document.getElementById('fName').value = task ? task.name : '';
+    document.getElementById('fAssignee').value = task ? (task.assignee||'') : '';
+    document.getElementById('fStatus').value = task ? (task.status||'todo') : 'todo';
+    document.getElementById('fStart').value = task ? task.start : '';
+    document.getElementById('fEnd').value = task ? task.end : '';
+    document.getElementById('fDateHint').style.display = task ? 'none' : '';
+    var prog = task ? (task.progress||0) : 0;
+    document.getElementById('fProgressRange').value = prog;
+    document.getElementById('fProgressVal').textContent = prog+'%';
+    document.getElementById('btnDeleteTask').style.display = task ? '' : 'none';
+
+    // milestone checkbox + single-date field + icon choice
+    var isMilestoneTask = task ? !!task.isMilestone : false;
+    document.getElementById('fIsMilestone').checked = isMilestoneTask;
+    document.getElementById('fMilestoneDate').value = (task && task.isMilestone && task.start) ? task.start : '';
+    var iconVal = (task && task.milestoneIcon) || 'diamond';
+    Array.prototype.slice.call(document.querySelectorAll('input[name="fMilestoneIcon"]')).forEach(function(r){
+      r.checked = (r.value===iconVal);
+    });
+    syncMilestoneFieldsVisibility();
+
+    // parent dropdown
+    var parentSelect = document.getElementById('fParent');
+    var options = validParentOptions(task ? task.id : null);
+    var optHtml = '<option value="">なし（トップレベル）</option>';
+    options.forEach(function(t){
+      var lvl = levelOf(t);
+      var prefix = lvl>1 ? (new Array(lvl).join('　')) + '－ ' : '';
+      optHtml += '<option value="'+t.id+'">'+prefix+escapeHtml(t.name)+'</option>';
+    });
+    parentSelect.innerHTML = optHtml;
+    parentSelect.value = parentPreset;
+    if(parentSelect.value !== parentPreset){ parentSelect.value = ''; }
+
+    // disable schedule/progress fields when this task currently has children (auto rollup)
+    var isGroup = task && hasChildren(task.id);
+    ['fStart','fEnd','fProgressRange'].forEach(function(id){
+      document.getElementById(id).disabled = !!isGroup;
+    });
+    if(isGroup){
+      var effGroup = getEffective(task);
+      document.getElementById('fStart').value = effGroup.start || '';
+      document.getElementById('fEnd').value = effGroup.end || '';
+      document.getElementById('fProgressRange').value = effGroup.progress;
+      document.getElementById('fProgressVal').textContent = effGroup.progress+'%';
+    }
+    document.getElementById('fRollupNote').style.display = isGroup ? '' : 'none';
+    // a group task (has children) can't be a milestone — hide the option entirely
+    document.getElementById('fieldMilestoneCheckboxWrap').style.display = isGroup ? 'none' : '';
+
+    // dependency checklist (excludes self only; independent of hierarchy)
+    var depList = document.getElementById('depList');
+    var others = state.tasks.filter(function(t){ return !task || t.id!==task.id; });
+    if(others.length===0){
+      depList.innerHTML = '<div class="hint">他にタスクがありません</div>';
+    } else {
+      depList.innerHTML = others.map(function(t){
+        var checked = task && task.deps && task.deps.indexOf(t.id)>=0 ? 'checked' : '';
+        return '<label><input type="checkbox" value="'+t.id+'" '+checked+'> '+escapeHtml(t.name)+'</label>';
+      }).join('');
+    }
+    document.getElementById('taskModal').classList.add('open');
+    document.getElementById('fName').focus();
+  }
+  function closeModal(){
+    document.getElementById('taskModal').classList.remove('open');
+    state.editingId = null;
+    if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  }
+
+  function saveTaskFromModal(){
+    var name = document.getElementById('fName').value.trim();
+    var errEl = document.getElementById('formError');
+    if(!name){ errEl.textContent = 'タスク名を入力してください。'; return; }
+
+    var isMilestone = document.getElementById('fIsMilestone').checked
+      && document.getElementById('fieldMilestoneCheckboxWrap').style.display !== 'none';
+    var assignee, status, start, end, progress, milestoneIcon = '';
+
+    if(isMilestone){
+      var msDate = document.getElementById('fMilestoneDate').value;
+      if(state.editingId && !msDate){ errEl.textContent = 'マイルストーン日を入力してください。'; return; }
+      assignee = '';
+      status = 'todo';
+      start = msDate || null;
+      end = msDate || null;
+      progress = 0;
+      var checkedIconEl = document.querySelector('input[name="fMilestoneIcon"]:checked');
+      milestoneIcon = checkedIconEl ? checkedIconEl.value : 'diamond';
+    } else {
+      assignee = document.getElementById('fAssignee').value.trim();
+      status = document.getElementById('fStatus').value;
+      start = document.getElementById('fStart').value;
+      end = document.getElementById('fEnd').value;
+      progress = Number(document.getElementById('fProgressRange').value);
+
+      if(state.editingId && hasChildren(state.editingId)){
+        // group task: schedule is rolled up from its children and not editable here
+      } else if(state.editingId){
+        if(!start || !end){ errEl.textContent = '開始日と終了日を入力してください。'; return; }
+        if(parseISO(end) < parseISO(start)){ errEl.textContent = '終了日は開始日以降にしてください。'; return; }
+      } else if(start || end){
+        if(!start || !end){ errEl.textContent = '開始日と終了日は両方入力するか、両方空欄のままにしてください（空欄の場合は保存後にガントチャート上をクリックして配置できます）。'; return; }
+        if(parseISO(end) < parseISO(start)){ errEl.textContent = '終了日は開始日以降にしてください。'; return; }
+      }
+    }
+
+    var parentVal = document.getElementById('fParent').value || null;
+    var checkedDeps = Array.prototype.slice.call(document.querySelectorAll('#depList input:checked')).map(function(c){return c.value;});
+
+    if(parentVal){
+      var allowedIds = validParentOptions(state.editingId).map(function(t){return t.id;});
+      if(allowedIds.indexOf(parentVal)===-1){
+        errEl.textContent = '選択した親タスクは設定できません（階層がLv3を超えるか、循環参照になります）。';
+        return;
+      }
+    }
+    errEl.textContent = '';
+
+    if(state.editingId){
+      var task = getTask(state.editingId);
+      task.name = name; task.assignee = assignee; task.status = status;
+      task.isMilestone = isMilestone; task.milestoneIcon = milestoneIcon;
+      if(!hasChildren(task.id)){ task.start = start; task.end = end; task.progress = progress; }
+      task.parentId = parentVal;
+      task.deps = [];
+      checkedDeps.forEach(function(depId){
+        if(depId===task.id) return;
+        if(wouldCreateCycle(depId, task.id)) return;
+        task.deps.push(depId);
+      });
+    } else {
+      state.tasks.push({ id: genId(), name:name, assignee:assignee, status:status, start:(start||null), end:(end||null), progress:progress, deps:checkedDeps.slice(), parentId:parentVal, isMilestone:isMilestone, milestoneIcon:milestoneIcon });
+    }
+    saveTasks();
+    closeModal();
+    renderAll();
+  }
+
+  function confirmDelete(id){
+    var task = getTask(id);
+    if(!task) return;
+    var descendants = getDescendantIds(id);
+    var msg = descendants.length>0
+      ? '「'+task.name+'」を削除すると、配下の子タスク（'+descendants.length+'件）も削除されます。よろしいですか？'
+      : '「'+task.name+'」を削除しますか？この操作は取り消せません。';
+    if(!confirm(msg)) return;
+    var idsToRemove = [id].concat(descendants);
+    var idSet = {};
+    idsToRemove.forEach(function(x){ idSet[x]=true; });
+    state.tasks = state.tasks.filter(function(t){ return !idSet[t.id]; });
+    state.tasks.forEach(function(t){ t.deps = (t.deps||[]).filter(function(d){ return !idSet[d]; }); });
+    if(state.selectedEdge && (idSet[state.selectedEdge.from] || idSet[state.selectedEdge.to])) state.selectedEdge = null;
+    saveTasks();
+    if(state.editingId && idSet[state.editingId]) closeModal();
+    renderAll();
+  }
+
+  /* ---------------- PDF export (print-to-PDF) ---------------- */
+  // Uses the browser's native print dialog (choose "PDFに保存"/"Save as PDF" as the
+  // destination) rather than a canvas/library-based renderer, so exported text stays
+  // sharp/selectable and no external script needs to be fetched. The @media print CSS
+  // above does the actual layout work; this function just makes sure the *content*
+  // being printed is the full Gantt chart (forces Gantt view, expands every collapsed
+  // group) and restores the user's on-screen state again afterwards.
+  function exportPdf(){
+    if(state.tasks.length===0){ alert('タスクがまだないため、PDFに出力する内容がありません。'); return; }
+    var originalView = state.view;
+    var originalCollapsed = state.collapsed;
+    var restored = false;
+    function restore(){
+      if(restored) return;
+      restored = true;
+      state.view = originalView;
+      state.collapsed = originalCollapsed;
+      renderAll();
+      // Drop the fit-to-A3 scaling rule again. It is computed for one specific chart
+      // size, so leaving it behind would mis-scale a later manual Ctrl+P; without it
+      // the static A3 @page rule in the stylesheet applies instead.
+      var st = document.getElementById('dynamicPrintPageSize');
+      if(st && st.parentNode) st.parentNode.removeChild(st);
+      window.removeEventListener('afterprint', restore);
+    }
+    state.view = 'gantt';
+    state.collapsed = {};
+    renderAll();
+    window.addEventListener('afterprint', restore);
+    // let the expanded Gantt view actually paint before the print dialog opens
+    setTimeout(function(){
+      // Output is fixed to A3 landscape: rather than growing the paper to match the
+      // chart (which produced huge, non-standard page sizes nobody can actually print),
+      // measure the fully expanded chart and scale it to fit a single A3 sheet — the
+      // same "fit to page" behaviour a plotter/print driver would apply. Text is scaled
+      // as vectors, so it stays sharp and selectable.
+      var scrollEl = document.querySelector('.gantt-scroll');
+      var pxToMm = 25.4/96, mmToPx = 96/25.4;
+      var marginMm = 10;
+      var A3_W_MM = 420, A3_H_MM = 297;   // A3 landscape
+      // Headroom for the header/footer Chrome itself draws into the page when
+      // "ヘッダーとフッター" is enabled in the print dialog (date, title, URL, page
+      // number). That browser-drawn furniture shrinks the usable area, and unaccounted
+      // for it is enough to push content onto a second, cut-off page.
+      var browserChromeMm = 16;
+      var usableWpx = (A3_W_MM - marginMm*2) * mmToPx;
+      var usableHpx = (A3_H_MM - marginMm*2 - browserChromeMm) * mmToPx;
+
+      // Natural (unscaled) size of everything that actually prints: the title and the
+      // legend stacked above the fully expanded chart.
+      var titleRowEl = document.querySelector('.title-row');
+      var legendEl = document.getElementById('legendRow');
+      var headerPx = 0;
+      if(titleRowEl) headerPx += titleRowEl.offsetHeight + 6;   // + header.top margin-bottom (print)
+      if(legendEl && legendEl.style.display !== 'none') headerPx += legendEl.offsetHeight + 8; // + .legend-row margin-bottom (print)
+      var contentWpx = scrollEl ? scrollEl.scrollWidth : usableWpx;
+      var contentHpx = headerPx + (scrollEl ? scrollEl.scrollHeight : 0) + 4;
+      if(contentWpx < 1) contentWpx = usableWpx;
+      if(contentHpx < 1) contentHpx = usableHpx;
+
+      // Fit to the sheet: shrink wide/long charts down, enlarge small ones up to fill
+      // the page. Clamped so a one-task chart isn't blown up to absurd proportions.
+      var scale = Math.min(usableWpx/contentWpx, usableHpx/contentHpx);
+      scale = Math.max(0.05, Math.min(scale, 3));
+
+      // A CSS transform doesn't shrink the element's *layout* box, so the un-scaled
+      // height would still paginate into extra (blank) pages. Pinning the body to the
+      // scaled size with overflow:hidden makes the document exactly one page tall.
+      var scaledWpx = Math.ceil(contentWpx*scale);
+      var scaledHpx = Math.ceil(contentHpx*scale);
+      var styleTag = document.getElementById('dynamicPrintPageSize');
+      if(!styleTag){
+        styleTag = document.createElement('style');
+        styleTag.id = 'dynamicPrintPageSize';
+        document.head.appendChild(styleTag);
+      }
+      styleTag.textContent =
+        '@media print{'+
+          '@page{ size: A3 landscape; margin:'+marginMm+'mm; }'+
+          'html,body{ width:'+scaledWpx+'px !important; height:'+scaledHpx+'px !important; overflow:hidden !important; }'+
+          '#app{ transform: scale('+scale.toFixed(4)+') !important; transform-origin: 0 0 !important;'+
+                ' width:'+Math.ceil(contentWpx)+'px !important; height:'+Math.ceil(contentHpx)+'px !important; }'+
+        '}';
+      window.print();
+      // safety-net only: normally 'afterprint' fires as soon as the dialog is
+      // dismissed. This just guarantees the view doesn't stay stuck expanded if a
+      // browser fails to fire that event.
+      setTimeout(restore, 120000);
+    }, 60);
+  }
+
+  /* ---------------- CSV ---------------- */
+  function toCsvField(v){
+    v = v==null? '' : String(v);
+    if(/[",\n]/.test(v)){ v = '"'+v.replace(/"/g,'""')+'"'; }
+    return v;
+  }
+  function exportCsv(){
+    var wbsMap = computeWbsMap();
+    // projectName is carried in its own column, filled only on the first data row —
+    // on re-import, the app reads it back and auto-applies it as the project title.
+    var currentTitle = (document.getElementById('projectTitle').value || '').trim() || DEFAULT_TITLE;
+    // dependsOnWbs (same order as dependsOn) lets re-import tell apart tasks with the same name;
+    // the parent is found from the row's own wbs ("1.2.3" -> "1.2").
+    var header = ['wbs','name','assignee','start','end','progress','status','parentName','dependsOn','isMilestone','milestoneIcon','projectName','dependsOnWbs'];
+    var lines = [header.join(',')];
+    state.tasks.forEach(function(t, idx){
+      var parent = t.parentId ? getTask(t.parentId) : null;
+      var depTasks = (t.deps||[]).map(getTask).filter(Boolean);
+      var dependsOnNames = depTasks.map(function(dt){ return dt.name; }).join(';');
+      var dependsOnWbs = depTasks.map(function(dt){ return wbsMap[dt.id]||''; }).join(';');
+      var projectNameField = idx===0 ? currentTitle : '';
+      lines.push([wbsMap[t.id]||'', t.name, t.assignee||'', t.start, t.end, t.progress||0, t.status||'todo', parent? parent.name : '', dependsOnNames, t.isMilestone?'TRUE':'FALSE', t.isMilestone ? (t.milestoneIcon||'diamond') : '', projectNameField, dependsOnWbs].map(toCsvField).join(','));
+    });
+    var blob = new Blob(["﻿"+lines.join('\n')], {type:'text/csv;charset=utf-8;'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'gantt_tasks_'+toISO(new Date())+'.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  function parseCsv(text){
+    var rows = [];
+    var row = [], field = '', inQuotes = false;
+    for(var i=0;i<text.length;i++){
+      var c = text[i];
+      if(inQuotes){
+        if(c==='"'){
+          if(text[i+1]==='"'){ field+='"'; i++; } else { inQuotes=false; }
+        } else field += c;
+      } else {
+        if(c==='"') inQuotes = true;
+        else if(c===','){ row.push(field); field=''; }
+        else if(c==='\n' || c==='\r'){
+          if(field!=='' || row.length){ row.push(field); rows.push(row); row=[]; field=''; }
+          if(c==='\r' && text[i+1]==='\n') i++;
+        } else field += c;
+      }
+    }
+    if(field!=='' || row.length){ row.push(field); rows.push(row); }
+    if(rows.length===0) return [];
+    var header = rows[0].map(function(h){return h.trim().replace(/^﻿/,'');});
+    return rows.slice(1).filter(function(r){return r.length>1 || (r[0]&&r[0].trim()!=='');}).map(function(r){
+      var obj = {};
+      header.forEach(function(h,idx){ obj[h] = r[idx]!==undefined? r[idx] : ''; });
+      return obj;
+    });
+  }
+  // Normalizes the date formats Excel tends to write back when a CSV is edited and
+  // re-saved (2026/8/6, 2026-8-6, 2026年8月6日, 2026.8.6, or a raw serial number)
+  // into the app's YYYY-MM-DD. Returns null when the value can't be read as a date.
+  function normImportDate(v){
+    v = String(v==null?'':v).trim();
+    if(!v) return null;
+    var y, m, d, mt;
+    if((mt = v.match(/^(\d{4})\s*[\/\-\.年]\s*(\d{1,2})\s*[\/\-\.月]\s*(\d{1,2})\s*日?(?:[\sT].*)?$/))){
+      y = +mt[1]; m = +mt[2]; d = +mt[3];
+    } else if((mt = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s.*)?$/))){
+      y = +mt[3]; m = +mt[1]; d = +mt[2];            // M/D/YYYY (US-locale Excel)
+    } else if(/^\d{5}(\.\d+)?$/.test(v)){
+      var dt = new Date(Date.UTC(1899,11,30) + Math.floor(+v)*86400000);  // Excel serial
+      y = dt.getUTCFullYear(); m = dt.getUTCMonth()+1; d = dt.getUTCDate();
+    } else {
+      return null;
+    }
+    var chk = new Date(y, m-1, d);
+    if(chk.getFullYear()!==y || chk.getMonth()!==m-1 || chk.getDate()!==d) return null;
+    return y+'-'+(m<10?'0':'')+m+'-'+(d<10?'0':'')+d;
+  }
+  // Accepts 50, "50%", "５０", "50.0" etc.
+  function normImportProgress(v){
+    v = String(v==null?'':v).trim().replace(/[０-９．]/g, function(c){ return String.fromCharCode(c.charCodeAt(0)-0xFEE0); }).replace(/[%％\s]/g,'');
+    var n = parseFloat(v);
+    if(isNaN(n)) return 0;
+    return clamp(Math.round(n),0,100);
+  }
+  function importDates(r, stats){
+    // both blank: an unscheduled task (the tool exports those with empty dates) stays unscheduled
+    if(!(r.start||'').trim() && !(r.end||'').trim()) return { start:null, end:null };
+    var s = normImportDate(r.start), e = normImportDate(r.end);
+    if(!s && !e){ if((r.start||'').trim() || (r.end||'').trim()) stats.badDates++; s = toISO(todayDate()); e = toISO(addDays(todayDate(),1)); }
+    else if(!s){ if((r.start||'').trim()) stats.badDates++; s = e; }
+    else if(!e){ if((r.end||'').trim()) stats.badDates++; e = s; }
+    if(e < s){ var tmp = s; s = e; e = tmp; }
+    return { start:s, end:e };
+  }
+  function importCsvFile(file){
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var buf = new Uint8Array(reader.result), text;
+        try{ text = new TextDecoder('utf-8', {fatal:true}).decode(buf); }
+        catch(encErr){ text = new TextDecoder('shift_jis').decode(buf); }
+        var records = parseCsv(text);
+        if(records.length===0){ alert('CSVにデータが見つかりませんでした。'); return; }
+
+        // projectName is optional and only needs to appear once anywhere in the file;
+        // the first non-empty value found is applied as the project title after import.
+        var importedProjectName = null;
+        for(var pi=0; pi<records.length; pi++){
+          var pn = (records[pi].projectName||'').trim();
+          if(pn){ importedProjectName = pn; break; }
+        }
+
+        var confirmMsg = records.length+'件のタスクを読み込みます。現在のタスクは置き換えられます。';
+        if(importedProjectName){ confirmMsg += '\nプロジェクト名も「'+importedProjectName+'」に更新されます。'; }
+        confirmMsg += 'よろしいですか？';
+        if(!confirm(confirmMsg)) return;
+
+        var sample = records[0];
+        // support both the current name-based format (parentName / dependsOn) and
+        // older exports from a previous version of this app (parentId / deps, raw IDs)
+        var useIdFormat = ('parentId' in sample) || ('deps' in sample);
+        var newTasks, unresolved = 0, dts, importStats = { badDates:0 };
+
+        if(useIdFormat){
+          // IDs in the file are only used to link rows to each other; every task gets a
+          // fresh internal ID, so nothing from the file is ever written into markup as an ID.
+          var idMap = {};
+          newTasks = records.map(function(r){
+            var id = genId();
+            var fileId = (r.id||'').trim();
+            if(fileId && !(fileId in idMap)) idMap[fileId] = id;
+            return {
+              id:id,
+              name: r.name || '(無題タスク)',
+              assignee: r.assignee || '',
+              start: (dts = importDates(r, importStats)).start,
+              end: dts.end,
+              progress: normImportProgress(r.progress),
+              status: ['todo','doing','done'].indexOf((r.status||'').trim().toLowerCase())>=0 ? (r.status||'').trim().toLowerCase() : 'todo',
+              deps: (r.deps||'').split(';').map(function(s){return s.trim();}).filter(Boolean),
+              parentId: (r.parentId||'').trim() || null,
+              isMilestone: /^(true|1|yes)$/i.test((r.isMilestone||'').trim()),
+              milestoneIcon: !/^(true|1|yes)$/i.test((r.isMilestone||'').trim()) ? '' : (MILESTONE_ICONS[(r.milestoneIcon||'').trim()] ? r.milestoneIcon.trim() : 'diamond')
+            };
+          });
+          newTasks.forEach(function(t){
+            t.deps = t.deps.map(function(d){ return Object.prototype.hasOwnProperty.call(idMap, d) ? idMap[d] : null; })
+              .filter(function(d){ return d && d!==t.id; });
+            t.parentId = t.parentId && Object.prototype.hasOwnProperty.call(idMap, t.parentId) ? idMap[t.parentId] : null;
+            if(t.parentId===t.id) t.parentId = null;
+          });
+        } else {
+          newTasks = records.map(function(r){
+            return {
+              id: genId(),
+              name: (r.name || '(無題タスク)').trim(),
+              assignee: r.assignee || '',
+              start: (dts = importDates(r, importStats)).start,
+              end: dts.end,
+              progress: normImportProgress(r.progress),
+              status: ['todo','doing','done'].indexOf((r.status||'').trim().toLowerCase())>=0 ? (r.status||'').trim().toLowerCase() : 'todo',
+              isMilestone: /^(true|1|yes)$/i.test((r.isMilestone||'').trim()),
+              milestoneIcon: !/^(true|1|yes)$/i.test((r.isMilestone||'').trim()) ? '' : (MILESTONE_ICONS[(r.milestoneIcon||'').trim()] ? r.milestoneIcon.trim() : 'diamond'),
+              _wbs: (r.wbs||'').trim(),
+              _parentName: (r.parentName||'').trim(),
+              _dependsOnNames: (r.dependsOn||'').split(';').map(function(s){return s.trim();}),
+              _dependsOnWbs: (r.dependsOnWbs||'').split(';').map(function(s){return s.trim();})
+            };
+          });
+          // Names can repeat (e.g. a "レビュー" under each phase), so a WBS number from the
+          // file is used first, as long as it points at a task with the expected name
+          // (a hand-edited file may have stale numbers); otherwise the first task with that name.
+          var nameMap = Object.create(null), wbsMap = Object.create(null);
+          newTasks.forEach(function(t){
+            if(!(t.name in nameMap)) nameMap[t.name] = t;
+            if(t._wbs && !(t._wbs in wbsMap)) wbsMap[t._wbs] = t;
+          });
+          function resolve(name, wbs){
+            var byWbs = wbs ? wbsMap[wbs] : null;
+            var found = byWbs && byWbs.name===name ? byWbs : nameMap[name];
+            return found ? found.id : null;
+          }
+          newTasks.forEach(function(t){
+            if(t._parentName){
+              t.parentId = resolve(t._parentName, t._wbs.replace(/(^|\.)[^.]*$/, ''));
+              if(t.parentId===t.id) t.parentId = null;
+              if(!t.parentId) unresolved++;
+            } else {
+              t.parentId = null;
+            }
+            var depNames = [], depIds = [];
+            t._dependsOnNames.forEach(function(n, i){
+              if(!n) return;
+              depNames.push(n);
+              var id = resolve(n, t._dependsOnWbs[i]||'');
+              if(id && id!==t.id) depIds.push(id);
+            });
+            t._dependsOnNames = depNames;
+            t.deps = depIds;
+            unresolved += t._dependsOnNames.length - t.deps.length;
+            delete t._wbs;
+            delete t._parentName;
+            delete t._dependsOnNames;
+            delete t._dependsOnWbs;
+          });
+        }
+
+        state.tasks = newTasks;
+        state.selectedEdge = null;
+        saveTasks();
+        if(importedProjectName){
+          var titleInput = document.getElementById('projectTitle');
+          titleInput.value = importedProjectName;
+          saveTitle(importedProjectName);
+          document.title = importedProjectName + TITLE_SUFFIX;
+        }
+        renderAll();
+        if(importStats.badDates>0){
+          alert(importStats.badDates+'件のタスクで日付を読み取れなかったため、仮の日付を入れました。日付は 2026-08-06 や 2026/8/6 の形式で入力してください。');
+        }
+        if(!useIdFormat && unresolved>0){
+          alert(unresolved+'件の親タスク名／依存タスク名が一致しなかったため無視されました。タスク名が完全に一致しているかご確認ください。');
+        }
+      }catch(err){
+        alert('CSVの読み込みに失敗しました: '+err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  /* ---------------- Toolbar bindings ---------------- */
+  function bindToolbar(){
+    document.getElementById('btnAddTask').addEventListener('click', function(){ openModal(null, null); });
+    document.getElementById('btnUndo').addEventListener('click', undo);
+    document.getElementById('btnRedo').addEventListener('click', redo);
+    document.getElementById('btnViewGantt').addEventListener('click', function(){ state.view='gantt'; renderAll(); });
+    document.getElementById('btnViewKanban').addEventListener('click', function(){ state.view='kanban'; renderAll(); });
+    document.getElementById('btnZoomIn').addEventListener('click', function(){
+      if(state.autoFit) return;
+      state.zoomIndex = clamp(state.zoomIndex+1, 0, ZOOM_LEVELS.length-1);
+      state.dayWidth = computeScaledDayWidth();
+      renderAll();
+    });
+    document.getElementById('btnZoomOut').addEventListener('click', function(){
+      if(state.autoFit) return;
+      state.zoomIndex = clamp(state.zoomIndex-1, 0, ZOOM_LEVELS.length-1);
+      state.dayWidth = computeScaledDayWidth();
+      renderAll();
+    });
+    document.getElementById('btnAutoFit').addEventListener('click', function(){
+      state.autoFit = !state.autoFit;
+      this.classList.toggle('toggle-on', state.autoFit);
+      renderAll();
+    });
+    document.querySelectorAll('#scaleToggle button[data-scale]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var scale = btn.getAttribute('data-scale');
+        state.scale = scale;
+        state.zoomIndex = 2;
+        if(!state.autoFit){ state.dayWidth = computeScaledDayWidth(); }
+        document.querySelectorAll('#scaleToggle button[data-scale]').forEach(function(b){ b.classList.toggle('active', b===btn); });
+        renderAll();
+      });
+    });
+    document.querySelectorAll('#colorModeToggle button[data-colormode]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        state.colorMode = btn.getAttribute('data-colormode');
+        document.querySelectorAll('#colorModeToggle button[data-colormode]').forEach(function(b){ b.classList.toggle('active', b===btn); });
+        renderAll();
+      });
+    });
+    document.getElementById('searchInput').addEventListener('input', function(){ state.search = this.value; renderAll(); });
+    document.getElementById('btnExportPdf').addEventListener('click', exportPdf);
+    document.getElementById('btnExportCsv').addEventListener('click', exportCsv);
+    document.getElementById('btnImportCsv').addEventListener('click', function(){ document.getElementById('csvFileInput').click(); });
+    document.getElementById('csvFileInput').addEventListener('change', function(e){
+      if(e.target.files && e.target.files[0]) importCsvFile(e.target.files[0]);
+      e.target.value = '';
+    });
+    document.getElementById('btnSample').addEventListener('click', function(){
+      if(!confirm('サンプルデータを読み込みます。現在のタスクは置き換えられます。よろしいですか？')) return;
+      state.tasks = sampleData();
+      state.selectedEdge = null;
+      saveTasks();
+      renderAll();
+    });
+    document.getElementById('btnClearAll').addEventListener('click', function(){
+      if(!confirm('全てのタスクを削除します。この操作は取り消せません。よろしいですか？')) return;
+      state.tasks = [];
+      state.selectedEdge = null;
+      saveTasks();
+      renderAll();
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key==='Escape'){
+        closeModal();
+        if(state.selectedEdge){ state.selectedEdge = null; renderAll(); }
+      }
+      if((e.key==='Delete'||e.key==='Backspace') && state.selectedEdge){
+        var active = document.activeElement;
+        if(active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.tagName==='SELECT')) return;
+        removeSelectedEdge();
+      }
+      var active2 = document.activeElement;
+      var typing = active2 && (active2.tagName==='INPUT'||active2.tagName==='TEXTAREA'||active2.tagName==='SELECT');
+      if(!typing && (e.ctrlKey||e.metaKey) && !e.shiftKey && e.key.toLowerCase()==='z'){
+        e.preventDefault(); undo();
+      } else if(!typing && (e.ctrlKey||e.metaKey) && ((e.shiftKey && e.key.toLowerCase()==='z') || e.key.toLowerCase()==='y')){
+        e.preventDefault(); redo();
+      }
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

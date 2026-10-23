@@ -4,14 +4,49 @@ Python 標準ライブラリだけで生成する静的サイトです。外部�
 
 ## 構成
 
-- `build.py` — ビルドスクリプト。`site/` に HTML と `static/` を出力します。
+- `build.py` — ビルドスクリプト。`site/` に HTML、`sitemap.xml`、`robots.txt` と `static/` を出力します。
+- `sitegen/seo.py` — 検索エンジン・SNS 向けの情報（正規 URL、OGP、構造化データ、サイトマップ）。
 - `sitegen/content.py` — サイトの文言とデータ（会社情報、事業、ニュース、プライバシーポリシーなど）。
 - `sitegen/pages.py` — 各ページの構成。
 - `sitegen/render.py` — 共通レイアウト（ヘッダー、フッター、ナビゲーション）。
 - `static/css/style.css`, `static/css/motion.css` — スタイルとスクロール演出。
-- `static/img/tokyo-skyline.svg` — 東京の街並みのイラスト。
+- `static/img/tokyo-skyline.svg` — 東京の街並みのイラスト（代表挨拶ページ）。
+- `static/img/japan-map.svg` — トップページの日本地図（`tools/japan_map.py` で作成。下の「トップページの地図と赤い点」を参照）。
+- `sitegen/geo.py` — 地図の範囲と都道府県の位置。
+- `functions/pm-book-bonus/download.js`, `bonus/` — 書籍の読者特典のダウンロード（下の「書籍ページと読者特典」）。
+- `functions/index.js` — トップページの赤い点を閲覧者の都道府県に動かす Cloudflare Pages Functions（サーバー側だけで動き、ブラウザには JavaScript を送りません）。
+- `static/img/favicon.svg` — ファビコン（ネイビーの角丸にロゴマーク）。
+- ロゴマーク（ヘッダー・フッター）は `sitegen/render.py` の `LOGO_MARK` にあります。
 - `tests/` — テスト。
-- `.github/workflows/pages.yml` — GitHub Pages への自動公開設定。
+- `.github/workflows/ci.yml` — push / プルリクエスト時のテスト実行（公開は Cloudflare Pages が行います）。
+
+## 書籍ページと読者特典
+
+- `pm-book.html`（`/pm-book`）— 書籍『外資系プロジェクトマネージャー1年目の教科書』の紹介ページ。グローバルナビの「書籍」と、出版のページ（`/publishing`）から入れます。文章と設定は `sitegen/content.py` の `BOOK_*`（原稿は pm-book リポジトリの `06_HP紹介/HP書籍紹介_実装仕様.md`）。画像は `static/img/book/`。
+- 書籍ページは書籍専用のヘッダー・フッター（ページ内リンクと発行元だけ）で表示します（`sitegen/render.py` の `layout="book"`）。特典ページも同じです。
+- 後から入れる値は `sitegen/content.py` の `BOOK` にまとめています。`None` の項目は表示されません。
+  - 発売のお知らせの窓口：`x_url`（X）、`line_url`（LINE公式の友だち追加 URL）、`newsletter_url`（メール登録フォームの URL）。入れたものだけボタンが出ます。全部 `None` のあいだは「発売日が決まりしだいお知らせします」と表示します。
+  - 購入ボタン：`kindle_url`・`paperback_url`（Amazon の商品ページ。予約ページでも可）。入れた版のボタンが出ます。価格は `kindle_price`・`paperback_price`、ISBN は `isbn`。
+  - 発売したら `"status": "on_sale"` にします（「好評発売中」になり、お知らせ欄の代わりに購入ボタンを大きく出します）。
+- 表紙横の帯（`BOOK_BADGES`）には事実だけを書きます。ランキングや推薦は、実際にあったときに足してください。
+- 特典セクションの画面写真（`static/img/book/bonus-screen-*.webp`）は、特典ツールにサンプルデータを入れて撮ったものです。ツールの見た目を変えたら撮り直します。
+- `pm-book-bonus.html`（`/pm-book-bonus`）— 読者特典のパスワード入力ページ（検索エンジンには載せません）。フォームは `functions/pm-book-bonus/download.js`（Cloudflare Pages Functions）に送られ、パスワードが正しければ特典のHTMLファイルがダウンロードされます。間違っていれば `pm-book-bonus-error.html` に戻ります。
+- 特典ファイルの原本は `bonus/pm-book-gantt-tool.html` です。`static/` には置かないので、公開サイトから直接は取得できません。差し替えたら `python3 tools/bonus_module.py` を実行して `bonus/pm-book-gantt-tool.js`（関数に組み込まれる形）を作り直します。
+- 読者パスワードは、サイトにもリポジトリにも書きません（本の中だけで案内）。`bonus/download.js` にはハッシュ値だけを置いています。全角・前後の空白・大文字小文字の違いは許容します。パスワードを変えるときは、`bonus/download.js` の冒頭にあるコマンドで新しいハッシュ値を作り、`PASSWORD_SHA256` を置き換えます。
+
+## ブランドカラーとロゴ
+
+| 名前 | 値 | 用途 |
+| --- | --- | --- |
+| ディープネイビー | `#10366B` | コーポレートのメインカラー（CSS の `--navy`） |
+| ジャパンレッド | `#D71920` | 日本を象徴するアクセントカラー（CSS の `--red`） |
+
+色はすべて `static/css/style.css` の `:root` で定義しています。補助色として `--navy-dark`（濃いネイビー）、`--sky`（ネイビー背景上の小見出し用の淡い青）、`--mist`（薄い背景）があります。
+
+- ネイビー背景の上の文字にジャパンレッドは使いません（コントラストが不足し読みにくいため）。赤は線・下線・丸などの装飾と、白背景上の文字に使います。
+- ネイビー背景の上では、フォーカス枠と現在ページの下線も白にしています（赤では見えにくいため）。
+- 「Lead Japan」の文字ロゴは画像ではなく文字（Inter）で表示しています。
+- 正式なロゴデータ（SVG など）を入手したら、`sitegen/render.py` の `LOGO_MARK` と `static/img/favicon.svg` の図形を差し替えてください。
 
 ## 文言の編集
 
@@ -23,20 +58,25 @@ Python 標準ライブラリだけで生成する静的サイトです。外部�
 
 | 場所 | 内容 | 埋め方 |
 | --- | --- | --- |
-| `sitegen/content.py` の会社情報 `"representative"` | 代表者名 | 代表者名を入力 |
-| `sitegen/content.py` の会社情報 `"founded"` | 設立日（「2026年」の後ろ） | 例: `1月15日` のように入力 |
-| `sitegen/content.py` の会社情報 `"address"` | 住所の詳細（「東京都」の後ろ） | 番地などを入力 |
-| `sitegen/content.py` の会社情報 `"email"` | お問い合わせ用メールアドレス | メールアドレスを入力 |
+| `sitegen/content.py` の会社情報 `"email"` | お問い合わせ用メールアドレス（お問い合わせページとプライバシーポリシーに表示） | メールアドレスを入力 |
+
+代表者名・設立日（2026年10月19日）・所在地（東京都中野区）は入力済みです。
+
+次の項目は `【要入力】` ではありませんが、公開前に内容の確認が必要です（ビルド時に `要確認:` として表示されます）。
+
+| 場所 | 内容 | 確認すること |
+| --- | --- | --- |
 | `sitegen/content.py` の `MESSAGE`（代表挨拶本文） | 草案の文面 | 代表者本人が内容を確認し、必要に応じて修正 |
 | `sitegen/content.py` の `CONTACT_HOURS`（受付時間） | 仮の受付時間 | 実際の受付時間に修正 |
-| `sitegen/content.py` の `NEWS`（ニュース） 2件 | 日付が推定値のニュース 2件（`# 【要入力】` コメント付き） | 実際の日付に置き換え |
+| `sitegen/content.py` の `COMPANY_NAME_ORIGIN`（社名の由来） | 草案の文面 | 内容を確認 |
+| `sitegen/content.py` の `PRIVACY`（プライバシーポリシー） | 草案の文面 | 専門家による確認を推奨 |
+| `sitegen/content.py` の `BUSINESSES`（3事業） | トップの帯とカード、事業・サービス（`/business`）のカード3枚。カードから事業ごとのページ（`/solution`・`/product`・`/publishing`）へ進む | 事業を増減したら、そのページの関数と `PAGE_META`、`ICONS`（`sitegen/pages.py`）も合わせる |
+| `sitegen/content.py` の `RESULT_*`（管理業務 30%→5%） | 代表個人の実績。AI駆動ソリューション（`/solution`）と代表挨拶に表示 | 外資系日本法人の数字を公開してよいか（社内ルール）。必ず `RESULT_NOTE` の注記を添える |
+| `sitegen/content.py` の `STAGES`・`FAQ`（料金） | Stage 1 30万円、Stage 2 見積もり制、Stage 3 月額50万円（すべて税別）。期間の目安は Stage 2 まで4〜6ヶ月、Stage 3 を加えて7〜9ヶ月 | 料金・期間を変えたら `STAGES`・`PROCESS_NOTE`・`FAQ`・`CONTACT_PROCESS` をそろえて直す。診断料の充当は起算日が決まるまで載せない |
+| `sitegen/content.py` の `PRODUCT_*` | 開発中のプロジェクト管理SaaS（短い紹介のみ） | 名前・機能・提供開始時期が決まったら追記。先行案内の登録窓口ができたらボタンを足す |
+| ニュース（管理画面） | 『外資系PM1年目の教科書』の刊行予定のお知らせの日付（推定値 2026-06-01）、サイト公開のお知らせの日付（2026-10-19） | 実際の日付に直し、管理画面から「サイトに反映」 |
 
-ニュースの日付は次の2件が推定値です。
-
-- 『外資系PM1年目の教科書』の刊行予定に関するお知らせ（2026-06-01）
-- Lead Japan 合同会社の設立に関するお知らせ（2026-04-01）
-
-サイト公開のお知らせ（2026-10-19）も、公開当日の日付に更新してください。
+ニュースは管理画面で編集します（`content/news.json` は手で書き換えません。下の「プレスリリース管理画面」を参照）。
 
 ビルド時には、公開前に確認が必要な項目も `要確認: ` として1行ずつ表示されます（`sitegen/content.py` の `UNCONFIRMED`。サイトには表示されません）。確認が済んだ項目は `UNCONFIRMED` から削除してください。
 
@@ -64,19 +104,61 @@ python3 -m http.server -d site 8000
 python3 -m unittest discover -s tests -v
 ```
 
-## 公開手順（GitHub Pages・無料）
+## Cloudflare Pages での公開
 
-1. GitHub で **public** リポジトリを作成します。
-2. このプロジェクトを push します（`main` ブランチ）。
-3. リポジトリの **Settings › Pages › Source** を **「GitHub Actions」** に設定します。
-4. `main` への push で `.github/workflows/pages.yml` が実行され、公開されます。手動で実行する場合は Actions タブから `workflow_dispatch` を使います。
-5. 公開 URL は `https://<ユーザー名>.github.io/<リポジトリ名>/` になります。
+Cloudflare Pages（無料プラン・商用利用可）で公開します。`main` に push されるたびに Cloudflare 側でテストと `python build.py` が実行され、テストが通った場合だけ自動で公開されます（テストが失敗するとビルドが止まり、公開中のサイトはそのまま残ります）。
 
-すべての内部リンクは相対パスのため、サブパスでも動作します。
+### 初回設定
 
-GitHub Pages は public リポジトリなら無料です（private リポジトリで使うには有料プランが必要です）。最初のデプロイが Pages の Source を「GitHub Actions」に設定する前に実行されて失敗した場合は、設定後に Actions タブからワークフローを再実行してください。
+1. Cloudflare のアカウントを作成します（https://dash.cloudflare.com/sign-up 。無料プランで足ります）。
+2. ダッシュボードで **Workers & Pages** → **Create** → **Pages** タブ → **Connect to Git** を選びます。
+3. GitHub と連携し、リポジトリ **`yamaguchikohei007-sudo/leadjapan-hp`** を選びます（Cloudflare の GitHub アプリにこのリポジトリへのアクセスを許可します）。
+4. ビルド設定を次のとおり入力します。
 
-既知の制限: 深い階層の存在しない URL（例: `/repo/a/b/c`）では、`404.html` の CSS・画像が相対パスのため読み込まれず、装飾なしで表示されることがあります。現状は許容しています。
+   | 項目 | 値 |
+   | --- | --- |
+   | Production branch | `main` |
+   | Framework preset | `None` |
+   | Build command | `python -m unittest discover -s tests && python build.py` |
+   | Build output directory | `site` |
+   | 環境変数（Environment variables） | `PYTHON_VERSION` = `3.13` |
+
+5. **Save and Deploy** を押します。最初のデプロイが終わると `https://<プロジェクト名>.pages.dev` の URL が表示されます。この URL をメモします。
+6. `sitegen/content.py` の `SITE_URL` にその URL を設定します（現在は `SITE_URL = "https://leadjapan-hp.pages.dev"`）。記事ページの `og:url` / `og:image` に使われます。
+
+7. **Settings** → **Runtime** → **Fail open / closed** を **Fail open** にします。トップページの赤い点（下記）は無料枠（1日10万回）で動いており、使い切ったときに Fail open ならエラーではなく通常のページ（赤い点は東京）が表示されます。
+
+### トップページの地図と赤い点
+
+トップページの日本地図には、閲覧者のおおよその場所（都道府県単位）を赤い点で目立たないように表示します。ラベルなどは出しません。
+
+- 場所は Cloudflare が IP アドレスから推定した都道府県で、点はその県庁所在地に置きます。海外からの閲覧・場所が分からないとき・エラーのときは東京に表示します。
+- 処理は `functions/index.js`（Cloudflare Pages Functions）で、トップページ（`/`）を返すときにだけ動きます（`build.py` が書き出す `site/_routes.json` で限定。ほかのページや画像は無料・無制限の静的配信のままです）。位置は保存・記録しません。
+- ページは閲覧者ごとに違うので、`Cache-Control: private, no-store` を付けて、他の人にキャッシュされたページが届かないようにしています。
+- 手元のプレビュー（`python3 -m http.server`）では Functions は動かないため、赤い点は常に東京です。
+- 推定は外れることがあります（スマホ回線は東京・大阪の設備を経由しやすく、VPN では別の場所になります）。
+- 公開サイトに JavaScript を使わない方針の例外です。`functions/index.js` は Cloudflare のサーバー上でだけ動き、ブラウザには送られません。テストは `node --test tests/js/visitor_pin.test.mjs`（Node.js がある環境では `python -m unittest` からも実行されます）。
+- 地図の範囲や都道府県の位置（`sitegen/geo.py`）を変えたときは、地図データ（[ne_10m_admin_0_countries_jpn.geojson](https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries_jpn.geojson)）をダウンロードして `python3 tools/japan_map.py <ダウンロードしたファイル>` を実行し、`static/img/japan-map.svg` と `functions/index.js` の位置表を作り直します。
+
+### 独自ドメインを使う場合
+
+1. ドメインを取得します（ドメイン費用のみ有料）。
+2. Cloudflare の Pages プロジェクト → **Custom domains** → **Set up a custom domain** でドメイン（例: `www.example.co.jp`）を追加します。
+3. 画面の案内に従って DNS を設定します（ドメインを Cloudflare で管理している場合は自動、他社 DNS の場合は表示された CNAME レコードを追加）。
+4. 有効になったら `sitegen/content.py` の `SITE_URL` を独自ドメインの URL に変更し、push します。
+
+内部リンク・CSS・画像は `/` から始まるルート基準のパスです（`sitegen/render.py` の `url()`）。どの階層の存在しない URL（例: `/a/b/c`）でも、404 ページが正しい見た目で表示されます。その代わり、サイトはドメインの一番上（`https://example.co.jp/`）に置く前提で、サブフォルダ（`https://example.com/leadjapan/`）への設置や、HTML ファイルをダブルクリックして直接開く確認には対応しません。確認は「プレビュー」の手順で行ってください。
+
+### 検索エンジン・SNS 向けの情報
+
+`SITE_URL` をもとに、ビルド時に次のものを自動で作ります（`sitegen/seo.py`）。`SITE_URL` を独自ドメインに変えれば、すべて追従します。
+
+- 各ページの正規 URL（`canonical`）と SNS 共有用の情報（OGP）。共有時の画像は、記事に画像があればその画像、なければ東京の写真（`static/img/hero-tokyo.jpg`）です。
+- `sitemap.xml`（404 ページを除く全ページ）と `robots.txt`。
+- トップページの会社情報（構造化データ。社名・所在地など。メールアドレスは確定後に自動で追加されます）。
+- 404 ページは検索結果に出ないよう `noindex` にしています。
+
+正規 URL は Cloudflare Pages の表示に合わせて `.html` を除いた形（例: `/company`）です。
 
 ## プレスリリース管理画面
 
@@ -141,6 +223,8 @@ Markdown の書き方:
 
 本文には画像を入れられません（メイン画像欄を使ってください）。
 
+メイン画像は「サイトに反映」のときに自動で整えられます。横幅 1600px を超える画像は縮小・再圧縮され、写真の撮影情報（撮影場所の位置情報を含む EXIF）は削除されます。スマホの写真をそのまま使っても大丈夫です。管理画面に保存された元の画像はそのまま残ります。
+
 **スラッグの注意:** 公開後にスラッグを変えると記事の URL が変わり、以前の URL は表示できなくなります。公開前に決めてください。
 
 ### プレビュー
@@ -151,25 +235,30 @@ Markdown の書き方:
 
 1. 公開したい記事の「状態」を「公開」にして保存します。下書きのままの記事や、公開から「下書き」に戻した記事はサイトに出ません。
 2. 記事一覧の「サイトに反映」ボタンを押し、確認画面で実行します。
-3. `content/news.json` と `static/img/news/` を書き出し、テスト実行・コミット・GitHub への push を行います。
+3. GitHub 上の最新の `main` から一時的な作業用コピーを作り、そこに `content/news.json` と `static/img/news/` を書き出してサイトのテストを実行します。テストが通れば、`news/publish` ブランチに送信して PR（変更の提案）を作ります。
+4. 完了メッセージの PR へのリンクを開き、GitHub で内容を確認して **マージ** します。マージすると Cloudflare Pages が数分で公開サイトを更新します（https://leadjapan-hp.pages.dev/ ）。
 
-**必ず `main` ブランチで行い、この Mac で GitHub にログイン済みである必要があります**（`gh auth login` を済ませるか、git の認証情報を設定してください）。
+- 作業用コピーは終わると消えます。この Mac のフォルダ（今いるブランチや、作業中のファイル）は変更されません。
+- 反映待ちの PR は常に 1 つです。マージする前にもう一度「サイトに反映」を押すと、新しい PR は作らず、今の PR を最新の内容に置き換えます。
+- **この Mac で GitHub にログイン済みであること**と、**GitHub CLI（`gh`）が使えること**が必要です（`brew install gh` のあと `gh auth login`）。`gh` が使えない場合も送信まではでき、PR を作るためのリンクが表示されます。
 
 結果のメッセージ:
 
 | メッセージ | 意味 |
 | --- | --- |
-| 数分でサイトに反映されます | 成功。push 後、数分で公開サイトが更新されます |
-| 変更はありません | 前回の反映から変更がなく、送信待ちのコミットもありません |
-| テストが失敗したため反映を中止しました | サイトのテストが失敗。表示された出力を確認してください。ファイルは元に戻され、コミットされません |
-| GitHub への送信に失敗しました | オフラインや認証切れなど。コミットは保存済みで、ログインし直して再度「サイトに反映」を押すと送信されます |
-| GitHub 側に新しい変更があるため送信できませんでした | GitHub 上に自分の知らない更新があります。コミットは保存済みです。サイトの管理者に連絡してください |
+| PR を作成しました | 成功。リンク先の PR を GitHub でマージするとサイトに反映されます |
+| 反映待ちの PR を最新の内容に更新しました | まだマージしていない PR があったので、その中身を置き換えました。リンク先でマージしてください |
+| 反映待ちの PR はすでに最新です | 前回の「サイトに反映」から変更がありません。リンク先の PR をマージしてください |
+| 変更はありません | 公開中のサイトと同じ内容です |
+| 反映待ちの PR を閉じました | マージ前の PR があったが、記事を下書きに戻すなどして公開中のサイトと同じ内容に戻ったため、その PR を自動で閉じました（間違えてマージされないように） |
+| テストが失敗したため反映を中止しました | サイトのテストが失敗しました。表示された出力を確認してください。何も送信されません |
+| GitHub への送信に失敗しました | オフラインやログイン切れなど。ログインし直して、もう一度「サイトに反映」を押してください |
+| 反映待ちの PR が別の場所で更新されていた | 誰かが GitHub 上で PR を直接変更しました。上書きしないよう止めています。もう一度押すと、その時点の状態から作り直します |
+| PR を作成できませんでした | 送信は済んでいます。表示されたリンクから GitHub で PR を作成してください（`gh` が未インストール・未ログインのとき） |
+| GitHub から最新の状態を取得できません | オフラインやログイン切れなど。何も送信されません |
 | 別の反映処理が実行中です | 「サイトに反映」が二重に押されました。しばらく待ってからやり直してください |
-| main ブランチで実行してください | `main` 以外のブランチにいます。`git switch main` してください |
-| 予期しないエラーが発生しました | 想定外の問題です。ファイルは元に戻されます。メッセージを管理者に伝えてください |
-| その他のエラー（書き出し・コミットの失敗） | メッセージに原因が出ます。ファイルは元に戻されます |
-
-公開先は現在 GitHub Pages です。Cloudflare Pages への移行は今後予定しています。
+| 予期しないエラーが発生しました | 想定外の問題です。何も送信されません。メッセージを管理者に伝えてください |
+| その他のエラー（書き出し・コミットの失敗） | メッセージに原因が出ます。何も送信されません |
 
 ### バックアップ
 
@@ -182,6 +271,8 @@ Markdown の書き方:
 ~/.venvs/leadjapan-cms/bin/python cms/manage.py test press
 ```
 
+GitHub の CI でも、push と PR のたびにサイトのテストと管理画面のテストの両方が実行されます。管理画面のテストには、`content/news.json` の表示用 HTML（`body_html`）が Markdown の本文（`body_md`）から正しく作られたものかの確認が含まれます。`news.json` は手で書き換えず、必ず管理画面から反映してください。
+
 ## お問い合わせ
 
 お問い合わせはメールアドレスでの受付です。有料のフォームサービスは使用していません。無料の Google フォームを追加する場合は、`sitegen/pages.py` の `body_contact` にあるコメント箇所に埋め込みを追加してください。
@@ -190,9 +281,10 @@ Markdown の書き方:
 
 - プライバシーポリシーの文面は草案です。公開前に内容を確認してください。
 - スクロール演出は Chrome / Edge / Safari 26 以降で動作します。それ以外のブラウザでは、演出なしでコンテンツが静的に表示されます。
-- 独自ドメインを後で使う場合は、ドメイン取得費用のみ有料です（任意）。GitHub Pages の設定でカスタムドメインを指定し、DNS の設定を行ってください。
+- スマホのメニューは、JavaScript を使わずブラウザ標準の「ポップオーバー」で開閉します（Esc キーや「閉じる」ボタンで閉じ、開閉の状態は読み上げソフトにも伝わります）。ポップオーバーに対応していない古いブラウザでは、メニューボタンの代わりにフッターのリンク一覧へ移動する「メニュー」リンクが表示されます。
+- 独自ドメインを後で使う場合は、ドメイン取得費用のみ有料です（任意）。手順は「Cloudflare Pages での公開」の「独自ドメインを使う場合」を参照してください。
 
 ## 画像のクレジット
 
-- トップページの写真: Louie Martinez / Unsplash（[Unsplash ライセンス](https://unsplash.com/license)、商用利用可・クレジット表記は任意）。元画像: https://unsplash.com/photos/IocJwyqRv3M
-- 写真を差し替えるときは `static/img/hero-tokyo.jpg` を同じ名前で置き換えます（横長・1920px 程度・800KB 未満）。
+- SNS 共有用の画像（`static/img/hero-tokyo.jpg`、トップページには表示しません）: Louie Martinez / Unsplash（[Unsplash ライセンス](https://unsplash.com/license)、商用利用可・クレジット表記は任意）。元画像: https://unsplash.com/photos/IocJwyqRv3M
+- 地図データ: [Natural Earth](https://www.naturalearthdata.com/)（パブリックドメイン）。国境は日本の見解に沿った版（`ne_10m_admin_0_countries_jpn`）を使っています。

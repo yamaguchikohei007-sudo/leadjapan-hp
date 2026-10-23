@@ -5,31 +5,45 @@ import pathlib
 import shutil
 from typing import Sequence
 
+from sitegen import content
 from sitegen.content import UNCONFIRMED
 from sitegen.pages import PAGES, Page
 from sitegen.render import find_placeholders, render_layout
+from sitegen.seo import robots_txt, sitemap_xml
 
 ROOT = pathlib.Path(__file__).resolve().parent
 STATIC = ROOT / "static"
+# Cloudflare Pages: run functions/index.js for the home page and
+# functions/pm-book-bonus/download.js for the reader-bonus form only. Every other
+# request stays a free static one and never counts toward the Functions quota.
+ROUTES_JSON = '{"version": 1, "include": ["/", "/pm-book-bonus/download"], "exclude": []}\n'
 
 
 def build(out_dir: pathlib.Path, pages: Sequence[Page] | None = None) -> list[pathlib.Path]:
+    """Writes the site; returns the HTML pages written (sitemap.xml/robots.txt are extra)."""
     out_dir = pathlib.Path(out_dir)
     if out_dir.exists():
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True)
+    pages = PAGES if pages is None else pages
     written: list[pathlib.Path] = []
-    for page in (PAGES if pages is None else pages):
+    for page in pages:
         html = render_layout(
             title=page.title,
             description=page.description,
             body=page.body(),
             current=page.nav_current or page.filename,
             head_extra=page.head_extra,
+            layout=page.layout,
         )
         path = out_dir / page.filename
         path.write_text(html, encoding="utf-8")
         written.append(path)
+    if content.SITE_URL:  # both files need absolute URLs
+        entries = [(p.filename, p.lastmod) for p in pages if p.indexable]
+        (out_dir / "sitemap.xml").write_text(sitemap_xml(entries, content.SITE_URL), encoding="utf-8")
+        (out_dir / "robots.txt").write_text(robots_txt(content.SITE_URL), encoding="utf-8")
+    (out_dir / "_routes.json").write_text(ROUTES_JSON, encoding="utf-8")
     if STATIC.exists():
         shutil.copytree(STATIC, out_dir / "static")
     return written
