@@ -323,7 +323,7 @@ html:has(.global-nav:popover-open) { overflow: hidden; }
 }
 .hero h1 {
   font-family: var(--font); font-weight: 700;
-  font-size: clamp(2.6rem, 7.4vw, 6rem); line-height: 1.2; letter-spacing: .02em;
+  font-size: clamp(2rem, 5.4vw, 4.2rem); line-height: 1.3; letter-spacing: .02em;
   color: #fff; margin: 0;
 }
 .hero h1 span { display: block; }
@@ -331,8 +331,9 @@ html:has(.global-nav:popover-open) { overflow: hidden; }
   background: linear-gradient(90deg, #fff, var(--sky));
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
+.hero-lead { margin: 1.8rem 0 2.4rem; }
 .hero-sub {
-  max-width: 34em; margin: 1.8rem 0 2.4rem;
+  max-width: 38em; margin: 0 0 .8rem;
   font-size: clamp(.95rem, 1.4vw, 1.05rem); color: rgba(255, 255, 255, .8);
 }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 14px; margin: 0; }
@@ -412,6 +413,135 @@ html:has(.global-nav:popover-open) { overflow: hidden; }
 }
 .biz-more::after { content: "→"; font-size: 1rem; }
 .biz-card:hover .biz-more { background: var(--red); border-color: var(--red); color: #fff; }
+.biz-card.is-static:hover { transform: none; box-shadow: var(--shadow); }
+.biz-card.is-static:hover .biz-icon-wrap { background: var(--mist); color: var(--navy); }
+
+/* Hero: who it is for, and the founder's result */
+.hero-note { margin: 1.6rem 0 0; color: var(--sky); font-size: .85rem; }
+.hero-result {
+  margin-top: 2rem; padding-top: 1.4rem; border-top: 1px solid var(--line-dark);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; max-width: 46em;
+}
+.hero-result .result-figure { color: #fff; }
+.hero-result-note { margin: 0; flex: 1 1 18em; font-size: .8rem; color: rgba(255, 255, 255, .72); line-height: 1.7; }
+.result-figure { margin: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.result-label { font-size: .78rem; font-weight: 700; letter-spacing: .08em; color: var(--sky); }
+.result-nums { display: flex; align-items: baseline; gap: .3em; font-variant-numeric: tabular-nums; }
+.result-from { font-size: 1.6rem; font-weight: 700; opacity: .65; text-decoration: line-through; text-decoration-thickness: 2px; }
+.result-arrow { font-size: 1.2rem; }
+.result-to { font-size: 2.6rem; font-weight: 700; letter-spacing: -.02em; }
+.result-figure--large .result-from { font-size: clamp(2.2rem, 5vw, 3.4rem); }
+.result-figure--large .result-arrow { font-size: clamp(1.6rem, 3vw, 2.2rem); }
+.result-figure--large .result-to { font-size: clamp(4rem, 10vw, 7rem); color: #fff; }
+.top-result p { color: rgba(255, 255, 255, .88); }
+.top-result .result-note { font-size: .82rem; color: rgba(255, 255, 255, .7); margin-top: 1.6rem; }
+
+/* Two columns: heading left, content right */
+.split { display: grid; gap: 8px 80px; }
+.split .section-title { font-size: clamp(1.5rem, 2.8vw, 2.1rem); }
+/* Japanese headings: break between phrases, not inside words (where supported) */
+.section-title, .stage-title, .biz-title, .why-item h3, .founder-title, .hero h1, .cta-box .btn { word-break: auto-phrase; }
+.top-message .message-grid { align-items: start; }
+.cta-box .btn { padding-inline: 20px; }
+@media (min-width: 900px) { .split { grid-template-columns: 5fr 7fr; align-items: start; } }
+.section-lead { max-width: 44em; margin: 0 0 32px; }
+.closing { margin: 1.6rem 0 0; font-weight: 700; color: var(--navy); }
+.closing-center { text-align: center; margin-top: 40px; }
+.package-note { margin: 32px 0 0; padding: 20px 24px; border-left: 3px solid var(--red); background: var(--mist); font-size: .92rem; }
+
+.check-list, .cross-list, .example-list, .ba-list { list-style: none; margin: 0; padding: 0; }
+.check-list li, .cross-list li, .ba-list li {
+  position: relative; padding: 14px 0 14px 32px; border-bottom: 1px solid var(--line);
+}
+.check-list li::before, .cross-list li::before, .ba-list li::before {
+  position: absolute; left: 0; top: 14px; font-weight: 700;
+}
+.check-list li::before { content: "✓"; color: var(--red); }
+.cross-list li::before { content: "×"; color: var(--muted); }
+
+/* Before / After */
+.ba-grid { display: grid; gap: 20px; }
+@media (min-width: 769px) { .ba-grid { grid-template-columns: 1fr 1fr; } }
+.ba-col { border-radius: var(--radius); padding: 28px clamp(20px, 3vw, 36px); background: var(--paper); box-shadow: var(--shadow); }
+.ba-label { margin: 0 0 8px; font-size: .78rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.ba-before .ba-list li::before { content: "−"; color: var(--muted); }
+.ba-after { background: var(--navy); color: #fff; }
+.ba-after .ba-label { color: var(--sky); }
+.ba-after .ba-list li { border-bottom-color: var(--line-dark); }
+.ba-after .ba-list li::before { content: "✓"; color: var(--sky); }
+.ba-list li:last-child { border-bottom: 0; }
+
+/* Stages: free consultation, then Stage 1–3 */
+.process-lead { max-width: 44em; margin: 0 0 32px; }
+.process-note { margin: 24px 0 0; font-size: .85rem; color: var(--muted); }
+.stage-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+.stage {
+  display: grid; gap: 8px 48px; background: var(--paper); border-radius: var(--radius);
+  padding: clamp(24px, 3vw, 36px); box-shadow: var(--shadow); border-top: 3px solid var(--navy);
+}
+.stage-entry { border-top-color: var(--sky); }
+#stage1 { border-top-color: var(--red); }
+@media (min-width: 900px) { .stage { grid-template-columns: 4fr 8fr; } }
+.stage-label { font-size: .78rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--red); }
+.stage-title { font-size: 1.2rem; color: var(--navy); margin: 4px 0 8px; }
+.stage-terms { margin: 0; font-weight: 700; color: var(--ink); }
+.stage-body p { margin: 0 0 .8em; }
+.stage-items-label { font-size: .8rem; font-weight: 700; color: var(--navy); margin-bottom: 4px !important; }
+.stage-items { margin: 0 0 1em; padding-left: 1.2em; }
+.stage-note { font-size: .85rem; color: var(--muted); }
+.stage-summary { list-style: none; margin: 1.2rem 0 1.6rem; padding: 0; border-top: 1px solid var(--line); }
+.stage-summary li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.stage-summary a { font-weight: 700; text-decoration: none; }
+.stage-summary a span { color: var(--red); margin-right: .8em; font-size: .85rem; }
+.stage-summary li > span { font-size: .9rem; color: var(--muted); }
+
+/* Use cases */
+.example-list { display: grid; gap: 12px; }
+@media (min-width: 640px) { .example-list { grid-template-columns: 1fr 1fr; } }
+.example-list li { background: var(--mist); border-radius: 12px; padding: 16px 20px; font-size: .95rem; }
+
+/* Product (in development) */
+.status-tag {
+  display: inline-block; margin: 16px 0 0; padding: 2px 12px; border-radius: 999px;
+  border: 1px solid var(--red); color: var(--red); font-size: .8rem; font-weight: 700;
+}
+
+/* Why Lead Japan */
+.why-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 20px; }
+@media (min-width: 900px) { .why-list { grid-template-columns: repeat(3, 1fr); } }
+.why-item { padding-top: 24px; border-top: 2px solid var(--navy); }
+.why-num { display: block; color: var(--red); font-size: 2rem; font-weight: 700; line-height: 1; margin-bottom: 16px; }
+.why-item h3 { font-size: 1.1rem; color: var(--navy); }
+.why-item p { margin: 0; font-size: .93rem; }
+
+/* Founder (dark band) */
+.founder-title { font-size: clamp(1.2rem, 2.4vw, 1.6rem); font-weight: 700; line-height: 1.6; margin: 0 0 1rem; }
+.top-message p:not(.founder-title, .message-sign, .hero-actions) { color: rgba(255, 255, 255, .85); }
+.founder-book { font-size: .9rem; margin: 0 0 24px; }
+
+/* Fit */
+.fit-grid { display: grid; gap: 20px; }
+@media (min-width: 900px) { .fit-grid { grid-template-columns: 1fr 1fr; } }
+.fit-col { background: var(--mist); border-radius: var(--radius); padding: 28px clamp(20px, 3vw, 36px); }
+.fit-col h3 { font-size: 1.1rem; color: var(--navy); }
+.fit-col--no { background: var(--paper); border: 1px solid var(--line); }
+.fit-col li:last-child { border-bottom: 0; }
+
+/* FAQ: <details>, no JavaScript */
+.faq-list { border-top: 1px solid var(--line); }
+.faq { border-bottom: 1px solid var(--line); }
+.faq summary {
+  cursor: pointer; list-style: none; position: relative;
+  padding: 20px 40px 20px 0; font-weight: 700; color: var(--navy);
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; position: absolute; right: 8px; top: 18px; font-size: 1.3rem; color: var(--red); }
+.faq[open] summary::after { content: "−"; }
+.faq p { margin: 0 0 20px; }
+
+/* Company and contact */
+.philosophy-text { max-width: 44em; margin: 32px auto 0; }
+.contact-title { font-size: clamp(1.3rem, 3vw, 1.8rem); color: var(--navy); }
 
 /* Message (dark band) */
 .message-grid { display: grid; gap: 32px 80px; align-items: center; }
@@ -523,7 +653,7 @@ html:has(.global-nav:popover-open) { overflow: hidden; }
     linear-gradient(160deg, var(--navy-dark), var(--navy-ink));
 }
 .business-visual .biz-icon { width: 140px; height: 140px; }
-.business-text h2 { color: var(--navy); font-size: clamp(1.4rem, 3vw, 2rem); margin-bottom: .2em; }
+.business-text h3 { color: var(--navy); font-size: clamp(1.4rem, 3vw, 2rem); margin-bottom: .2em; }
 .business-text .biz-num { display: block; color: var(--red); font-family: var(--font); font-size: 2.4rem; font-weight: 700; line-height: 1; letter-spacing: -.02em; margin-bottom: 12px; }
 .business-text .biz-en { display: block; margin-bottom: 1em; }
 .business-text ul { padding-left: 1.2em; margin: 0; }
