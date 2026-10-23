@@ -26,14 +26,14 @@ SITE: dict[str, str] = {
 
 @dataclass(frozen=True)
 class Business:
-    slug: str  # business.html の見出しの id
+    slug: str  # 事業ごとのページ（<slug>.html）
     number: str
     title: str
     title_en: str
     summary: str
 
 
-# 事業は3つ。トップの帯とカード、business.html の目次に使う
+# 事業は3つ。トップの帯とカード、business.html のカードに使う。カードからそれぞれのページ（<slug>.html）へ進む
 BUSINESSES: tuple[Business, ...] = (
     Business(
         slug="solution",
@@ -58,7 +58,8 @@ BUSINESSES: tuple[Business, ...] = (
     ),
 )
 
-# ===== AI駆動ソリューション（business.html#solution）: 一つの支援パッケージと3段階の進め方 =====
+# ===== AI駆動ソリューション（solution.html）: 一つの支援パッケージと3段階の進め方 =====
+# スマホで長くならないよう、見出し・実績・提供内容・3段階・相談ボタンだけを開いて見せ、ほかはタップで開く。
 # 4つの提供内容は別々の事業ではなく、一つの流れとして見せる。
 SOLUTION_TITLE: tuple[str, str] = ("管理業務はAIに。", "人間は、事業を前に進めることに。")
 SOLUTION_LEAD: tuple[str, ...] = (
@@ -161,6 +162,7 @@ class Stage:
     lead: tuple[str, ...]
     items: tuple[str, ...]
     notes: tuple[str, ...]
+    highlight: str = ""  # 閉じた状態でも見せる一行（なければ ""）
 
 
 # 料金は税別。Stage 1 の値上げ方針などの社内方針はここに書かない。SaaS の利用料は決まるまで金額を出さない。
@@ -186,6 +188,7 @@ STAGES: tuple[Stage, ...] = (
             "診断から1ヶ月以内にStage 2をご契約の場合、診断料30万円はStage 2の料金から全額差し引きます。本支援まで進む場合、診断料は実質0円です。",
             "診断だけで終わる場合も、成果物はそのまま自社での改善にご活用いただけます。",
         ),
+        highlight="診断から1ヶ月以内にStage 2をご契約の場合、診断料は全額差し引き（実質0円）",
     ),
     Stage(
         slug="stage2",
@@ -339,7 +342,7 @@ FAQ: tuple[tuple[str, str], ...] = (
      "顧客訪問も可能です。オンラインでは密にコミュニケーションを取り、小さな確認を溜めずに、スピード感を持ってプロジェクトを進めます。"),
 )
 
-# 出版（business.html#publishing。BUSINESSES の summary に続けて表示）
+# 出版（publishing.html。BUSINESSES の summary に続けて表示）
 PUBLISHING_TEXT = "代表の知見を書籍として届けることで、支援の現場にいない方にも、仕事の進め方を共有します。"
 
 
@@ -454,7 +457,7 @@ ABOUT_TEXT = "Lead Japan 合同会社は、日本を導き、世界の中で日�
 MESSAGE_EXCERPT = "日本の成長に寄与するかどうか。それを、私たちはすべての判断の拠り所としています。"
 CTA_LEAD = "AI駆動の業務改善・システム開発、プロダクト、出版に関するご相談など、まずはお気軽にお問い合わせください。"
 
-# AI駆動ソリューションの相談の案内（business.html）
+# AI駆動ソリューションの相談の案内（solution.html）
 CONSULT_BUTTON = "無料オペレーション相談を申し込む"
 CONSULT_TITLE = "まずは、今のオペレーションについて話しませんか。"
 CONSULT_LEAD = (
@@ -525,9 +528,21 @@ PAGE_META: dict[str, tuple[str, str]] = {
         "日本の成長に寄与するかを価値基準に、AI駆動のオペレーション支援を行います。",
     ),
     "business.html": (
-        "事業・サービス | Lead Japan 合同会社 — AI駆動ソリューション・プロダクト・出版",
-        "管理業務はAIに。人間は、事業を前に進めることに。業務分析から情報の一元管理、AI駆動のシステム開発、定着支援まで。"
-        "スタートアップ・中小企業向けのAI駆動ソリューションの3段階の進め方と料金、開発中のプロダクト、出版をご紹介します。",
+        "事業・サービス | Lead Japan 合同会社",
+        "AI駆動ソリューション、プロダクト、出版。Lead Japan 合同会社の3つの事業をご紹介します。",
+    ),
+    "solution.html": (
+        "AI駆動ソリューション | Lead Japan 合同会社",
+        "管理業務はAIに。人間は、事業を前に進めることに。スタートアップ・中小企業向けに、業務分析から情報の一元管理、"
+        "AI駆動のシステム開発、定着支援までを一貫して行います。3段階の進め方と料金をご紹介します。",
+    ),
+    "product.html": (
+        "プロダクト | Lead Japan 合同会社",
+        "Lead Japan が開発中の、AIや他のアプリとの連携を前提にしたプロジェクト管理SaaSをご紹介します。",
+    ),
+    "publishing.html": (
+        "出版 | Lead Japan 合同会社",
+        "Lead Japan 合同会社の出版事業。代表 山口康平の著書をご紹介します。",
     ),
     "message.html": (
         "代表挨拶 | Lead Japan 合同会社",
@@ -577,7 +592,7 @@ UNCONFIRMED: tuple[str, ...] = (
     "実績（管理業務30%→5%）の公開可否：外資系日本法人の数字を出してよいか、社内ルールの確認",
     "プロダクト（プロジェクト管理SaaS）の名前・公開できる機能・提供開始時期（決まるまで短く紹介）",
     "連携を打ち出せるツール名（実績ベース。決まったら事業・サービスページに追加）",
-    "代表の顔写真（事業・サービスの「設立したばかりだからこそ」の欄に入れる）",
+    "代表の顔写真（AI駆動ソリューションの「なぜLead Japanか」に入れる）",
 )
 
 

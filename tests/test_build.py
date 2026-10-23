@@ -19,7 +19,8 @@ class BuildTests(unittest.TestCase):
 
     def test_writes_all_pages(self):
         names = sorted(p.name for p in self.out.glob("*.html"))
-        self.assertEqual(names, sorted(["index.html", "company.html", "business.html", "message.html",
+        self.assertEqual(names, sorted(["index.html", "company.html", "business.html", "solution.html",
+                                        "product.html", "publishing.html", "message.html",
                                         "news.html", "privacy.html", "contact.html", "404.html",
                                         "pm-book.html", "pm-book-bonus.html", "pm-book-bonus-error.html"]
                                        + [news_page_filename(n) for n in NEWS]))
