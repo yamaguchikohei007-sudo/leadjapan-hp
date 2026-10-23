@@ -26,7 +26,7 @@ class AccessControlTests(TestCase):
     def test_staff_without_article_permissions_cannot_read_or_publish(self):
         self.client.force_login(self.user)
         with patch('press.views.publish') as publish:
-            for url in (self.preview, '/preview/media/news/private.png', '/media/news/private.png'):
+            for url in (self.preview, reverse('press:preview_media', args=['news/private.png']), '/media/news/private.png'):
                 self.assertEqual(self.client.get(url).status_code, 403)
             self.assertEqual(self.client.post(self.publish).status_code, 403)
             publish.assert_not_called()
@@ -46,7 +46,7 @@ class AccessControlTests(TestCase):
         with tempfile.TemporaryDirectory() as tmp, override_settings(MEDIA_ROOT=Path(tmp)):
             (Path(tmp) / 'news').mkdir()
             (Path(tmp) / 'news/private.png').write_bytes(b'private image')
-            for url in ('/media/news/private.png', '/preview/media/news/private.png'):
+            for url in ('/media/news/private.png', reverse('press:preview_media', args=['news/private.png'])):
                 self.client.logout()
                 self.assertEqual(self.client.get(url).status_code, 302)
                 self.grant('view_article')
@@ -65,8 +65,8 @@ class AccessControlTests(TestCase):
             publish.assert_not_called()
 
     def test_preview_routes_preserve_login_redirect_and_permission_boundary(self):
-        urls = (self.preview, '/preview/static/css/style.css',
-                '/preview/media/news/private.png', '/media/news/private.png')
+        urls = (self.preview, reverse('press:preview_static', args=['css/style.css']),
+                reverse('press:preview_media', args=['news/private.png']), '/media/news/private.png')
         for url in urls:
             with self.subTest(url=url, role='anonymous'):
                 response = self.client.get(url)
@@ -83,7 +83,7 @@ class AccessControlTests(TestCase):
 
     def test_authorized_static_preview_preserves_content_and_cache_headers(self):
         self.grant('view_article')
-        response = self.client.get('/preview/static/css/style.css')
+        response = self.client.get(reverse('press:preview_static', args=['css/style.css']))
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response['Content-Type'].startswith('text/css'))
         self.assertIn('no-store', response['Cache-Control'])
@@ -95,7 +95,7 @@ class AccessControlTests(TestCase):
     def test_authorized_missing_preview_resources_remain_not_found(self):
         self.grant('view_article')
         for url in (reverse('press:preview', args=[999999]),
-                    '/preview/static/nonexistent.css',
-                    '/preview/media/nonexistent.png', '/media/nonexistent.png'):
+                    reverse('press:preview_static', args=['nonexistent.css']),
+                    reverse('press:preview_media', args=['nonexistent.png']), '/media/nonexistent.png'):
             with self.subTest(url=url):
                 self.assertEqual(self.client.get(url).status_code, 404)
