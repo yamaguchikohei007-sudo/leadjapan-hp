@@ -527,7 +527,10 @@ html:has(.global-nav:popover-open) { overflow: hidden; }
 .business-back { margin: 40px 0 0; }
 .cta-band .business-back .link-more { color: var(--navy); }
 .solution-head .result-note { margin: 12px 0 0; max-width: 46em; font-size: .78rem; color: rgba(255, 255, 255, .65); line-height: 1.7; }
-.solution-head .hero-actions { margin-top: 2rem; }
+.solution-head .hero-actions { margin: 0 0 2rem; }
+.solution-head .hero-note { margin: 0 0 1.6rem; }
+.solution-head .hero-result { margin-top: 0; }
+.solution-subtitle { margin: 2rem 0 0; padding-top: 1.4rem; border-top: 1px solid var(--line-dark); color: var(--sky); font-weight: 700; }
 .service-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 @media (min-width: 769px) { .service-list { grid-template-columns: 1fr 1fr; gap: 16px; } }
 .service { display: flex; gap: 16px; align-items: flex-start; padding: 20px; border-radius: var(--radius); background: var(--mist); }
@@ -536,7 +539,6 @@ html:has(.global-nav:popover-open) { overflow: hidden; }
 .service .biz-num { font-size: .75rem; font-weight: 700; letter-spacing: .1em; color: var(--red); }
 .service-title { font-size: 1.02rem; color: var(--navy); margin: 0 0 4px; }
 .service p { margin: 0; font-size: .88rem; color: var(--muted); line-height: 1.8; }
-.stage-highlight { margin: 8px 0 0; font-size: .85rem; font-weight: 700; color: var(--red); }
 .stage-more summary { cursor: pointer; font-weight: 700; color: var(--navy); font-size: .9rem; padding: 4px 0; }
 .stage-more[open] summary { margin-bottom: 12px; }
 @media (min-width: 900px) { .stage { align-items: start; } }

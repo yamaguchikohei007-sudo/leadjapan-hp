@@ -10,18 +10,34 @@ class ContentTest(unittest.TestCase):
 
     def test_one_package_of_four_services(self):
         self.assertEqual([sv.title for sv in c.SERVICES],
-                         ["業務オペレーション分析", "情報の一元管理の設計", "AI駆動の業務アプリ・システム開発",
-                          "AI業務活用と定着支援"])
+                         ["業務オペレーション分析", "情報共有と業務の標準化", "AI・システム開発",
+                          "運用設計と定着支援"])
+        # not only AI: standardisation, handover and shared information are part of the package (v1.7)
+        blob = " ".join(d for sv in c.SERVICES for d in sv.details)
+        for word in ("引き継げる", "更新責任", "不要な業務の廃止", "確認・承認"):
+            self.assertIn(word, blob)
         self.assertEqual(len({sv.slug for sv in c.SERVICES}), 4)
 
     def test_three_stages_with_published_terms(self):
         self.assertEqual([st.label for st in c.STAGES], ["Stage 1", "Stage 2", "Stage 3"])
-        self.assertIn("一律30万円（税別）", c.STAGES[0].terms)
+        self.assertIn("30万円（税別）", c.STAGES[0].terms)
         self.assertIn("見積もり制", c.STAGES[1].terms)
         self.assertIn("月額50万円（税別）", c.STAGES[2].terms)
-        # the diagnosis fee is credited in full when Stage 2 is signed within a month
-        self.assertIn("1ヶ月以内", " ".join(c.STAGES[0].notes))
-        self.assertIn("全額差し引き", " ".join(c.STAGES[0].notes))
+
+    def test_terms_left_out_until_decided(self):
+        # v1.7: no unlimited-scope wording, no "about half a year", and no fee credit until its start date is decided
+        static = repr({k: v for k, v in c.__dict__.items() if k != "NEWS"})
+        for phrase in ("一律", "対象範囲によらず", "雇うような", "約半年", "実質0円", "全額差し引", "1ヶ月以内", "省人化"):
+            self.assertNotIn(phrase, static)
+        for text in (c.PROCESS_NOTE, c.CONTACT_PROCESS, dict(c.FAQ)["期間はどのくらいかかりますか。"]):
+            self.assertIn("4〜6ヶ月", text)
+            self.assertIn("7〜9ヶ月", text)
+
+    def test_no_headcount_promise(self):
+        static = repr({k: v for k, v in c.__dict__.items() if k != "NEWS"})
+        for phrase in ("半分", "半減", "採用不要", "採用が不要"):
+            self.assertNotIn(phrase, static)
+        self.assertNotIn("人員を半分にできますか。", dict(c.FAQ))
 
     def test_saas_fee_not_priced_yet(self):
         blob = " ".join([*c.STAGES[2].notes, *(a for _, a in c.FAQ), *c.PRODUCT_TEXT])

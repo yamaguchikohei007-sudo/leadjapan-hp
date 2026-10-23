@@ -238,9 +238,20 @@ class SubPageTests(unittest.TestCase):
         self.assertNotIn("<details open", b)
         self.assertNotIn("<script", b)
 
-    def test_stage1_credit_shown_closed(self):
-        self.assertIn("実質0円", body_solution().split('<details class="stage-more">')[0] + STAGES[0].highlight)
-        self.assertIn("実質0円", STAGES[0].highlight)
+    def test_solution_headline(self):
+        b = body_solution()
+        self.assertIn('<h2 class="solution-title">人を増やす前に、<br>今の人数で回る会社へ。</h2>', b)
+        self.assertIn('href="#process">料金・進め方を見る', b)
+        # the old headline stays as a supporting line, not a second big headline
+        self.assertIn('<p class="solution-subtitle">管理業務はAIに。人間は、事業を前に進めることに。</p>', b)
+
+    def test_result_shown_in_two_places_on_solution(self):
+        # the short figure under the headline, and the detail fold; why-us no longer repeats the number
+        b = body_solution()
+        self.assertEqual(b.count('class="result-figure'), 1)
+        self.assertEqual(b.count("実績の詳細"), 2)  # the fold, and the founder text pointing to it
+        why = b[b.index('<ol class="why-list">'):b.index("</ol>", b.index('<ol class="why-list">'))]
+        self.assertNotIn("30%", why)
 
     def test_result_never_shown_without_its_note(self):
         b = body_solution()
