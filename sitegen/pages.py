@@ -6,19 +6,19 @@ from dataclasses import dataclass
 from typing import Callable, Sequence
 
 from sitegen.content import (
-    AFTER, AUTOMATION_EXAMPLES, AUTOMATION_NOTE, BEFORE, BEFORE_AFTER_CLOSING, BOOK, BOOK_ABOUT, BOOK_AUTHOR,
-    BOOK_AUTHOR_BIO, BOOK_AUTHOR_NAME, BOOK_BADGES, BOOK_BONUS_ERROR, BOOK_BONUS_FEATURES, BOOK_BONUS_HOWTO,
-    BOOK_BONUS_INTRO, BOOK_BONUS_TEXT, BOOK_BONUS_TITLE, BOOK_CATCH, BOOK_CLOSING_TITLE, BOOK_COLUMNS,
-    BOOK_COLUMNS_LEAD, BOOK_COMING_SOON_NOTE, BOOK_COVER_ALT, BOOK_FORMATS, BOOK_FOR_YOU, BOOK_LEAD,
+    ABOUT_LEAD, ABOUT_TEXT, AFTER, AUTOMATION_EXAMPLES, AUTOMATION_NOTE, BEFORE, BEFORE_AFTER_CLOSING, BOOK,
+    BOOK_ABOUT, BOOK_AUTHOR, BOOK_AUTHOR_BIO, BOOK_AUTHOR_NAME, BOOK_BADGES, BOOK_BONUS_ERROR, BOOK_BONUS_FEATURES,
+    BOOK_BONUS_HOWTO, BOOK_BONUS_INTRO, BOOK_BONUS_TEXT, BOOK_BONUS_TITLE, BOOK_CATCH, BOOK_CLOSING_TITLE,
+    BOOK_COLUMNS, BOOK_COLUMNS_LEAD, BOOK_COMING_SOON_NOTE, BOOK_COVER_ALT, BOOK_FORMATS, BOOK_FOR_YOU, BOOK_LEAD,
     BOOK_NOTIFY_TEXT, BOOK_NOTIFY_TITLE, BOOK_OG_DESCRIPTION, BOOK_PARTS, BOOK_SUBTITLE, BOOK_TITLE,
-    BOOK_TRADEMARK_NOTE, COMPANY_ACTIVITIES, COMPANY_NAME_ORIGIN, COMPANY_PHILOSOPHY_TEXT, CONSULTATION_TEXT,
-    CONSULTATION_TITLE, CONTACT_ASK, CONTACT_CATEGORIES, CONTACT_HOURS, CONTACT_INTRO, CONTACT_PROCESS,
-    CONTACT_TITLE, CTA_BUTTON, CTA_LEAD, CTA_TITLE, FAQ, FIT, FIT_NOTE, FOUNDER_TEXT, FOUNDER_TITLE, HERO_LEAD,
-    HERO_NOTE, HERO_SUB, HERO_TITLE, MESSAGE, MESSAGE_TITLE, NEWS, NOT_FOUND_TEXT, PAGE_META, PAINS,
-    PAINS_CLOSING, PLACEHOLDER, PRIVACY, PRIVACY_ENACTED, PROCESS_LEAD, PROCESS_NOTE, PRODUCT_TEXT,
-    PRODUCT_TITLE, PUBLISHING_TEXT, RESULT_FROM, RESULT_LABEL, RESULT_NOTE, RESULT_SHORT, RESULT_TEXT,
-    RESULT_TO, SECTION_DISPLAY, SERVICES, SERVICES_LEAD, SERVICES_NOTE, SITE, SITE_URL, STAGES, UNFIT, WHY,
-    NewsItem,
+    BOOK_TRADEMARK_NOTE, BUSINESSES, COMPANY_ACTIVITIES, COMPANY_NAME_ORIGIN, COMPANY_PHILOSOPHY_TEXT,
+    CONSULT_BUTTON, CONSULT_LEAD, CONSULT_TITLE, CONSULTATION_TEXT, CONSULTATION_TITLE, CONTACT_ASK,
+    CONTACT_CATEGORIES, CONTACT_HOURS, CONTACT_INTRO, CONTACT_PROCESS, CONTACT_TITLE, CTA_LEAD, FAQ, FIT, FIT_NOTE,
+    FOUNDER_TEXT, FOUNDER_TITLE, HERO_LEAD, HERO_SUB, MESSAGE, MESSAGE_EXCERPT, MESSAGE_TITLE, NEWS,
+    NOT_FOUND_TEXT, PAGE_META, PAINS, PAINS_CLOSING, PLACEHOLDER, PRIVACY, PRIVACY_ENACTED, PROCESS_LEAD,
+    PROCESS_NOTE, PRODUCT_TEXT, PRODUCT_TITLE, PUBLISHING_TEXT, RESULT_FROM, RESULT_LABEL, RESULT_NOTE,
+    RESULT_SHORT, RESULT_TEXT, RESULT_TO, SECTION_DISPLAY, SERVICES, SERVICES_LEAD, SERVICES_NOTE, SITE, SITE_URL,
+    SOLUTION_LEAD, SOLUTION_NOTE, SOLUTION_TITLE, STAGES, UNFIT, WHY, NewsItem,
 )
 from sitegen.geo import MAP_HEIGHT, MAP_WIDTH, pin_xy
 from sitegen.render import esc, url
@@ -105,25 +105,6 @@ def _result_figure(extra: str = "") -> str:
     )
 
 
-def services_html(*, link: bool) -> str:
-    """The four parts of the package. link: cards link to their detail on business.html (top page)."""
-    cards = []
-    for i, s in enumerate(SERVICES):
-        inner = (
-            f'<span class="biz-card-top"><span class="biz-icon-wrap">{ICONS.get(s.slug, "")}</span>'
-            f'<span class="biz-num">{esc(s.number)}</span></span>'
-            f'<span class="biz-en" lang="en">{esc(s.title_en)}</span>'
-            f'<h3 class="biz-title">{esc(s.title)}</h3>'
-            f'<p class="biz-summary">{esc(s.summary)}</p>'
-        )
-        if link:
-            cards.append(f'<a class="biz-card reveal" style="--d: {i}" href="/business.html#{esc(s.slug)}">'
-                         f'{inner}<span class="biz-more">詳しく見る</span></a>')
-        else:
-            cards.append(f'<div class="biz-card is-static reveal" style="--d: {i}">{inner}</div>')
-    return '<div class="biz-grid">\n' + "\n".join(cards) + "\n</div>"
-
-
 def stages_html() -> str:
     """Free consultation, then Stage 1–3 (top page and business.html)."""
     rows = [
@@ -161,153 +142,79 @@ def faq_html() -> str:
     ) + "\n</div>"
 
 
-def cta_button(cls: str = "btn") -> str:
-    return f'<a class="{cls}" href="/contact.html">{esc(CTA_BUTTON)}</a>'
+def consult_button(cls: str = "btn") -> str:
+    return f'<a class="{cls}" href="/contact.html">{esc(CONSULT_BUTTON)}</a>'
 
 
 def body_index() -> str:
+    cards = "\n".join(
+        f'<a class="biz-card reveal" style="--d: {i}" href="/business.html#{esc(b.slug)}">'
+        f'<span class="biz-card-top"><span class="biz-icon-wrap">{ICONS.get(b.slug, "")}</span>'
+        f'<span class="biz-num">{esc(b.number)}</span></span>'
+        f'<span class="biz-en" lang="en">{esc(b.title_en)}</span>'
+        f'<h3 class="biz-title">{esc(b.title)}</h3>'
+        f'<p class="biz-summary">{esc(b.summary)}</p>'
+        f'<span class="biz-more">詳しく見る</span>'
+        "</a>"
+        for i, b in enumerate(BUSINESSES)
+    )
     band = "".join(
-        f'<li><a href="#{href}"><span class="hero-band-num">{esc(label)}</span>{esc(title)}</a></li>'
-        for href, label, title in (
-            ("process", "入口", "無料オペレーション相談"),
-            *((st.slug, st.label, st.title.split("＆")[0].split("・")[0]) for st in STAGES),
-        )
+        f'<li><a href="/business.html#{esc(b.slug)}"><span class="hero-band-num">{esc(b.number)}</span>'
+        f"{esc(b.title)}</a></li>"
+        for b in BUSINESSES
     )
-    before_after = (
-        '<div class="ba-grid">'
-        f'<div class="ba-col ba-before reveal reveal--left"><p class="ba-label" lang="en">Before</p>{_list(BEFORE, "ba-list")}</div>'
-        f'<div class="ba-col ba-after reveal reveal--right" style="--d: 1"><p class="ba-label" lang="en">After</p>{_list(AFTER, "ba-list")}</div>'
-        "</div>"
+    facts = (
+        ("設立", SITE["founded"][:4]),
+        ("事業領域", str(len(BUSINESSES))),
+        ("拠点", "Tokyo"),
     )
-    why = "".join(
-        f'<li class="why-item reveal" style="--d: {i}"><span class="why-num">{i + 1:02d}</span>'
-        f"<h3>{esc(t)}</h3><p>{esc(d)}</p></li>"
-        for i, (t, d) in enumerate(WHY)
-    )
+    facts_html = "".join(f"<div><dt>{esc(k)}</dt><dd>{esc(v)}</dd></div>" for k, v in facts)
     contact_cats = "".join(f"<li>{esc(c)}</li>" for c in CONTACT_CATEGORIES[:-1])
-    lead = "".join(f'<p class="hero-sub reveal" style="--d: 1">{esc(t)}</p>' for t in HERO_LEAD)
     return f"""<section class="section hero">
 <div class="hero-grid" aria-hidden="true"></div>
 {_hero_map()}
 <p class="hero-word" aria-hidden="true">LEAD JAPAN</p>
 <div class="container hero-inner">
 <p class="hero-kicker reveal">{esc(HERO_SUB)}</p>
-<h1><span>{esc(HERO_TITLE[0])}</span><span class="hero-accent">{esc(HERO_TITLE[1])}</span></h1>
-<div class="hero-lead">{lead}</div>
-<p class="hero-actions">{cta_button("btn btn-light")}<a class="btn btn-outline-light" href="#process">支援の進め方を見る</a></p>
-<p class="hero-note">{esc(HERO_NOTE)}</p>
-<div class="hero-result">{_result_figure()}<p class="hero-result-note">{esc(RESULT_SHORT)}</p></div>
+<h1><span>日本を導き、</span><span class="hero-accent">世界へ。</span></h1>
+<p class="hero-sub reveal" style="--d: 1">{esc(HERO_LEAD)}</p>
+<p class="hero-actions"><a class="btn btn-light" href="/business.html">事業を見る</a><a class="btn btn-outline-light" href="/contact.html">お問い合わせ</a></p>
 </div>
-<nav class="hero-band" aria-label="支援の進め方"><ul class="container">{band}</ul></nav>
+<nav class="hero-band" aria-label="事業"><ul class="container">{band}</ul></nav>
 </section>
 
-<section class="section top-problem" id="problem">
-<div class="container split">
-{_section_head("Problem", "人が足りないのではない。\n管理業務が、人を奪っている。", " reveal--left")}
-<div class="reveal" style="--d: 1">
-{_list(PAINS, "check-list")}
-<p class="closing">{esc(PAINS_CLOSING)}</p>
-</div>
-</div>
-</section>
-
-<section class="section alt top-goal" id="goal">
-<div class="container">
-{_section_head("Goal", "目指すのは、省人化ではありません。\n人が、本質的な仕事に戻れる状態です。")}
-{before_after}
-<p class="closing closing-center">{esc(BEFORE_AFTER_CLOSING)}</p>
-</div>
-</section>
-
-<section class="section section-dark top-result" id="result">
-<div class="container split">
-<div>
-{_section_head("Result", "言葉ではなく、\n数字で証明してきた改善です。", " reveal--left")}
-{_result_figure(" result-figure--large reveal")}
-</div>
-<div class="reveal" style="--d: 1">
-{_paras(RESULT_TEXT)}
-<p class="result-note">{esc(RESULT_NOTE)}</p>
+<section class="section top-about" id="about">
+<div class="container about-grid">
+{_section_head("About", "会社紹介", " reveal--left", SECTION_DISPLAY["about"])}
+<div class="about-body reveal" style="--d: 1">
+<p class="about-lead">{esc(ABOUT_LEAD)}</p>
+<p>{esc(ABOUT_TEXT)}</p>
+{_more_link("/company.html", "会社紹介を見る")}
+<dl class="about-facts">{facts_html}</dl>
 </div>
 </div>
 </section>
 
-<section class="section top-business" id="service">
+<section class="section alt top-business" id="business">
 <div class="container">
 <div class="head-row">
-{_section_head("Service", "分析して終わりでも、開発して終わりでもない。\n理解から定着まで、一貫して支援します。")}
+{_section_head("Business", "事業・サービス", display=SECTION_DISPLAY["business"])}
 {_more_link("/business.html", "事業・サービスを見る")}
 </div>
-<p class="section-lead reveal">{esc(SERVICES_LEAD)}</p>
-{services_html(link=True)}
-<p class="package-note reveal">{esc(SERVICES_NOTE)}</p>
-</div>
-</section>
-
-<section class="section alt top-process" id="process">
-<div class="container">
-{_section_head("Process", "いきなり長期契約は、提案しません。\nまずは1ヶ月の診断から。")}
-{stages_html()}
-</div>
-</section>
-
-<section class="section top-examples" id="examples">
-<div class="container split">
-{_section_head("Examples", "たとえば、\nこんな管理業務からゼロに近づけます。", " reveal--left")}
-<div class="reveal" style="--d: 1">
-{examples_html()}
+<div class="biz-grid biz-grid--3">
+{cards}
 </div>
 </div>
 </section>
 
-<section class="section alt top-product" id="product">
-<div class="container split">
-<div class="section-head reveal reveal--left">
-<span class="section-label">Product</span>
-<h2 class="section-title">{esc(PRODUCT_TITLE).replace(chr(10), "<br>")}</h2>
-<p class="status-tag">開発中</p>
-</div>
-<div class="reveal" style="--d: 1">
-{_paras(PRODUCT_TEXT)}
-</div>
-</div>
-</section>
-
-<section class="section top-why" id="why">
-<div class="container">
-{_section_head("Why us", "なぜ、Lead Japanがやるのか。")}
-<ol class="why-list">{why}</ol>
-</div>
-</section>
-
-<section class="section section-dark top-message" id="founder">
+<section class="section section-dark top-message" id="message">
 <div class="container message-grid">
-{_section_head("Founder", "代表と書籍", " reveal--left")}
+{_section_head("Message", "代表挨拶", " reveal--left", SECTION_DISPLAY["message"])}
 <div class="reveal" style="--d: 1">
-<p class="founder-title">{esc(FOUNDER_TITLE)}</p>
-{_paras(FOUNDER_TEXT)}
+<blockquote class="message-excerpt"><p>{esc(MESSAGE_EXCERPT)}</p></blockquote>
 <p class="message-sign">{esc(SITE["name"])} 代表社員 <strong>{esc(SITE["representative"])}</strong></p>
-<p class="founder-book">著書『{esc(BOOK_TITLE)}』（{esc(BOOK["release_label"] or "")}）</p>
-<p class="hero-actions"><a class="btn btn-outline-light" href="/message.html">代表挨拶を読む</a><a class="btn btn-outline-light" href="/pm-book.html">書籍について見る</a></p>
+<a class="btn btn-outline-light" href="/message.html">代表挨拶を読む</a>
 </div>
-</div>
-</section>
-
-<section class="section top-fit" id="fit">
-<div class="container">
-{_section_head("Fit", "向いている会社・向いていない会社")}
-<div class="fit-grid">
-<div class="fit-col reveal reveal--left"><h3>こんな会社に向いています</h3>{_list(FIT, "check-list")}</div>
-<div class="fit-col fit-col--no reveal reveal--right" style="--d: 1"><h3>こんな場合は、向いていないかもしれません</h3>{_list(UNFIT, "cross-list")}</div>
-</div>
-<p class="closing closing-center">{esc(FIT_NOTE)}</p>
-</div>
-</section>
-
-<section class="section alt top-faq" id="faq">
-<div class="container split">
-{_section_head("FAQ", "よくある質問", " reveal--left")}
-{faq_html()}
 </div>
 </section>
 
@@ -329,13 +236,13 @@ def body_index() -> str:
 <div class="cta-main">
 <span class="section-label">Contact</span>
 <p class="section-display" lang="en">{esc(SECTION_DISPLAY["contact"])}</p>
-<h2 class="section-title">{esc(CTA_TITLE)}</h2>
+<h2 class="section-title">お問い合わせ</h2>
 <p class="cta-lead">{esc(CTA_LEAD)}</p>
 <ul class="cta-tags">{contact_cats}</ul>
 </div>
 <div class="cta-box">
 <dl><dt>受付時間</dt><dd>{esc(CONTACT_HOURS)}</dd><dt>所在地</dt><dd>{esc(SITE["address"])}</dd></dl>
-{cta_button("btn btn-light btn-block")}
+<a class="btn btn-light btn-block" href="/contact.html">お問い合わせはこちら</a>
 </div>
 </div>
 </div>
@@ -370,6 +277,16 @@ _SVG = (
 )
 
 ICONS: dict[str, str] = {
+    "solution": _SVG
+    + '<circle cx="60" cy="22" r="9"/><circle cx="24" cy="60" r="9"/><circle cx="96" cy="60" r="9"/>'
+    '<circle cx="42" cy="98" r="9"/><circle cx="78" cy="98" r="9"/><circle cx="60" cy="60" r="7"/>'
+    '<path d="M54 29 29 52M66 29l25 23M33 60h20M67 60h20M56 66 46 90M64 66l10 24M51 98h18"/></svg>',
+    "product": _SVG
+    + '<rect x="14" y="20" width="92" height="72" rx="6"/><path d="M14 36h92M24 28h4M34 28h4"/>'
+    '<path d="M28 52h22M28 64h40M28 76h30"/><rect x="74" y="48" width="20" height="32" rx="2"/></svg>',
+    "publishing": _SVG
+    + '<path d="M60 36C48 26 30 24 12 28v62c18-4 36-2 48 8 12-10 30-12 48-8V28c-18-4-36-2-48 8z"/>'
+    '<path d="M60 36v62M24 46c10-2 22 0 28 5M24 62c10-2 22 0 28 5M96 46c-10-2-22 0-28 5M96 62c-10-2-22 0-28 5"/></svg>',
     "analysis": _SVG
     + '<circle cx="60" cy="60" r="44"/><circle cx="60" cy="60" r="4"/>'
     '<path d="m82 38-12 28-28 16 12-28z"/><path d="M60 10v8M60 102v8M10 60h8M102 60h8"/></svg>',
@@ -427,10 +344,20 @@ def body_company() -> str:
 
 
 def body_business() -> str:
-    items = []
+    toc = "".join(
+        f'<a class="biz-card reveal" style="--d: {i}" href="#{esc(b.slug)}">'
+        f'<span class="biz-card-top"><span class="biz-icon-wrap">{ICONS.get(b.slug, "")}</span>'
+        f'<span class="biz-num">{esc(b.number)}</span></span>'
+        f'<span class="biz-en" lang="en">{esc(b.title_en)}</span>'
+        f'<h2 class="biz-title">{esc(b.title)}</h2>'
+        f'<p class="biz-summary">{esc(b.summary)}</p>'
+        '<span class="biz-more biz-more--down">見る</span></a>'
+        for i, b in enumerate(BUSINESSES)
+    )
+    services = []
     for i, sv in enumerate(SERVICES):
         side = "reveal--left" if i % 2 == 0 else "reveal--right"
-        items.append(
+        services.append(
             f'<section id="{esc(sv.slug)}" class="business-item reveal {side}">\n'
             f'<div class="business-visual">{ICONS.get(sv.slug, "")}</div>\n'
             '<div class="business-text">'
@@ -441,69 +368,161 @@ def body_business() -> str:
             f'{_list(sv.details, "")}'
             "</div>\n</section>"
         )
-    stage_summary = "".join(
-        f'<li><a href="#{esc(st.slug)}"><span lang="en">{esc(st.label)}</span>{esc(st.title)}</a>'
-        f"<span>{esc(st.terms)}</span></li>"
-        for st in STAGES
+    before_after = (
+        '<div class="ba-grid">'
+        f'<div class="ba-col ba-before reveal reveal--left"><p class="ba-label" lang="en">Before</p>{_list(BEFORE, "ba-list")}</div>'
+        f'<div class="ba-col ba-after reveal reveal--right" style="--d: 1"><p class="ba-label" lang="en">After</p>{_list(AFTER, "ba-list")}</div>'
+        "</div>"
     )
+    why = "".join(
+        f'<li class="why-item reveal" style="--d: {i}"><span class="why-num">{i + 1:02d}</span>'
+        f"<h3>{esc(t)}</h3><p>{esc(d)}</p></li>"
+        for i, (t, d) in enumerate(WHY)
+    )
+    lead = "".join(f'<p class="hero-sub">{esc(t)}</p>' for t in SOLUTION_LEAD)
+    solution, product, publishing = BUSINESSES
     return f"""{page_hero("事業・サービス", "BUSINESS")}
 <section class="section business-intro">
+<div class="container">
+<p class="section-lead reveal">Lead Japanは、3つの事業を通じて、日本の企業が世界で力を発揮するための土台をつくります。</p>
+<nav aria-label="事業"><div class="biz-grid biz-grid--3">
+{toc}
+</div></nav>
+</div>
+</section>
+
+<section class="section section-dark solution-head" id="{solution.slug}">
+<div class="container">
+<p class="solution-kicker"><span>{esc(solution.number)}</span>{esc(solution.title)}</p>
+<h2 class="solution-title"><span>{esc(SOLUTION_TITLE[0])}</span><span class="hero-accent">{esc(SOLUTION_TITLE[1])}</span></h2>
+<div class="hero-lead">{lead}</div>
+<p class="hero-actions">{consult_button("btn btn-light")}<a class="btn btn-outline-light" href="#process">支援の進め方を見る</a></p>
+<p class="hero-note">{esc(SOLUTION_NOTE)}</p>
+<div class="hero-result">{_result_figure()}<p class="hero-result-note">{esc(RESULT_SHORT)}</p></div>
+</div>
+</section>
+
+<section class="section" id="problem">
 <div class="container split">
-{_section_head("One package", "分析 × 開発 × 定着を、一つに。", " reveal--left")}
+{_section_head("Problem", "人が足りないのではない。\n管理業務が、人を奪っている。", " reveal--left")}
 <div class="reveal" style="--d: 1">
-<p class="about-lead">Lead Japanの事業は、一つです。</p>
-<p>スタートアップ・中小企業の業務オペレーションを分析し、AI駆動の仕組みを開発し、現場に定着させ、継続的に改善する支援です。提供は3段階に分かれています。</p>
-<ol class="stage-summary">{stage_summary}</ol>
-<p>「コンサルティング」「システム開発」「AIソリューション」を分けて提供するのではありません。その3つが分断されることこそが、現場で使われない仕組みを生む原因だからです。ただし契約はいきなり長期ではなく、診断から段階的に進められます。</p>
+{_list(PAINS, "check-list")}
+<p class="closing">{esc(PAINS_CLOSING)}</p>
 </div>
 </div>
 </section>
 
-<section class="section alt">
+<section class="section alt" id="goal">
 <div class="container">
-{_section_head("Service", "提供内容の詳細")}
+{_section_head("Goal", "目指すのは、省人化ではありません。\n人が、本質的な仕事に戻れる状態です。")}
+{before_after}
+<p class="closing closing-center">{esc(BEFORE_AFTER_CLOSING)}</p>
+</div>
+</section>
+
+<section class="section section-dark top-result" id="result">
+<div class="container split">
+<div>
+{_section_head("Result", "言葉ではなく、\n数字で証明してきた改善です。", " reveal--left")}
+{_result_figure(" result-figure--large reveal")}
+</div>
+<div class="reveal" style="--d: 1">
+{_paras(RESULT_TEXT)}
+<p class="result-note">{esc(RESULT_NOTE)}</p>
+</div>
+</div>
+</section>
+
+<section class="section" id="service">
+<div class="container">
+{_section_head("Service", "分析して終わりでも、開発して終わりでもない。\n理解から定着まで、一貫して支援します。")}
 <p class="section-lead reveal">{esc(SERVICES_LEAD)}</p>
 <div class="business-list">
-{chr(10).join(items)}
+{chr(10).join(services)}
 </div>
+<p class="package-note reveal">{esc(SERVICES_NOTE)}</p>
 </div>
 </section>
 
-<section class="section" id="process">
+<section class="section alt" id="process">
 <div class="container">
-{_section_head("Process", "進め方と料金")}
+{_section_head("Process", "いきなり長期契約は、提案しません。\nまずは1ヶ月の診断から。")}
 {stages_html()}
 </div>
 </section>
 
-<section class="section alt">
+<section class="section" id="examples">
 <div class="container split">
-{_section_head("Examples", "自動化・効率化の対象例", " reveal--left")}
+{_section_head("Examples", "たとえば、\nこんな管理業務からゼロに近づけます。", " reveal--left")}
 <div class="reveal" style="--d: 1">
 {examples_html()}
 </div>
 </div>
 </section>
 
-<section class="section" id="publishing">
-<div class="container split">
-{_section_head("Publishing", "出版について", " reveal--left")}
-<div class="reveal" style="--d: 1">
-<p>{esc(PUBLISHING_TEXT)}</p>
-{_more_link("/pm-book.html", "書籍の紹介を見る")}
+<section class="section alt" id="why">
+<div class="container">
+{_section_head("Why us", "なぜ、Lead Japanがやるのか。")}
+<ol class="why-list">{why}</ol>
+<div class="founder-note reveal">
+<p class="founder-title">{esc(FOUNDER_TITLE)}</p>
+{_paras(FOUNDER_TEXT)}
+{_more_link("/message.html", "代表挨拶を読む")}
 </div>
 </div>
 </section>
 
-<section class="section alt cta-band">
+<section class="section" id="fit">
+<div class="container">
+{_section_head("Fit", "向いている会社・向いていない会社")}
+<div class="fit-grid">
+<div class="fit-col reveal reveal--left"><h3>こんな会社に向いています</h3>{_list(FIT, "check-list")}</div>
+<div class="fit-col fit-col--no reveal reveal--right" style="--d: 1"><h3>こんな場合は、向いていないかもしれません</h3>{_list(UNFIT, "cross-list")}</div>
+</div>
+<p class="closing closing-center">{esc(FIT_NOTE)}</p>
+</div>
+</section>
+
+<section class="section alt" id="faq">
+<div class="container split">
+{_section_head("FAQ", "よくある質問", " reveal--left")}
+{faq_html()}
+</div>
+</section>
+
+<section class="section cta-band">
 <div class="container">
 <div class="cta-card reveal">
 <div class="cta-main">
 <span class="section-label">Contact</span>
-<h2 class="section-title">{esc(CTA_TITLE)}</h2>
-<p class="cta-lead">{esc(CTA_LEAD)}</p>
+<h2 class="section-title">{esc(CONSULT_TITLE)}</h2>
+<p class="cta-lead">{esc(CONSULT_LEAD)}</p>
 </div>
-<div class="cta-box">{cta_button("btn btn-light btn-block")}</div>
+<div class="cta-box">{consult_button("btn btn-light btn-block")}</div>
+</div>
+</div>
+</section>
+
+<section class="section business-block" id="{product.slug}">
+<div class="container split">
+<div class="section-head reveal reveal--left">
+<span class="section-label">{esc(product.number)} {esc(product.title_en)}</span>
+<h2 class="section-title">{esc(PRODUCT_TITLE).replace(chr(10), "<br>")}</h2>
+<p class="status-tag">開発中</p>
+</div>
+<div class="reveal" style="--d: 1">
+{_paras(PRODUCT_TEXT)}
+</div>
+</div>
+</section>
+
+<section class="section alt business-block" id="{publishing.slug}">
+<div class="container split">
+{_section_head(f"{publishing.number} {publishing.title_en}", publishing.title, " reveal--left")}
+<div class="reveal" style="--d: 1">
+<p>{esc(publishing.summary)}{esc(PUBLISHING_TEXT)}</p>
+<p>著書『{esc(BOOK_TITLE)}』（{esc(BOOK["release_label"] or "")}）</p>
+{_more_link("/pm-book.html", "書籍の紹介を見る")}
 </div>
 </div>
 </section>"""

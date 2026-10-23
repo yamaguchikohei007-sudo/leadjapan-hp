@@ -5,9 +5,9 @@ from pathlib import Path
 from tests.helpers import ROOT
 from unittest import mock
 
-from sitegen.content import (CONTACT_CATEGORIES, CONTACT_HOURS, CTA_BUTTON, CTA_LEAD, FAQ, HERO_LEAD, NEWS,
-                             PLACEHOLDER, PRIVACY, RESULT_NOTE, RESULT_SHORT, SECTION_DISPLAY, SERVICES, SITE,
-                             STAGES, NewsItem)
+from sitegen.content import (ABOUT_LEAD, ABOUT_TEXT, BUSINESSES, CONSULT_BUTTON, CONTACT_CATEGORIES, CONTACT_HOURS,
+                             CTA_LEAD, FAQ, HERO_LEAD, MESSAGE, MESSAGE_EXCERPT, NEWS, PLACEHOLDER, PRIVACY,
+                             RESULT_NOTE, RESULT_SHORT, SECTION_DISPLAY, SERVICES, SITE, STAGES, NewsItem)
 from sitegen.geo import pin_xy
 from sitegen.render import esc
 from sitegen.pages import (PAGES, article_page_title, body_business, body_company, body_contact, body_index,
@@ -19,22 +19,14 @@ from sitegen.pages import (PAGES, article_page_title, body_business, body_compan
 class IndexPageTests(unittest.TestCase):
     def test_index_first_and_titled(self):
         self.assertEqual(PAGES[0].filename, "index.html")
-        self.assertTrue(PAGES[0].title.startswith("Lead Japan 合同会社 | 管理業務はAIに。"))
+        self.assertEqual(PAGES[0].title, "Lead Japan 合同会社 | 日本を導き、世界へ。")
 
     def test_index_hero(self):
         b = body_index()
-        self.assertIn('<h1><span>管理業務はAIに。</span><span class="hero-accent">人間は、事業を前に進めることに。</span></h1>', b)
+        self.assertIn('<h1><span>日本を導き、</span><span class="hero-accent">世界へ。</span></h1>', b)
         self.assertIn("Lead Japan — Tokyo, Japan", b)
-        for text in HERO_LEAD:
-            self.assertIn(esc(text), b)
-        self.assertIn('href="#process">支援の進め方を見る', b)
+        self.assertIn(esc(HERO_LEAD), b)
         self.assertNotIn("SCROLL", b)
-
-    def test_result_never_shown_without_its_note(self):
-        b = body_index()
-        self.assertEqual(b.count('class="result-figure'), 2)
-        self.assertIn(esc(RESULT_SHORT), b)
-        self.assertIn(esc(RESULT_NOTE), b)
 
     def test_hero_map_and_visitor_pin_default_to_tokyo(self):
         b = body_index()
@@ -53,33 +45,24 @@ class IndexPageTests(unittest.TestCase):
 
     def test_index_section_copy(self):
         b = body_index()
-        for text in (CTA_LEAD, CONTACT_HOURS, *SECTION_DISPLAY.values()):
+        for text in (ABOUT_LEAD, MESSAGE_EXCERPT, CTA_LEAD, CONTACT_HOURS, *SECTION_DISPLAY.values()):
             self.assertIn(esc(text), b)
-        for section in ("problem", "goal", "result", "service", "process", "examples", "product", "why",
-                        "founder", "fit", "faq", "news", "contact"):
-            self.assertIn(f'id="{section}"', b)
+        self.assertIn(MESSAGE_EXCERPT, " ".join(MESSAGE))
+        self.assertIn(esc(ABOUT_TEXT), b)
+        self.assertIn(ABOUT_TEXT, SITE["philosophy"])  # excerpt of the philosophy
 
-    def test_index_links_all_services_and_stages(self):
+    def test_three_businesses_in_band_and_cards(self):
+        self.assertEqual([biz.title for biz in BUSINESSES], ["AI駆動ソリューション", "プロダクト", "出版"])
         b = body_index()
-        for sv in SERVICES:
-            self.assertIn(f'href="/business.html#{sv.slug}"', b)
-        for st in STAGES:
-            self.assertIn(f'id="{st.slug}"', b)
-            self.assertIn(f'href="#{st.slug}"', b)
+        for biz in BUSINESSES:
+            # once in the hero band, once on the card
+            self.assertEqual(b.count(f'href="/business.html#{biz.slug}"'), 2)
+        self.assertIn("<dt>事業領域</dt><dd>3</dd>", b)
 
-    def test_index_faq_uses_details_without_script(self):
+    def test_index_keeps_solution_details_on_the_business_page(self):
         b = body_index()
-        self.assertEqual(b.count('<details class="faq">'), len(FAQ))
-        self.assertNotIn("<script", b)
-
-    def test_cta_wording_is_the_same_everywhere(self):
-        for body in (body_index(), body_business()):
-            self.assertIn(f'href="/contact.html">{esc(CTA_BUTTON)}</a>', body)
-
-    def test_product_is_marked_in_development_without_signup(self):
-        b = body_index()
-        self.assertIn("開発中", b)
-        self.assertNotIn("先行案内に登録", b)
+        self.assertNotIn("result-figure", b)
+        self.assertNotIn("<details", b)
 
     def test_index_shows_latest_three_news(self):
         self.assertEqual(body_index().count("<li><time"), min(3, len(NEWS)))
@@ -89,7 +72,7 @@ class IndexPageTests(unittest.TestCase):
 
     def test_index_links_sections(self):
         b = body_index()
-        for href in ("/business.html", "/message.html", "/pm-book.html", "/news.html", "/contact.html"):
+        for href in ("/company.html", "/business.html", "/message.html", "/news.html", "/contact.html"):
             self.assertIn(f'href="{href}"', b)
 
     def test_skyline_svg_has_tower_and_no_script(self):
@@ -219,12 +202,42 @@ class SubPageTests(unittest.TestCase):
 
     def test_business_sections_have_ids(self):
         b = body_business()
+        for biz in BUSINESSES:
+            self.assertIn(f'id="{biz.slug}"', b)
+            self.assertIn(f'href="#{biz.slug}"', b)
         for sv in SERVICES:
             self.assertIn(f'id="{sv.slug}"', b)
         for st in STAGES:
             self.assertIn(f'id="{st.slug}"', b)
-        self.assertIn('id="process"', b)
+        for section in ("problem", "goal", "result", "service", "process", "examples", "why", "fit", "faq"):
+            self.assertIn(f'id="{section}"', b)
         self.assertIn('href="/pm-book.html"', b)
+
+    def test_business_solution_order(self):
+        # the solution comes first, then the product, then publishing
+        b = body_business()
+        self.assertLess(b.index('id="solution"'), b.index('id="faq"'))
+        self.assertLess(b.index('id="faq"'), b.index('id="product"'))
+        self.assertLess(b.index('id="product"'), b.index('id="publishing"'))
+
+    def test_result_never_shown_without_its_note(self):
+        b = body_business()
+        self.assertEqual(b.count('class="result-figure'), 2)
+        self.assertIn(esc(RESULT_SHORT), b)
+        self.assertIn(esc(RESULT_NOTE), b)
+
+    def test_business_faq_uses_details_without_script(self):
+        b = body_business()
+        self.assertEqual(b.count('<details class="faq">'), len(FAQ))
+        self.assertNotIn("<script", b)
+
+    def test_consultation_button(self):
+        self.assertEqual(body_business().count(f'href="/contact.html">{esc(CONSULT_BUTTON)}</a>'), 2)
+
+    def test_product_is_marked_in_development_without_signup(self):
+        b = body_business()
+        self.assertIn("開発中", b)
+        self.assertNotIn("先行案内に登録", b)
 
     def test_business_text_is_escaped(self):
         evil = SERVICES[0].__class__("analysis", "01", "<b>X</b>", "E", "s&t", ("d",))
