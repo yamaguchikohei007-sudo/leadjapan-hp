@@ -6,13 +6,19 @@ from dataclasses import dataclass
 from typing import Callable, Sequence
 
 from sitegen.content import (
-    BOOK, BOOK_ABOUT, BOOK_AUTHOR, BOOK_AUTHOR_BIO, BOOK_AUTHOR_NAME, BOOK_BADGES, BOOK_BONUS_ERROR,
-    BOOK_BONUS_FEATURES, BOOK_BONUS_HOWTO, BOOK_BONUS_INTRO, BOOK_BONUS_TEXT, BOOK_BONUS_TITLE, BOOK_CATCH,
-    BOOK_CLOSING_TITLE, BOOK_COLUMNS, BOOK_COLUMNS_LEAD, BOOK_COMING_SOON_NOTE, BOOK_COVER_ALT, BOOK_FORMATS,
-    BOOK_FOR_YOU, BOOK_LEAD, BOOK_NOTIFY_TEXT, BOOK_NOTIFY_TITLE, BOOK_OG_DESCRIPTION, BOOK_PARTS, BOOK_SUBTITLE,
-    BOOK_TITLE, BOOK_TRADEMARK_NOTE, ABOUT_LEAD, ABOUT_TEXT, BUSINESSES, COMPANY_NAME_ORIGIN, CONTACT_CATEGORIES, CONTACT_HOURS, CONTACT_INTRO, CTA_LEAD,
-    HERO_LEAD, HERO_SUB, MESSAGE, MESSAGE_EXCERPT, MESSAGE_TITLE, NEWS, NOT_FOUND_TEXT, PAGE_META, PLACEHOLDER,
-    PRIVACY, PRIVACY_ENACTED, SECTION_DISPLAY, SITE, SITE_URL, NewsItem,
+    ABOUT_LEAD, ABOUT_TEXT, AFTER, AUTOMATION_EXAMPLES, AUTOMATION_NOTE, BEFORE, BEFORE_AFTER_CLOSING, BOOK,
+    BOOK_ABOUT, BOOK_AUTHOR, BOOK_AUTHOR_BIO, BOOK_AUTHOR_NAME, BOOK_BADGES, BOOK_BONUS_ERROR, BOOK_BONUS_FEATURES,
+    BOOK_BONUS_HOWTO, BOOK_BONUS_INTRO, BOOK_BONUS_TEXT, BOOK_BONUS_TITLE, BOOK_CATCH, BOOK_CLOSING_TITLE,
+    BOOK_COLUMNS, BOOK_COLUMNS_LEAD, BOOK_COMING_SOON_NOTE, BOOK_COVER_ALT, BOOK_FORMATS, BOOK_FOR_YOU, BOOK_LEAD,
+    BOOK_NOTIFY_TEXT, BOOK_NOTIFY_TITLE, BOOK_OG_DESCRIPTION, BOOK_PARTS, BOOK_SUBTITLE, BOOK_TITLE,
+    BOOK_TRADEMARK_NOTE, BUSINESSES, COMPANY_ACTIVITIES, COMPANY_NAME_ORIGIN, COMPANY_PHILOSOPHY_TEXT,
+    CONSULT_BUTTON, CONSULT_LEAD, CONSULT_TITLE, CONSULTATION_TEXT, CONSULTATION_TITLE, CONTACT_ASK,
+    CONTACT_CATEGORIES, CONTACT_HOURS, CONTACT_INTRO, CONTACT_PROCESS, CONTACT_TITLE, CTA_LEAD, FAQ, FIT, FIT_NOTE,
+    FOUNDER_TEXT, FOUNDER_TITLE, HERO_LEAD, HERO_SUB, MESSAGE, MESSAGE_EXCERPT, MESSAGE_TITLE, NEWS,
+    NOT_FOUND_TEXT, PAGE_META, PAINS, PAINS_CLOSING, PLACEHOLDER, PRIVACY, PRIVACY_ENACTED, PROCESS_LEAD,
+    PROCESS_NOTE, PRODUCT_TEXT, PRODUCT_TITLE, PUBLISHING_TEXT, RESULT_FROM, RESULT_LABEL, RESULT_NOTE,
+    RESULT_SHORT, RESULT_TEXT, RESULT_TO, SECTION_DISPLAY, SERVICES, SERVICES_LEAD, SERVICES_NOTE, SITE, SITE_URL,
+    SOLUTION_LEAD, SOLUTION_NOTE, SOLUTION_TITLE, STAGES, UNFIT, WHY, NewsItem,
 )
 from sitegen.geo import MAP_HEIGHT, MAP_WIDTH, pin_xy
 from sitegen.render import esc, url
@@ -51,13 +57,14 @@ def news_list_html(items: Sequence[NewsItem], *, with_summary: bool = False) -> 
 
 
 def _section_head(label: str, title: str, extra: str = "", display: str = "") -> str:
-    """display: optional large English heading shown between the label and the title."""
+    """display: optional large English heading shown between the label and the title.
+    A newline in title becomes a line break."""
     display_html = f'<p class="section-display" lang="en">{esc(display)}</p>' if display else ""
     return (
         f'<div class="section-head reveal{extra}">'
         f'<span class="section-label">{esc(label)}</span>'
         f"{display_html}"
-        f'<h2 class="section-title">{esc(title)}</h2>'
+        f'<h2 class="section-title">{esc(title).replace(chr(10), "<br>")}</h2>'
         "</div>"
     )
 
@@ -80,21 +87,75 @@ def _hero_map() -> str:
     )
 
 
-def body_index() -> str:
-    cards = "\n".join(
-        f'<a class="biz-card reveal" style="--d: {i}" href="/business.html#{esc(b.slug)}">'
-        f'<span class="biz-card-top"><span class="biz-icon-wrap">{ICONS.get(b.slug, "")}</span>'
-        f'<span class="biz-num">{esc(b.number)}</span></span>'
-        f'<span class="biz-en" lang="en">{esc(b.title_en)}</span>'
-        f'<h3 class="biz-title">{esc(b.title)}</h3>'
-        f'<p class="biz-summary">{esc(b.summary)}</p>'
-        f'<span class="biz-more">詳しく見る</span>'
-        "</a>"
-        for i, b in enumerate(BUSINESSES)
+def _list(items: Sequence[str], cls: str) -> str:
+    return f'<ul class="{cls}">' + "".join(f"<li>{esc(i)}</li>" for i in items) + "</ul>"
+
+
+def _paras(texts: Sequence[str]) -> str:
+    return "\n".join(f"<p>{esc(t)}</p>" for t in texts)
+
+
+def _result_figure(extra: str = "") -> str:
+    """30% → 5%: the founder's own result (always shown with RESULT_SHORT or RESULT_NOTE)."""
+    return (
+        f'<p class="result-figure{extra}"><span class="result-label">{esc(RESULT_LABEL)}</span>'
+        f'<span class="result-nums"><span class="result-from">{esc(RESULT_FROM)}</span>'
+        f'<span class="result-arrow" aria-hidden="true">→</span><span class="visually-hidden">から</span>'
+        f'<strong class="result-to">{esc(RESULT_TO)}</strong></span></p>'
     )
+
+
+def _fold(title: str, body: str, *, open_: bool = False) -> str:
+    """A section that opens on tap (<details>: no JavaScript). Keeps solution.html short on phones."""
+    return (f'<details class="fold"{" open" if open_ else ""}><summary><h3 class="fold-title">{esc(title)}</h3></summary>'
+            f'<div class="fold-body">{body}</div></details>')
+
+
+def stages_html() -> str:
+    """Free consultation, then Stage 1–3: period and price always shown, the rest opens on tap."""
+    rows = [
+        '<li class="stage stage-entry">'
+        '<div class="stage-head"><span class="stage-label">入口</span>'
+        f'<h3 class="stage-title">{esc(CONSULTATION_TITLE)}</h3><p class="stage-terms">無料</p></div>'
+        f'<div class="stage-body"><p>{esc(CONSULTATION_TEXT)}</p></div></li>'
+    ]
+    for st in STAGES:
+        notes = "".join(f'<p class="stage-note">※{esc(n)}</p>' for n in st.notes)
+        items_label = "成果物" if st.slug == "stage1" else "主な内容"
+        highlight = f'<p class="stage-highlight">{esc(st.highlight)}</p>' if st.highlight else ""
+        rows.append(
+            f'<li class="stage" id="{esc(st.slug)}">'
+            f'<div class="stage-head"><span class="stage-label" lang="en">{esc(st.label)}</span>'
+            f'<h3 class="stage-title">{esc(st.title)}</h3><p class="stage-terms">{esc(st.terms)}</p>{highlight}</div>'
+            f'<details class="stage-more"><summary>内容を見る</summary><div class="stage-body">{_paras(st.lead)}'
+            f'<p class="stage-items-label">{items_label}</p>{_list(st.items, "stage-items")}{notes}</div></details></li>'
+        )
+    return (
+        '<ol class="stage-list">\n' + "\n".join(rows) + "\n</ol>\n"
+        f'<p class="process-note">※{esc(PROCESS_NOTE)}</p>'
+    )
+
+
+def examples_html() -> str:
+    return (_list(AUTOMATION_EXAMPLES, "example-list reveal")
+            + f'\n<p class="process-note">※{esc(AUTOMATION_NOTE)}</p>')
+
+
+def faq_html() -> str:
+    # <details>: opens and closes without JavaScript
+    return '<div class="faq-list">\n' + "\n".join(
+        f'<details class="faq"><summary>{esc(q)}</summary><p>{esc(a)}</p></details>' for q, a in FAQ
+    ) + "\n</div>"
+
+
+def consult_button(cls: str = "btn") -> str:
+    return f'<a class="{cls}" href="/contact.html">{esc(CONSULT_BUTTON)}</a>'
+
+
+def body_index() -> str:
     band = "".join(
-        f'<li><a href="/business.html#{esc(b.slug)}"><span class="hero-band-num">{esc(b.number)}</span>'
-        f"{esc(b.title.removesuffix('の展開'))}</a></li>"
+        f'<li><a href="/{esc(b.slug)}.html"><span class="hero-band-num">{esc(b.number)}</span>'
+        f"{esc(b.title)}</a></li>"
         for b in BUSINESSES
     )
     facts = (
@@ -103,7 +164,7 @@ def body_index() -> str:
         ("拠点", "Tokyo"),
     )
     facts_html = "".join(f"<div><dt>{esc(k)}</dt><dd>{esc(v)}</dd></div>" for k, v in facts)
-    contact_cats = "".join(f"<li>{esc(c)}</li>" for c in CONTACT_CATEGORIES)
+    contact_cats = "".join(f"<li>{esc(c)}</li>" for c in CONTACT_CATEGORIES[:-1])
     return f"""<section class="section hero">
 <div class="hero-grid" aria-hidden="true"></div>
 {_hero_map()}
@@ -132,12 +193,10 @@ def body_index() -> str:
 <section class="section alt top-business" id="business">
 <div class="container">
 <div class="head-row">
-{_section_head("Business", "事業概要", display=SECTION_DISPLAY["business"])}
-{_more_link("/business.html", "事業概要を見る")}
+{_section_head("Business", "事業・サービス", display=SECTION_DISPLAY["business"])}
+{_more_link("/business.html", "事業・サービスを見る")}
 </div>
-<div class="biz-grid">
-{cards}
-</div>
+{_business_cards("h3")}
 </div>
 </section>
 
@@ -211,26 +270,34 @@ _SVG = (
 )
 
 ICONS: dict[str, str] = {
-    "ai": _SVG
+    "solution": _SVG
     + '<circle cx="60" cy="22" r="9"/><circle cx="24" cy="60" r="9"/><circle cx="96" cy="60" r="9"/>'
     '<circle cx="42" cy="98" r="9"/><circle cx="78" cy="98" r="9"/><circle cx="60" cy="60" r="7"/>'
     '<path d="M54 29 29 52M66 29l25 23M33 60h20M67 60h20M56 66 46 90M64 66l10 24M51 98h18"/></svg>',
-    "consulting": _SVG
-    + '<circle cx="60" cy="60" r="44"/><circle cx="60" cy="60" r="4"/>'
-    '<path d="m82 38-12 28-28 16 12-28z"/><path d="M60 10v8M60 102v8M10 60h8M102 60h8"/></svg>',
-    "system": _SVG
-    + '<rect x="14" y="14" width="64" height="46" rx="3"/><path d="M14 26h64"/>'
-    '<rect x="34" y="40" width="64" height="46" rx="3"/><path d="M34 52h64"/>'
-    '<rect x="54" y="66" width="52" height="40" rx="3"/><path d="M54 78h52"/></svg>',
+    "product": _SVG
+    + '<rect x="14" y="20" width="92" height="72" rx="6"/><path d="M14 36h92M24 28h4M34 28h4"/>'
+    '<path d="M28 52h22M28 64h40M28 76h30"/><rect x="74" y="48" width="20" height="32" rx="2"/></svg>',
     "publishing": _SVG
     + '<path d="M60 36C48 26 30 24 12 28v62c18-4 36-2 48 8 12-10 30-12 48-8V28c-18-4-36-2-48 8z"/>'
     '<path d="M60 36v62M24 46c10-2 22 0 28 5M24 62c10-2 22 0 28 5M96 46c-10-2-22 0-28 5M96 62c-10-2-22 0-28 5"/></svg>',
+    "analysis": _SVG
+    + '<circle cx="60" cy="60" r="44"/><circle cx="60" cy="60" r="4"/>'
+    '<path d="m82 38-12 28-28 16 12-28z"/><path d="M60 10v8M60 102v8M10 60h8M102 60h8"/></svg>',
+    "data": _SVG
+    + '<ellipse cx="60" cy="26" rx="36" ry="12"/><path d="M24 26v68c0 6.6 16 12 36 12s36-5.4 36-12V26"/>'
+    '<path d="M24 49c0 6.6 16 12 36 12s36-5.4 36-12M24 72c0 6.6 16 12 36 12s36-5.4 36-12"/></svg>',
+    "development": _SVG
+    + '<rect x="14" y="14" width="64" height="46" rx="3"/><path d="M14 26h64"/>'
+    '<rect x="34" y="40" width="64" height="46" rx="3"/><path d="M34 52h64"/>'
+    '<rect x="54" y="66" width="52" height="40" rx="3"/><path d="M54 78h52"/></svg>',
+    "adoption": _SVG
+    + '<path d="M98 60a38 38 0 1 1-11-27"/><path d="M90 16v18H72"/><path d="m42 60 13 13 25-27"/></svg>',
 }
 
 
 def body_company() -> str:
     name_origin = "\n".join(f"<p>{esc(p)}</p>" for p in COMPANY_NAME_ORIGIN)
-    biz_list = "<ul>" + "".join(f"<li>{esc(b.title)}</li>" for b in BUSINESSES) + "</ul>"
+    biz_list = "<ul>" + "".join(f"<li>{esc(a)}</li>" for a in COMPANY_ACTIVITIES) + "</ul>"
     rows = [
         ("商号", esc(SITE["name"])),
         ("英文社名", esc(SITE["name_en"])),
@@ -246,6 +313,7 @@ def body_company() -> str:
 <div class="container">
 {_section_head("Philosophy", "企業理念")}
 <blockquote class="philosophy reveal reveal--zoom"><p>{esc(SITE["philosophy"])}</p></blockquote>
+<p class="philosophy-text reveal">{esc(COMPANY_PHILOSOPHY_TEXT)}</p>
 </div>
 </section>
 
@@ -268,28 +336,168 @@ def body_company() -> str:
 </section>"""
 
 
+def _business_cards(heading: str) -> str:
+    """The three business cards; each opens its own page. heading: "h2" on business.html, "h3" on the top page."""
+    return '<div class="biz-grid biz-grid--3">\n' + "\n".join(
+        f'<a class="biz-card reveal" style="--d: {i}" href="/{esc(b.slug)}.html">'
+        f'<span class="biz-card-top"><span class="biz-icon-wrap">{ICONS.get(b.slug, "")}</span>'
+        f'<span class="biz-num">{esc(b.number)}</span></span>'
+        f'<span class="biz-en" lang="en">{esc(b.title_en)}</span>'
+        f'<{heading} class="biz-title">{esc(b.title)}</{heading}>'
+        f'<p class="biz-summary">{esc(b.summary)}</p>'
+        f'<span class="biz-more">詳しく見る</span>'
+        "</a>"
+        for i, b in enumerate(BUSINESSES)
+    ) + "\n</div>"
+
+
+def _business_hero(b) -> str:
+    return page_hero(b.title, b.title_en.upper(), [("事業・サービス", "business.html"), (b.title, None)])
+
+
+def _back_to_business() -> str:
+    return f'<p class="business-back">{_more_link("/business.html", "事業・サービス一覧へ戻る")}</p>'
+
+
 def body_business() -> str:
-    items = []
-    for i, b in enumerate(BUSINESSES):
-        side = "reveal--left" if i % 2 == 0 else "reveal--right"
-        details = "".join(f"<li>{esc(d)}</li>" for d in b.details)
-        icon = ICONS.get(b.slug, "")
-        items.append(
-            f'<section id="{esc(b.slug)}" class="business-item reveal {side}">\n'
-            f'<div class="business-visual">{icon}</div>\n'
-            '<div class="business-text">'
-            f'<span class="biz-num">{esc(b.number)}</span>'
-            f'<h2>{esc(b.title)}</h2>'
-            f'<span class="biz-en">{esc(b.title_en)}</span>'
-            f'<p>{esc(b.summary)}</p>'
-            f'<ul>{details}</ul>'
-            + (_more_link("/pm-book.html", "書籍の紹介を見る") if b.slug == "publishing" else "")
-            + "</div>\n</section>"
-        )
-    return f"""{page_hero("事業概要", "BUSINESS")}
-<div class="container business-list">
-{chr(10).join(items)}
-</div>"""
+    return f"""{page_hero("事業・サービス", "BUSINESS")}
+<section class="section business-cards">
+<div class="container">
+<p class="section-lead reveal">Lead Japanは、3つの事業を通じて、日本の企業が世界で力を発揮するための土台をつくります。</p>
+{_business_cards("h2")}
+</div>
+</section>"""
+
+
+def body_solution() -> str:
+    services = "".join(
+        f'<li class="service reveal"><span class="service-icon">{ICONS.get(sv.slug, "")}</span>'
+        f'<div><span class="biz-num">{esc(sv.number)}</span><h3 class="service-title">{esc(sv.title)}</h3>'
+        f"<p>{esc(sv.summary)}</p></div></li>"
+        for sv in SERVICES
+    )
+    before_after = (
+        '<div class="ba-grid">'
+        f'<div class="ba-col ba-before"><p class="ba-label" lang="en">Before</p>{_list(BEFORE, "ba-list")}</div>'
+        f'<div class="ba-col ba-after"><p class="ba-label" lang="en">After</p>{_list(AFTER, "ba-list")}</div>'
+        f'</div><p class="closing">{esc(BEFORE_AFTER_CLOSING)}</p>'
+    )
+    why = "".join(
+        f'<li class="why-item"><span class="why-num">{i + 1:02d}</span><h4>{esc(t)}</h4><p>{esc(d)}</p></li>'
+        for i, (t, d) in enumerate(WHY)
+    )
+    fit = (
+        '<div class="fit-grid">'
+        f'<div class="fit-col"><h4>こんな会社に向いています</h4>{_list(FIT, "check-list")}</div>'
+        f'<div class="fit-col fit-col--no"><h4>こんな場合は、向いていないかもしれません</h4>{_list(UNFIT, "cross-list")}</div>'
+        f'</div><p class="closing">{esc(FIT_NOTE)}</p>'
+    )
+    folds = "\n".join((
+        _fold("こんな状態になっていませんか", _list(PAINS, "check-list") + f'<p class="closing">{esc(PAINS_CLOSING)}</p>'),
+        _fold("目指す状態（Before / After）", before_after),
+        _fold("30%から5%へ：実績の詳細", _paras(RESULT_TEXT)),
+        _fold("自動化・効率化の対象例", examples_html()),
+        _fold("なぜ、Lead Japanがやるのか", f'<ol class="why-list">{why}</ol>'
+              f'<p class="founder-title">{esc(FOUNDER_TITLE)}</p>{_paras(FOUNDER_TEXT)}'
+              + _more_link("/message.html", "代表挨拶を読む")),
+        _fold("向いている会社・向いていない会社", fit),
+        _fold("よくある質問", faq_html()),
+    ))
+    services_detail = "".join(
+        f"<h4>{esc(sv.title)}</h4>{_list(sv.details, 'stage-items')}" for sv in SERVICES
+    ) + f'<p class="package-note">{esc(SERVICES_NOTE)}</p>'
+    lead = "".join(f'<p class="hero-sub">{esc(t)}</p>' for t in SOLUTION_LEAD)
+    solution = BUSINESSES[0]
+    return f"""{_business_hero(solution)}
+<section class="section section-dark solution-head">
+<div class="container">
+<h2 class="solution-title"><span>{esc(SOLUTION_TITLE[0])}</span><span class="hero-accent">{esc(SOLUTION_TITLE[1])}</span></h2>
+<div class="hero-lead">{lead}</div>
+<p class="hero-note">{esc(SOLUTION_NOTE)}</p>
+<div class="hero-result">{_result_figure()}<p class="hero-result-note">{esc(RESULT_SHORT)}</p></div>
+<p class="result-note">{esc(RESULT_NOTE)}</p>
+<p class="hero-actions">{consult_button("btn btn-light")}<a class="btn btn-outline-light" href="#process">進め方と料金を見る</a></p>
+</div>
+</section>
+
+<section class="section" id="service">
+<div class="container">
+{_section_head("Service", "理解から定着まで、一貫して支援します。")}
+<p class="section-lead">{esc(SERVICES_LEAD)}</p>
+<ol class="service-list">{services}</ol>
+{_fold("提供内容の詳細", services_detail)}
+</div>
+</section>
+
+<section class="section alt" id="process">
+<div class="container">
+{_section_head("Process", "まずは1ヶ月の診断から。")}
+<p class="section-lead">{esc(PROCESS_LEAD)}</p>
+{stages_html()}
+</div>
+</section>
+
+<section class="section" id="more">
+<div class="container">
+{_section_head("More", "もっと詳しく")}
+<div class="fold-list">
+{folds}
+</div>
+</div>
+</section>
+
+<section class="section alt cta-band">
+<div class="container">
+<div class="cta-card reveal">
+<div class="cta-main">
+<span class="section-label">Contact</span>
+<h2 class="section-title">{esc(CONSULT_TITLE)}</h2>
+<p class="cta-lead">{esc(CONSULT_LEAD)}</p>
+</div>
+<div class="cta-box">{consult_button("btn btn-light btn-block")}</div>
+</div>
+{_back_to_business()}
+</div>
+</section>"""
+
+
+def body_product() -> str:
+    return f"""{_business_hero(BUSINESSES[1])}
+<section class="section">
+<div class="container split">
+<div class="section-head reveal reveal--left">
+<span class="section-label">Product</span>
+<h2 class="section-title">{esc(PRODUCT_TITLE).replace(chr(10), "<br>")}</h2>
+<p class="status-tag">開発中</p>
+</div>
+<div class="reveal" style="--d: 1">
+{_paras(PRODUCT_TEXT)}
+{_back_to_business()}
+</div>
+</div>
+</section>"""
+
+
+def body_publishing() -> str:
+    publishing = BUSINESSES[2]
+    return f"""{_business_hero(publishing)}
+<section class="section">
+<div class="container publishing">
+<a class="publishing-cover reveal" href="/pm-book.html"><picture>
+<source srcset="/static/img/book/cover_front.webp" type="image/webp">
+<img src="/static/img/book/cover_front.png" alt="{esc(BOOK_COVER_ALT)}" width="1000" height="1422" loading="lazy">
+</picture></a>
+<div class="reveal" style="--d: 1">
+<p>{esc(publishing.summary)}{esc(PUBLISHING_TEXT)}</p>
+<p class="publishing-status">{esc(BOOK["release_label"] or "")}</p>
+<h2 class="publishing-title">{esc(BOOK_TITLE)}</h2>
+<p class="publishing-sub">{esc(BOOK_SUBTITLE)}</p>
+<p>{esc(BOOK_LEAD)}</p>
+<p><a class="btn" href="/pm-book.html">書籍の紹介を見る</a></p>
+{_back_to_business()}
+</div>
+</div>
+</section>"""
 
 
 def body_message() -> str:
@@ -379,18 +587,17 @@ def body_contact() -> str:
         email_html = esc(email)
     else:
         email_html = f'<a href="mailto:{esc(email)}">{esc(email)}</a>'
-    categories = "".join(
-        f"<li>{esc(c)}</li>" for c in CONTACT_CATEGORIES
-    )
     btn = (
-        f'<a class="btn" href="mailto:{esc(email)}">メールで問い合わせる</a>'
+        f'<a class="btn" href="mailto:{esc(email)}">メールで相談する</a>'
         if email != PLACEHOLDER
-        else '<span class="btn is-disabled" aria-disabled="true">メールで問い合わせる</span>'
+        else '<span class="btn is-disabled" aria-disabled="true">メールで相談する</span>'
     )
     return f"""{page_hero("お問い合わせ", "CONTACT")}
 <section class="section">
 <div class="container contact reveal">
+<h2 class="contact-title">{esc(CONTACT_TITLE)}</h2>
 <p>{esc(CONTACT_INTRO)}</p>
+{_list(CONTACT_ASK, "contact-cats")}
 <dl class="contact-info">
 <dt>メール</dt><dd>{email_html}</dd>
 <dt>所在地</dt><dd>{esc(SITE["address"])}</dd>
@@ -398,8 +605,11 @@ def body_contact() -> str:
 </dl>
 <p>{btn}</p>
 <!-- 無料の Google フォームを使う場合はここに埋め込みリンクを置く -->
-<h2 class="contact-sub">お問い合わせの例</h2>
-<ul class="contact-cats">{categories}</ul>
+<p class="contact-note">メールの件名に、次のお問い合わせ種別をお書き添えください。</p>
+{_list(CONTACT_CATEGORIES, "contact-cats")}
+<h2 class="contact-sub">進め方について</h2>
+<p>{esc(CONTACT_PROCESS)}</p>
+{_more_link("/solution.html#process", "進め方と料金を見る")}
 <p class="contact-note">お預かりした個人情報は、プライバシーポリシーに定める利用目的の範囲内で利用します。詳しくは<a href="/privacy.html">プライバシーポリシー</a>をご確認ください。</p>
 </div>
 </section>"""
@@ -655,6 +865,9 @@ _BODIES: dict[str, Callable[[], str]] = {
     "index.html": body_index,
     "company.html": body_company,
     "business.html": body_business,
+    "solution.html": body_solution,
+    "product.html": body_product,
+    "publishing.html": body_publishing,
     "message.html": body_message,
     "news.html": body_news,
     "privacy.html": body_privacy,
@@ -664,6 +877,8 @@ _BODIES: dict[str, Callable[[], str]] = {
     "pm-book-bonus-error.html": lambda: body_book_bonus(error=True),
     "404.html": body_404,
 }
+
+BUSINESS_PAGES = tuple(f"{b.slug}.html" for b in BUSINESSES)
 
 # Reader-bonus pages: only for readers of the book, so kept out of search results.
 NOINDEX = ("404.html", "pm-book-bonus.html", "pm-book-bonus-error.html")
@@ -685,7 +900,9 @@ def _fixed_page(name: str, body: Callable[[], str]) -> Page:
     head = head_meta(filename=name, title=title, description=description)
     if name == "index.html":
         head += "\n" + organization_jsonld()
-    return Page(name, title, description, body, head_extra=head)
+    # each business page sits under 事業・サービス in the navigation
+    current = "business.html" if name in BUSINESS_PAGES else None
+    return Page(name, title, description, body, nav_current=current, head_extra=head)
 
 
 PAGES: list[Page] = [_fixed_page(name, body) for name, body in _BODIES.items()]

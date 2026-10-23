@@ -114,7 +114,7 @@ class BookPageTests(unittest.TestCase):
             self.assertIn(f"/static/img/book/{name}", page)
             self.assertTrue((self.out / "static/img/book" / name).exists(), name)
         self.assertEqual(collect(self.out / "pm-book.html").jsonld, 1)
-        self.assertIn('href="/pm-book.html"', (self.out / "business.html").read_text(encoding="utf-8"))
+        self.assertIn('href="/pm-book.html"', (self.out / "publishing.html").read_text(encoding="utf-8"))
         self.assertIn(("pm-book.html", "書籍"), NAV)
         for name in ("cover_front.webp", "cover_front.png", "og_image.png"):
             self.assertTrue((self.out / "static/img/book" / name).exists(), name)

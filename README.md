@@ -22,7 +22,7 @@ Python 標準ライブラリだけで生成する静的サイトです。外部�
 
 ## 書籍ページと読者特典
 
-- `pm-book.html`（`/pm-book`）— 書籍『外資系プロジェクトマネージャー1年目の教科書』の紹介ページ。グローバルナビの「書籍」と、事業概要の「出版」から入れます。文章と設定は `sitegen/content.py` の `BOOK_*`（原稿は pm-book リポジトリの `06_HP紹介/HP書籍紹介_実装仕様.md`）。画像は `static/img/book/`。
+- `pm-book.html`（`/pm-book`）— 書籍『外資系プロジェクトマネージャー1年目の教科書』の紹介ページ。グローバルナビの「書籍」と、出版のページ（`/publishing`）から入れます。文章と設定は `sitegen/content.py` の `BOOK_*`（原稿は pm-book リポジトリの `06_HP紹介/HP書籍紹介_実装仕様.md`）。画像は `static/img/book/`。
 - 書籍ページは書籍専用のヘッダー・フッター（ページ内リンクと発行元だけ）で表示します（`sitegen/render.py` の `layout="book"`）。特典ページも同じです。
 - 後から入れる値は `sitegen/content.py` の `BOOK` にまとめています。`None` の項目は表示されません。
   - 発売のお知らせの窓口：`x_url`（X）、`line_url`（LINE公式の友だち追加 URL）、`newsletter_url`（メール登録フォームの URL）。入れたものだけボタンが出ます。全部 `None` のあいだは「発売日が決まりしだいお知らせします」と表示します。
@@ -70,6 +70,10 @@ Python 標準ライブラリだけで生成する静的サイトです。外部�
 | `sitegen/content.py` の `CONTACT_HOURS`（受付時間） | 仮の受付時間 | 実際の受付時間に修正 |
 | `sitegen/content.py` の `COMPANY_NAME_ORIGIN`（社名の由来） | 草案の文面 | 内容を確認 |
 | `sitegen/content.py` の `PRIVACY`（プライバシーポリシー） | 草案の文面 | 専門家による確認を推奨 |
+| `sitegen/content.py` の `BUSINESSES`（3事業） | トップの帯とカード、事業・サービス（`/business`）のカード3枚。カードから事業ごとのページ（`/solution`・`/product`・`/publishing`）へ進む | 事業を増減したら、そのページの関数と `PAGE_META`、`ICONS`（`sitegen/pages.py`）も合わせる |
+| `sitegen/content.py` の `RESULT_*`（管理業務 30%→5%） | 代表個人の実績。AI駆動ソリューション（`/solution`）と代表挨拶に表示 | 外資系日本法人の数字を公開してよいか（社内ルール）。必ず `RESULT_NOTE` の注記を添える |
+| `sitegen/content.py` の `STAGES`・`FAQ`（料金） | Stage 1 一律30万円、Stage 2 見積もり制、Stage 3 月額50万円（すべて税別） | 料金を変えたら `STAGES` と `FAQ`、`CONTACT_PROCESS` をそろえて直す |
+| `sitegen/content.py` の `PRODUCT_*` | 開発中のプロジェクト管理SaaS（短い紹介のみ） | 名前・機能・提供開始時期が決まったら追記。先行案内の登録窓口ができたらボタンを足す |
 | ニュース（管理画面） | 『外資系PM1年目の教科書』の刊行予定のお知らせの日付（推定値 2026-06-01）、サイト公開のお知らせの日付（2026-10-19） | 実際の日付に直し、管理画面から「サイトに反映」 |
 
 ニュースは管理画面で編集します（`content/news.json` は手で書き換えません。下の「プレスリリース管理画面」を参照）。
