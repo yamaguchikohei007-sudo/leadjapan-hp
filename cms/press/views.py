@@ -1,10 +1,14 @@
 from django.conf import settings
 from django.contrib import admin, messages
+from django.contrib.auth.decorators import permission_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.html import format_html
 from django.views.static import serve
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_http_methods
 
 from sitegen.pages import article_page_title, body_news_article
 from sitegen.render import render_layout
@@ -15,6 +19,8 @@ from .publish import publish
 
 
 @staff_member_required
+@permission_required("press.view_article", raise_exception=True)
+@never_cache
 def preview(request, pk):
     article = get_object_or_404(Article, pk=pk)
     item = article_to_newsitem(article, image=None)
@@ -29,16 +35,23 @@ def preview(request, pk):
 
 
 @staff_member_required
+@permission_required("press.view_article", raise_exception=True)
+@never_cache
 def preview_static(request, path):
     return serve(request, path, document_root=settings.REPO_ROOT / "static")
 
 
 @staff_member_required
+@permission_required("press.view_article", raise_exception=True)
+@never_cache
 def preview_media(request, path):
     return serve(request, path, document_root=settings.MEDIA_ROOT)
 
 
 @staff_member_required
+@permission_required("press.change_article", raise_exception=True)
+@csrf_protect
+@require_http_methods(["GET", "POST"])
 def publish_view(request):
     if request.method != "POST":
         return render(request, "admin/press/article/publish.html", {**admin.site.each_context(request),
