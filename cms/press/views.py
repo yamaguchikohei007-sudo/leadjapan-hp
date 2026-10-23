@@ -18,9 +18,16 @@ from .models import Article
 from .publish import publish
 
 
-@staff_member_required
-@permission_required("press.view_article", raise_exception=True)
-@never_cache
+def _article_preview(view):
+    """Require active staff and article access before serving uncached previews."""
+    uncached_view = never_cache(view)
+    authorized_view = permission_required(
+        "press.view_article", raise_exception=True
+    )(uncached_view)
+    return staff_member_required(authorized_view)
+
+
+@_article_preview
 def preview(request, pk):
     article = get_object_or_404(Article, pk=pk)
     item = article_to_newsitem(article, image=None)
@@ -34,16 +41,12 @@ def preview(request, pk):
     return HttpResponse(html)
 
 
-@staff_member_required
-@permission_required("press.view_article", raise_exception=True)
-@never_cache
+@_article_preview
 def preview_static(request, path):
     return serve(request, path, document_root=settings.REPO_ROOT / "static")
 
 
-@staff_member_required
-@permission_required("press.view_article", raise_exception=True)
-@never_cache
+@_article_preview
 def preview_media(request, path):
     return serve(request, path, document_root=settings.MEDIA_ROOT)
 
