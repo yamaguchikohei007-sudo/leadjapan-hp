@@ -87,6 +87,16 @@ def _hero_map() -> str:
     )
 
 
+REVEAL_DELAY_MAX = 3  # static/css/motion.css defines .reveal--d1 to .reveal--d3
+
+
+def _reveal_delay(i: int) -> str:
+    """Stagger class for the i-th revealed item (0 = no delay). A class rather than
+    style="--d: N", because the Content-Security-Policy allows no inline styles."""
+    n = min(i, REVEAL_DELAY_MAX)
+    return f" reveal--d{n}" if n > 0 else ""
+
+
 def _list(items: Sequence[str], cls: str) -> str:
     return f'<ul class="{cls}">' + "".join(f"<li>{esc(i)}</li>" for i in items) + "</ul>"
 
@@ -171,7 +181,7 @@ def body_index() -> str:
 <div class="container hero-inner">
 <p class="hero-kicker reveal">{esc(HERO_SUB)}</p>
 <h1><span>日本を導き、</span><span class="hero-accent">世界へ。</span></h1>
-<p class="hero-sub reveal" style="--d: 1">{esc(HERO_LEAD)}</p>
+<p class="hero-sub reveal reveal--d1">{esc(HERO_LEAD)}</p>
 <p class="hero-actions"><a class="btn btn-light" href="/business.html">事業を見る</a><a class="btn btn-outline-light" href="/contact.html">お問い合わせ</a></p>
 </div>
 <nav class="hero-band" aria-label="事業"><ul class="container">{band}</ul></nav>
@@ -180,7 +190,7 @@ def body_index() -> str:
 <section class="section top-about" id="about">
 <div class="container about-grid">
 {_section_head("About", "会社紹介", " reveal--left", SECTION_DISPLAY["about"])}
-<div class="about-body reveal" style="--d: 1">
+<div class="about-body reveal reveal--d1">
 <p class="about-lead">{esc(ABOUT_LEAD)}</p>
 <p>{esc(ABOUT_TEXT)}</p>
 {_more_link("/company.html", "会社紹介を見る")}
@@ -202,7 +212,7 @@ def body_index() -> str:
 <section class="section section-dark top-message" id="message">
 <div class="container message-grid">
 {_section_head("Message", "代表挨拶", " reveal--left", SECTION_DISPLAY["message"])}
-<div class="reveal" style="--d: 1">
+<div class="reveal reveal--d1">
 <blockquote class="message-excerpt"><p>{esc(MESSAGE_EXCERPT)}</p></blockquote>
 <p class="message-sign">{esc(SITE["name"])} 代表社員 <strong>{esc(SITE["representative"])}</strong></p>
 <a class="btn btn-outline-light" href="/message.html">代表挨拶を読む</a>
@@ -216,7 +226,7 @@ def body_index() -> str:
 {_section_head("News", "ニュースルーム", display=SECTION_DISPLAY["news"])}
 {_more_link("/news.html", "ニュース一覧へ")}
 </div>
-<div class="news-body reveal" style="--d: 1">
+<div class="news-body reveal reveal--d1">
 {news_list_html(NEWS[:3])}
 </div>
 </div>
@@ -319,7 +329,7 @@ def body_company() -> str:
 <section class="section alt">
 <div class="container name-origin">
 {_section_head("Name", "社名の由来", " reveal--left")}
-<div class="reveal reveal--right" style="--d: 1">
+<div class="reveal reveal--right reveal--d1">
 {name_origin}
 </div>
 </div>
@@ -338,7 +348,7 @@ def body_company() -> str:
 def _business_cards(heading: str) -> str:
     """The three business cards; each opens its own page. heading: "h2" on business.html, "h3" on the top page."""
     return '<div class="biz-grid biz-grid--3">\n' + "\n".join(
-        f'<a class="biz-card reveal" style="--d: {i}" href="/{esc(b.slug)}.html">'
+        f'<a class="biz-card reveal{_reveal_delay(i)}" href="/{esc(b.slug)}.html">'
         f'<span class="biz-card-top"><span class="biz-icon-wrap">{ICONS.get(b.slug, "")}</span>'
         f'<span class="biz-num">{esc(b.number)}</span></span>'
         f'<span class="biz-en" lang="en">{esc(b.title_en)}</span>'
@@ -470,7 +480,7 @@ def body_product() -> str:
 <h2 class="section-title">{esc(PRODUCT_TITLE).replace(chr(10), "<br>")}</h2>
 <p class="status-tag">開発中</p>
 </div>
-<div class="reveal" style="--d: 1">
+<div class="reveal reveal--d1">
 {_paras(PRODUCT_TEXT)}
 {_back_to_business()}
 </div>
@@ -487,7 +497,7 @@ def body_publishing() -> str:
 <source srcset="/static/img/book/cover_front.webp" type="image/webp">
 <img src="/static/img/book/cover_front.png" alt="{esc(BOOK_COVER_ALT)}" width="1000" height="1422" loading="lazy">
 </picture></a>
-<div class="reveal" style="--d: 1">
+<div class="reveal reveal--d1">
 <p>{esc(publishing.summary)}{esc(PUBLISHING_TEXT)}</p>
 <p class="publishing-status">{esc(BOOK["release_label"] or "")}</p>
 <h2 class="publishing-title">{esc(BOOK_TITLE)}</h2>
@@ -508,7 +518,7 @@ def body_message() -> str:
 <aside class="message-side reveal reveal--left" aria-hidden="true">
 <img src="/static/img/tokyo-skyline.svg" alt="" width="1600" height="600">
 </aside>
-<article class="message-body reveal reveal--right" style="--d: 1">
+<article class="message-body reveal reveal--right reveal--d1">
 <h2>{esc(MESSAGE_TITLE)}</h2>
 {paras}
 <p class="signature"><span>{esc(SITE["name"])}</span> 代表社員 <strong>{esc(SITE["representative"])}</strong></p>
@@ -684,10 +694,10 @@ def body_book(book: dict[str, str | None] = BOOK) -> str:
     label = "好評発売中" if on_sale else book["release_label"]
     badges = "".join(f"<li>{esc(b)}</li>" for b in BOOK_BADGES)
     about = "\n".join(f"<p>{esc(p)}</p>" for p in BOOK_ABOUT)
-    for_you = "".join(f'<li class="reveal" style="--d: {i}">{BOOK_ICONS["check"]}<span>{esc(t)}</span></li>'
+    for_you = "".join(f'<li class="reveal{_reveal_delay(i)}">{BOOK_ICONS["check"]}<span>{esc(t)}</span></li>'
                       for i, t in enumerate(BOOK_FOR_YOU))
     parts = "\n".join(
-        f'<article class="book-part reveal" style="--d: {i % 2}">'
+        f'<article class="book-part reveal{_reveal_delay(i % 2)}">'
         f'<div class="book-part-top"><span class="book-part-label">{esc(part.label)}</span>'
         f'<p class="book-part-count" aria-hidden="true"><span>{esc(part.count)}</span>{esc(part.count_unit)}</p></div>'
         f'<h3>{esc(part.title)}</h3>'
@@ -779,7 +789,7 @@ def body_book(book: dict[str, str | None] = BOOK) -> str:
 <ul class="book-bonus-features">{features}</ul>
 <p><a class="btn book-btn book-btn-large" href="/pm-book-bonus.html">特典ページへ</a></p>
 </div>
-<figure class="book-bonus-shots reveal" style="--d: 1">
+<figure class="book-bonus-shots reveal reveal--d1">
 <img class="shot-main" src="/static/img/book/bonus-screen-chart.webp" alt="特典ツールのガントチャート画面。タスクの期間、依存関係、進み具合が表示されている" width="1280" height="760" loading="lazy">
 <img class="shot-sub" src="/static/img/book/bonus-screen-board.webp" alt="特典ツールのかんばん画面。未着手・進行中・完了の列にタスクが並んでいる" width="1280" height="470" loading="lazy">
 <figcaption>サンプルデータを入れた実際の画面</figcaption>

@@ -7,6 +7,7 @@ from typing import Sequence
 
 from sitegen import content
 from sitegen.content import UNCONFIRMED
+from sitegen.headers import headers_file
 from sitegen.pages import PAGES, Page
 from sitegen.render import find_placeholders, render_layout
 from sitegen.seo import robots_txt, sitemap_xml
@@ -44,6 +45,7 @@ def build(out_dir: pathlib.Path, pages: Sequence[Page] | None = None) -> list[pa
         (out_dir / "sitemap.xml").write_text(sitemap_xml(entries, content.SITE_URL), encoding="utf-8")
         (out_dir / "robots.txt").write_text(robots_txt(content.SITE_URL), encoding="utf-8")
     (out_dir / "_routes.json").write_text(ROUTES_JSON, encoding="utf-8")
+    (out_dir / "_headers").write_text(headers_file(), encoding="utf-8")
     if STATIC.exists():
         shutil.copytree(STATIC, out_dir / "static")
     return written

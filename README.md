@@ -6,6 +6,7 @@ Python 標準ライブラリだけで生成する静的サイトです。外部�
 
 - `build.py` — ビルドスクリプト。`site/` に HTML、`sitemap.xml`、`robots.txt` と `static/` を出力します。
 - `sitegen/seo.py` — 検索エンジン・SNS 向けの情報（正規 URL、OGP、構造化データ、サイトマップ）。
+- `sitegen/headers.py`, `functions/_middleware.js` — セキュリティヘッダー（下の「セキュリティヘッダー」）。
 - `sitegen/content.py` — サイトの文言とデータ（会社情報、事業、ニュース、プライバシーポリシーなど）。
 - `sitegen/pages.py` — 各ページの構成。
 - `sitegen/render.py` — 共通レイアウト（ヘッダー、フッター、ナビゲーション）。
@@ -139,6 +140,16 @@ Cloudflare Pages（無料プラン・商用利用可）で公開します。`mai
 - 推定は外れることがあります（スマホ回線は東京・大阪の設備を経由しやすく、VPN では別の場所になります）。
 - 公開サイトに JavaScript を使わない方針の例外です。`functions/index.js` は Cloudflare のサーバー上でだけ動き、ブラウザには送られません。テストは `node --test tests/js/visitor_pin.test.mjs`（Node.js がある環境では `python -m unittest` からも実行されます）。
 - 地図の範囲や都道府県の位置（`sitegen/geo.py`）を変えたときは、地図データ（[ne_10m_admin_0_countries_jpn.geojson](https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries_jpn.geojson)）をダウンロードして `python3 tools/japan_map.py <ダウンロードしたファイル>` を実行し、`static/img/japan-map.svg` と `functions/index.js` の位置表を作り直します。
+
+### セキュリティヘッダー
+
+すべての応答に、CSP（Content-Security-Policy）・HSTS などのセキュリティヘッダーを付けています。
+
+- 値は `sitegen/headers.py` にあります。`build.py` がそれを `site/_headers` に書き出し、Cloudflare Pages が静的ページに付けます。
+- Cloudflare Pages は `_headers` を Functions の応答（トップページ `/` と `/pm-book-bonus/download`）には付けないため、`functions/_middleware.js` が同じ値を付けます。値を変えるときは両方を直します（`tests/test_headers.py` が一致を確認します）。
+- CSP は例外なしの厳しい設定です。読み込めるのは自サイトの CSS・画像と Google Fonts だけで、JavaScript、HTML 内の `style="..."`・`<style>` は使えません（ブラウザが無視します）。スクロール演出の遅延は `style="--d: 1"` ではなく、クラス `reveal--d1`〜`reveal--d3`（`static/css/motion.css`）で付けます。外部の画像・埋め込み（YouTube など）やフォントを足すときは、CSP も合わせて直します。テストが埋め込みスタイルと外部の読み込みを検出します。
+- HSTS（`Strict-Transport-Security: max-age=31536000`）は独自ドメインに移ってもそのまま効きます。同じドメインのほかのサブドメインに影響しないよう、`includeSubDomains`・`preload` は付けていません。
+- 手元のプレビュー（`python3 -m http.server`）ではヘッダーは付きません。
 
 ### 独自ドメインを使う場合
 

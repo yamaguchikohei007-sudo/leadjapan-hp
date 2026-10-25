@@ -35,7 +35,7 @@ class BookPageTests(unittest.TestCase):
         positions = [b.index(f'id="{i}"') for i in ids]
         self.assertEqual(positions, sorted(positions))
         self.assertEqual(b.count("<h1"), 1)
-        self.assertEqual(b.count('class="book-part reveal"'), len(BOOK_PARTS))
+        self.assertEqual(b.count('class="book-part reveal'), len(BOOK_PARTS))
 
     def test_coming_soon_has_no_buy_button(self):
         b = body_book(COMING_SOON)
