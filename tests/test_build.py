@@ -4,8 +4,8 @@ import tempfile
 import unittest
 from unittest import mock
 
-from tests.helpers import (LinkCollector, build_to_tmp, check_internal_links_resolve, check_no_javascript,
-                           check_only_free_external_hosts, check_unique_titles, collect)
+from tests.helpers import (LinkCollector, build_to_tmp, check_internal_links_resolve, check_no_inline_styles,
+                           check_no_javascript, check_only_free_external_hosts, check_unique_titles, collect)
 from build import build, format_warnings, placeholder_report
 from sitegen.content import SITE_URL, UNCONFIRMED, NEWS
 from sitegen.pages import NOINDEX, PAGES, article_pages, news_page_filename
@@ -104,6 +104,9 @@ class BuildTests(unittest.TestCase):
 
     def test_no_javascript_anywhere(self):
         check_no_javascript(self, self.out)
+
+    def test_no_inline_styles_anywhere(self):
+        check_no_inline_styles(self, self.out)
 
     def test_only_free_external_hosts(self):
         check_only_free_external_hosts(self, self.out)
