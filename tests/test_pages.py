@@ -5,7 +5,7 @@ from pathlib import Path
 from tests.helpers import ROOT
 from unittest import mock
 
-from sitegen.content import (ABOUT_LEAD, ABOUT_TEXT, BUSINESSES, CONSULT_BUTTON, CONTACT_CATEGORIES, CONTACT_HOURS,
+from sitegen.content import (ABOUT_LEAD, ABOUT_TEXT, BUSINESS_LEAD, BUSINESSES, CONSULT_BUTTON, CONTACT_CATEGORIES, CONTACT_HOURS,
                              BOOK_TITLE, CTA_LEAD, FAQ, HERO_LEAD, MESSAGE, MESSAGE_EXCERPT, NEWS, PLACEHOLDER, PRIVACY,
                              RESULT_NOTE, RESULT_SHORT, SECTION_DISPLAY, SERVICES, SITE, STAGES, NewsItem)
 from sitegen.geo import pin_xy
@@ -28,6 +28,15 @@ class IndexPageTests(unittest.TestCase):
         self.assertIn("Lead Japan — Tokyo, Japan", b)
         self.assertIn(esc(HERO_LEAD), b)
         self.assertNotIn("SCROLL", b)
+
+    def test_index_leads_with_the_value_proposition(self):
+        # v1.8: the entrance says what changes for the customer, matching solution.html, not a list of three businesses
+        self.assertTrue(HERO_LEAD.startswith("人を増やす前に、今の人数で回る会社へ。"))
+        self.assertIn("10〜20名規模", PAGES[0].description)
+        b = body_index()
+        for old in ("3つの事業を通じて", "AI駆動ソリューション、プロダクト、出版"):
+            self.assertNotIn(old, b)
+            self.assertNotIn(old, PAGES[0].description)
 
     def test_hero_map_and_visitor_pin_default_to_tokyo(self):
         b = body_index()
@@ -207,6 +216,16 @@ class SubPageTests(unittest.TestCase):
         for biz in BUSINESSES:
             self.assertIn(f'href="/{biz.slug}.html"', b)
         self.assertNotIn("<details", b)
+
+    def test_business_page_centres_the_solution(self):
+        # v1.8: one package at the centre, product and publishing support it; copy lives in content.py
+        b = body_business()
+        self.assertIn(esc(BUSINESS_LEAD), b)
+        self.assertIn("AI駆動ソリューション", BUSINESS_LEAD)
+        page = {p.filename: p for p in PAGES}["business.html"]
+        for old in ("3つの事業", "AI駆動ソリューション、プロダクト、出版"):
+            self.assertNotIn(old, b)
+            self.assertNotIn(old, page.description)
 
     def test_business_pages_registered_under_business(self):
         pages = {p.filename: p for p in PAGES}
