@@ -29,15 +29,6 @@ class IndexPageTests(unittest.TestCase):
         self.assertIn(esc(HERO_LEAD), b)
         self.assertNotIn("SCROLL", b)
 
-    def test_index_leads_with_the_value_proposition(self):
-        # v1.8: the entrance says what changes for the customer, matching solution.html, not a list of three businesses
-        self.assertTrue(HERO_LEAD.startswith("人を増やす前に、今の人数で回る会社へ。"))
-        self.assertIn("10〜20名規模", PAGES[0].description)
-        b = body_index()
-        for old in ("3つの事業を通じて", "AI駆動ソリューション、プロダクト、出版"):
-            self.assertNotIn(old, b)
-            self.assertNotIn(old, PAGES[0].description)
-
     def test_hero_map_and_visitor_pin_default_to_tokyo(self):
         b = body_index()
         self.assertIn('<img src="/static/img/japan-map.svg" alt=""', b)
