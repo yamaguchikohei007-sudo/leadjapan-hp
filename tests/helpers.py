@@ -19,6 +19,7 @@ class LinkCollector(html.parser.HTMLParser):
         self.anchors: list[str] = []    # <a href>
         self.scripts = 0                # executable scripts only
         self.jsonld = 0                 # <script type="application/ld+json"> (data, not code)
+        self.inline_styles = 0          # style="" attributes and <style> elements (blocked by the CSP)
         self.title = ""
         self._in_title = False
 
@@ -29,6 +30,8 @@ class LinkCollector(html.parser.HTMLParser):
                 self.jsonld += 1
             else:
                 self.scripts += 1
+        if tag == "style" or "style" in a:
+            self.inline_styles += 1
         if tag == "title":
             self._in_title = True
         for key in ("href", "src"):
@@ -81,6 +84,12 @@ def check_no_javascript(tc, out: pathlib.Path) -> None:
     tc.assertEqual(list(out.rglob("*.js")), [])
 
 
+def check_no_inline_styles(tc, out: pathlib.Path) -> None:
+    # The Content-Security-Policy (sitegen/headers.py) allows stylesheets only.
+    for page in out.glob("*.html"):
+        tc.assertEqual(collect(page).inline_styles, 0, page.name)
+
+
 def check_only_free_external_hosts(tc, out: pathlib.Path) -> None:
     for page in out.glob("*.html"):
         # only loaded resources (src=, <link href>) are restricted; <a href> to
@@ -98,5 +107,6 @@ def check_unique_titles(tc, out: pathlib.Path) -> None:
 def check_whole_site(tc, out: pathlib.Path) -> None:
     check_internal_links_resolve(tc, out)
     check_no_javascript(tc, out)
+    check_no_inline_styles(tc, out)
     check_only_free_external_hosts(tc, out)
     check_unique_titles(tc, out)

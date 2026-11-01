@@ -63,6 +63,10 @@
       entry calc(var(--d, 0) * 20px)
       entry calc(80px + var(--d, 0) * 20px);
   }
+  /* Stagger (sitegen/pages.py _reveal_delay): classes, since the CSP allows no inline styles. */
+  .reveal--d1 { --d: 1; }
+  .reveal--d2 { --d: 2; }
+  .reveal--d3 { --d: 3; }
   .reveal.reveal--left  { animation-name: reveal-left; }
   .reveal.reveal--right { animation-name: reveal-right; }
   .reveal.reveal--zoom  { animation-name: reveal-zoom; }

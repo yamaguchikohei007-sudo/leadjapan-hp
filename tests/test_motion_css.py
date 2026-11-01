@@ -1,8 +1,9 @@
 """Motion CSS contract: content must stay visible without scroll timelines."""
 import re
+import shutil
 import unittest
 
-from tests.helpers import ROOT
+from tests.helpers import ROOT, build_to_tmp
 
 SUPPORTS = "@supports (animation-timeline: view())"
 REDUCED = "@media (prefers-reduced-motion: reduce)"
@@ -122,6 +123,17 @@ class MotionCssTests(unittest.TestCase):
         for sel in ("html", "body"):
             m = re.search(r"(?m)^" + sel + r"\s*\{([^}]*)\}", css)
             self.assertNotIn("overflow-x: hidden", m.group(1) if m else "")
+
+    def test_reveal_delay_classes_used_by_pages_are_defined(self):
+        # The stagger delay is a class, not style="--d: N": the CSP forbids inline styles.
+        out = build_to_tmp()
+        self.addCleanup(shutil.rmtree, out, ignore_errors=True)
+        used = {int(n) for page in out.glob("*.html")
+                for n in re.findall(r"\breveal--d(\d+)\b", page.read_text(encoding="utf-8"))}
+        self.assertTrue(used)
+        css = self.css()
+        for n in sorted(used):
+            self.assertRegex(css, r"\.reveal--d%d\s*\{\s*--d:\s*%d;\s*\}" % (n, n))
 
     def test_helpers(self):
         css = "@a{x{y:1}} @keyframes hero-a{from{opacity: 0}} @keyframes b{}"

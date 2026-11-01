@@ -44,7 +44,8 @@ class RoutesTests(unittest.TestCase):
         # the home page (this pin) and the reader-bonus form (tests/test_book.py)
         self.assertEqual(routes, {"version": 1, "include": ["/", "/pm-book-bonus/download"], "exclude": []})
         functions = sorted(str(p.relative_to(ROOT / "functions")) for p in (ROOT / "functions").rglob("*.js"))
-        self.assertEqual(functions, ["index.js", "pm-book-bonus/download.js"])
+        # _middleware.js adds the security headers to both (tests/test_headers.py)
+        self.assertEqual(functions, ["_middleware.js", "index.js", "pm-book-bonus/download.js"])
 
     def test_function_never_logs_or_stores(self):
         js = FUNCTION.read_text(encoding="utf-8")
