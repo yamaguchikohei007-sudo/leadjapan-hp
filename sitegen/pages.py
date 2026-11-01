@@ -515,8 +515,8 @@ def body_message() -> str:
     return f"""{page_hero("代表挨拶", "MESSAGE")}
 <section class="section">
 <div class="container message-layout">
-<aside class="message-side reveal reveal--left" aria-hidden="true">
-<img src="/static/img/tokyo-skyline.svg" alt="" width="1600" height="600">
+<aside class="message-side reveal reveal--left">
+<img src="/static/img/representative.jpg" alt="Lead Japan 合同会社 代表社員 山口康平" width="1000" height="1333">
 </aside>
 <article class="message-body reveal reveal--right reveal--d1">
 <h2>{esc(MESSAGE_TITLE)}</h2>
