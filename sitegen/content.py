@@ -616,8 +616,8 @@ UNCONFIRMED: tuple[str, ...] = (
 # Amazon の商品ページの URL を入れる。決まっていない値（None）の行やボタンは表示しない。
 BOOK: dict[str, str | None] = {
     "status": "coming_soon",  # "coming_soon" | "on_sale"
-    "release_label": "近日発売",  # 発売の目標日が決まったら「2026年12月 発売予定」のように変える
-    "release_date": None,  # 例: "2026-12-01"
+    "release_label": "2026年12月19日 発売予定",  # 発売前に表紙の上と出版のページに出す文言
+    "release_date": "2026-12-19",  # 発売日（YYYY-MM-DD）。書籍情報の表と構造化データに出る
     # Amazon の商品ページ（予約ページでもよい）。入れた版だけ購入ボタンが出る
     "kindle_url": None,
     "paperback_url": None,
@@ -645,7 +645,8 @@ BOOK_LEAD = (
     "初めてプロジェクトを任されたあなたへ。信頼を初動でつかむ。関係者の認識をそろえる。崩れた計画を立て直す。"
     "外資系の現場で40件以上のプロジェクトを担当してきた著者が、1年目から使える行動のルールと、プロジェクトマネジメントの基礎知識を伝えます。"
 )
-BOOK_COMING_SOON_NOTE = "発売日が決まりしだい、このページでお知らせします。"
+BOOK_COMING_SOON_NOTE = "発売日が決まりしだい、このページでお知らせします。"  # 発売日が未定のとき
+BOOK_DATED_NOTE = "{date}に発売します。予約開始などの情報は、このページでお知らせします。"  # 発売日が決まったとき
 BOOK_NOTIFY_TITLE = "発売のお知らせを受け取る"
 BOOK_NOTIFY_TEXT = "発売日や予約開始、読者向けの情報をお届けします。"
 BOOK_CLOSING_TITLE = "最初のプロジェクトを、迷わず進めるために。"

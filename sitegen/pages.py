@@ -9,7 +9,7 @@ from sitegen.content import (
     ABOUT_LEAD, ABOUT_TEXT, AFTER, AUTOMATION_EXAMPLES, AUTOMATION_NOTE, BEFORE, BEFORE_AFTER_CLOSING, BEFORE_AFTER_TITLE, BOOK,
     BOOK_ABOUT, BOOK_AUTHOR, BOOK_AUTHOR_BIO, BOOK_AUTHOR_NAME, BOOK_BADGES, BOOK_BONUS_ERROR, BOOK_BONUS_FEATURES,
     BOOK_BONUS_HOWTO, BOOK_BONUS_INTRO, BOOK_BONUS_TEXT, BOOK_BONUS_TITLE, BOOK_CATCH, BOOK_CLOSING_TITLE,
-    BOOK_COLUMNS, BOOK_COLUMNS_LEAD, BOOK_COMING_SOON_NOTE, BOOK_COVER_ALT, BOOK_FORMATS, BOOK_FOR_YOU, BOOK_LEAD,
+    BOOK_COLUMNS, BOOK_COLUMNS_LEAD, BOOK_COMING_SOON_NOTE, BOOK_COVER_ALT, BOOK_DATED_NOTE, BOOK_FORMATS, BOOK_FOR_YOU, BOOK_LEAD,
     BOOK_NOTIFY_TEXT, BOOK_NOTIFY_TITLE, BOOK_OG_DESCRIPTION, BOOK_PARTS, BOOK_SUBTITLE, BOOK_TITLE, BOOK_TITLE_EN,
     BOOK_TRADEMARK_NOTE, BUSINESS_LEAD, BUSINESSES, COMPANY_ACTIVITIES, COMPANY_NAME_ORIGIN, COMPANY_PHILOSOPHY_TEXT,
     CONSULT_BUTTON, CONSULT_LEAD, CONSULT_TITLE, CONSULTATION_TEXT, CONSULTATION_TITLE, CONTACT_ASK,
@@ -663,6 +663,16 @@ def _buy_buttons(book: dict[str, str | None], extra_class: str = "") -> str:
     return f'<div class="book-buy">{"".join(links)}</div>' if links else ""
 
 
+def _ja_date(value: str) -> str:
+    """"2026-12-19" -> "2026年12月19日"."""
+    d = datetime.date.fromisoformat(value)
+    return f"{d.year}年{d.month}月{d.day}日"
+
+
+def _coming_soon_note(book: dict[str, str | None]) -> str:
+    return BOOK_DATED_NOTE.format(date=_ja_date(book["release_date"])) if book.get("release_date") else BOOK_COMING_SOON_NOTE
+
+
 def _notify_panel(book: dict[str, str | None], *, panel_id: str = "") -> str:
     """Where to hear about the release. Channels without a URL are left out; with none, a note."""
     links = "".join(
@@ -672,7 +682,7 @@ def _notify_panel(book: dict[str, str | None], *, panel_id: str = "") -> str:
     )
     id_attr = f' id="{panel_id}"' if panel_id else ""
     body = (f'<p class="book-notify-text">{esc(BOOK_NOTIFY_TEXT)}</p><div class="book-notify-links">{links}</div>'
-            if links else f'<p class="book-notify-text">{esc(BOOK_COMING_SOON_NOTE)}</p>')
+            if links else f'<p class="book-notify-text">{esc(_coming_soon_note(book))}</p>')
     return f'<div class="book-notify"{id_attr}><p class="book-notify-title">{esc(BOOK_NOTIFY_TITLE)}</p>{body}</div>'
 
 
@@ -725,7 +735,7 @@ def body_book(book: dict[str, str | None] = BOOK) -> str:
         ("著者", esc(BOOK_AUTHOR)),
         ("発行・発売", esc(SITE["name"])),
         ("形態", esc(BOOK_FORMATS)),
-        ("発売日", esc(book["release_date"]) if book.get("release_date") else None),
+        ("発売日", esc(_ja_date(book["release_date"])) if book.get("release_date") else None),
         ("価格（Kindle版）", esc(_price(book.get("kindle_price"))) if book.get("kindle_price") else None),
         ("価格（ペーパーバック）", esc(_price(book.get("paperback_price"))) if book.get("paperback_price") else None),
         ("ISBN", esc(book["isbn"]) if book.get("isbn") else None),

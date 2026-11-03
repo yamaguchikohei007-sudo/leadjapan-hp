@@ -59,6 +59,17 @@ class BookPageTests(unittest.TestCase):
         self.assertEqual([o["price"] for o in data["offers"]], ["1250", "1980"])
         self.assertEqual(data["datePublished"], "2026-12-01")
 
+    def test_release_date_before_release(self):
+        book = {**COMING_SOON, "release_label": "2026年12月19日 発売予定", "release_date": "2026-12-19"}
+        b = body_book(book)
+        self.assertIn("2026年12月19日 発売予定", b)
+        self.assertIn('<th scope="row">発売日</th><td>2026年12月19日</td>', b)
+        self.assertIn("2026年12月19日に発売します", b)
+        self.assertNotIn("発売日が決まりしだい", b)
+        self.assertNotIn("Amazonで購入する", b)
+        data = json.loads(re.search(r">(\{.*\})<", book_jsonld(book)).group(1))
+        self.assertEqual(data["datePublished"], "2026-12-19")
+
     def test_notify_channels_show_only_when_set(self):
         b = body_book(COMING_SOON)
         self.assertIn('id="notify"', b)
