@@ -200,6 +200,8 @@ class SubPageTests(unittest.TestCase):
         for th in ("商号", "英文社名", "設立", "代表者", "所在地", "事業内容"):
             self.assertIn(f'<th scope="row">{th}</th>', b)
         self.assertIn("Lead Japan 合同会社", b)
+        self.assertIn('<th scope="row">設立</th><td>2026年5月26日</td>', b)
+        self.assertNotIn("現況", b)
 
     def test_business_page_is_just_three_cards(self):
         b = body_business()

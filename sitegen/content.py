@@ -17,10 +17,9 @@ SITE: dict[str, str] = {
     ),
     "location": "東京都",
     "address": "東京都中野区",
-    "founded": "2026年10月19日",
+    "founded": "2026年5月26日",
     "representative": "山口康平",
     "email": PLACEHOLDER,  # TBC
-    "status": "2026年設立。現在、各事業の立ち上げを進めています。",
 }
 
 
