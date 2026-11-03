@@ -515,10 +515,10 @@ def body_message() -> str:
     return f"""{page_hero("代表挨拶", "MESSAGE")}
 <section class="section">
 <div class="container message-layout">
-<aside class="message-side reveal reveal--left">
-<img src="/static/img/representative.jpg" alt="Lead Japan 合同会社 代表社員 山口康平" width="1000" height="1333">
-</aside>
-<article class="message-body reveal reveal--right reveal--d1">
+<figure class="message-photo reveal">
+<img src="/static/img/representative.jpg" alt="Lead Japan 合同会社 代表社員 山口康平" width="1448" height="1086">
+</figure>
+<article class="message-body reveal reveal--d1">
 <h2>{esc(MESSAGE_TITLE)}</h2>
 {paras}
 <p class="signature"><span>{esc(SITE["name"])}</span> 代表社員 <strong>{esc(SITE["representative"])}</strong></p>

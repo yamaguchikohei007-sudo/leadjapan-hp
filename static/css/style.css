@@ -671,16 +671,17 @@ html:has(.global-nav:popover-open) { overflow: hidden; }
 }
 
 
-.message-layout { display: grid; gap: 32px; }
-.message-side { background: var(--navy); border-radius: var(--radius); overflow: hidden; min-height: 200px; }
-.message-side img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; display: block; }
+.message-layout { display: grid; gap: 40px; justify-items: center; }
+.message-photo { margin: 0; width: 100%; max-width: 960px; background: var(--navy); border-radius: var(--radius); overflow: hidden; }
+.message-photo img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; object-position: 53% 22%; display: block; }
+.message-body { width: 100%; max-width: 760px; }
 .message-body h2 { color: var(--navy); font-size: clamp(1.5rem, 3.5vw, 2.2rem); }
 .signature { margin-top: 2em; text-align: right; font-family: var(--font); }
 .signature span { margin-right: 1em; }
 .signature strong { font-size: 1.3rem; }
 @media (min-width: 900px) {
-  .message-layout { grid-template-columns: 280px 1fr; gap: 64px; }
-  .message-side { min-height: 480px; }
+  .message-layout { gap: 56px; }
+  .message-photo img { aspect-ratio: 21 / 9; }
 }
 
 /* Newsroom / Privacy / Contact */
