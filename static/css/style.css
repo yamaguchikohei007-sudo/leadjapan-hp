@@ -681,7 +681,7 @@ html:has(.global-nav:popover-open) { overflow: hidden; }
 .signature strong { font-size: 1.3rem; }
 @media (min-width: 900px) {
   .message-layout { gap: 56px; }
-  .message-photo img { aspect-ratio: 21 / 9; }
+  .message-photo img { aspect-ratio: 3 / 2; }
 }
 
 /* Newsroom / Privacy / Contact */
