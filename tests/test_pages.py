@@ -1,5 +1,6 @@
 import datetime
 import unittest
+import struct
 from pathlib import Path
 
 from tests.helpers import ROOT
@@ -9,6 +10,7 @@ from sitegen.content import (ABOUT_LEAD, ABOUT_TEXT, BUSINESS_LEAD, BUSINESSES, 
                              BOOK_TITLE, CTA_LEAD, FAQ, HERO_LEAD, MESSAGE, MESSAGE_EXCERPT, NEWS, PLACEHOLDER, PRIVACY,
                              RESULT_NOTE, RESULT_SHORT, SECTION_DISPLAY, SERVICES, SITE, STAGES, NewsItem)
 from sitegen.geo import pin_xy
+from sitegen.seo import DEFAULT_OG_IMAGE
 from sitegen.render import esc
 from sitegen.pages import (PAGES, article_page_title, body_business, body_company, body_contact, body_index,
                            body_message, body_news, body_news_article, body_product, body_publishing,
@@ -38,11 +40,15 @@ class IndexPageTests(unittest.TestCase):
         self.assertIn(f'<g data-visitor-pin transform="translate({x} {y})">', b)
         self.assertIn('<div class="hero-map" aria-hidden="true">', b)
 
-    def test_og_photo_is_light_enough(self):
-        # no longer on the page; still the default og:image for social shares
-        photo = ROOT / "static/img/hero-tokyo.jpg"
-        self.assertTrue(photo.exists())
-        self.assertLess(photo.stat().st_size, 800 * 1024)
+    def test_default_og_image_is_logo_png(self):
+        # share previews (LINE, X, Facebook) do not show SVG, so the logo is a PNG
+        self.assertEqual(DEFAULT_OG_IMAGE, "static/img/og-logo.png")
+        image = ROOT / DEFAULT_OG_IMAGE
+        self.assertTrue(image.exists())
+        self.assertEqual(image.read_bytes()[:8], b"\x89PNG\r\n\x1a\n")
+        width, height = struct.unpack(">II", image.read_bytes()[16:24])
+        self.assertEqual((width, height), (1200, 630))
+        self.assertLess(image.stat().st_size, 800 * 1024)
 
     def test_index_section_copy(self):
         b = body_index()
@@ -173,7 +179,7 @@ class ArticleTests(unittest.TestCase):
         self.assertIn('property="og:url" content="https://x.pages.dev/news-founding"', out)
         self.assertIn('property="og:image" content="https://x.pages.dev/static/img/news/a.png"', out)
         self.assertIn("&lt;t&gt;", out)
-        self.assertIn('property="og:image" content="https://x.pages.dev/static/img/hero-tokyo.jpg"',
+        self.assertIn('property="og:image" content="https://x.pages.dev/static/img/og-logo.png"',
                       og_tags(_item(), "https://x.pages.dev"))
 
     def test_article_page_title_uses_site_name(self):
