@@ -638,6 +638,7 @@ BOOK_BADGES: tuple[str, ...] = (
 )
 BOOK_TITLE = "外資系プロジェクトマネージャー1年目の教科書"
 BOOK_SUBTITLE = "最短で信頼されるプロジェクトリーダーになる方法"
+BOOK_TITLE_EN = "The First-Year Project Manager’s Handbook"  # 表紙の英題
 BOOK_AUTHOR = "山口康平"
 BOOK_CATCH = "プロジェクトマネジメントには、原理原則がある。"
 BOOK_LEAD = (

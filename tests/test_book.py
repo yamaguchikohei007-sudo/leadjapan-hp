@@ -98,6 +98,12 @@ class BookPageTests(unittest.TestCase):
         for key in ("offers", "isbn", "datePublished"):
             self.assertNotIn(key, data)
 
+    def test_english_title_from_cover(self):
+        from sitegen.content import BOOK_TITLE_EN
+        self.assertIn(esc(BOOK_TITLE_EN), body_book())
+        data = json.loads(re.search(r">(\{.*\})<", book_jsonld(COMING_SOON)).group(1))
+        self.assertIn(BOOK_TITLE_EN, data["alternateName"])
+
     def test_live_settings_render_without_placeholders(self):
         self.assertIn(BOOK["status"], ("coming_soon", "on_sale"))
         self.assertNotIn(PLACEHOLDER, body_book())
