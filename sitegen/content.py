@@ -357,7 +357,7 @@ FAQ: tuple[tuple[str, str], ...] = (
 PUBLISHING_TEXT = "代表の知見を書籍として届けることで、支援の現場にいない方にも、仕事の進め方を共有します。"
 
 
-SITE_URL = "https://leadjapan-hp.pages.dev"
+SITE_URL = "https://leadjapanllc.com"
 
 NEWS: tuple[NewsItem, ...] = load_news()
 

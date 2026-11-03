@@ -125,7 +125,7 @@ Cloudflare Pages（無料プラン・商用利用可）で公開します。`mai
    | 環境変数（Environment variables） | `PYTHON_VERSION` = `3.13` |
 
 5. **Save and Deploy** を押します。最初のデプロイが終わると `https://<プロジェクト名>.pages.dev` の URL が表示されます。この URL をメモします。
-6. `sitegen/content.py` の `SITE_URL` にその URL を設定します（現在は `SITE_URL = "https://leadjapan-hp.pages.dev"`）。記事ページの `og:url` / `og:image` に使われます。
+6. `sitegen/content.py` の `SITE_URL` にその URL を設定します（現在は独自ドメインの `SITE_URL = "https://leadjapanllc.com"`）。記事ページの `og:url` / `og:image` に使われます。
 
 7. **Settings** → **Runtime** → **Fail open / closed** を **Fail open** にします。トップページの赤い点（下記）は無料枠（1日10万回）で動いており、使い切ったときに Fail open ならエラーではなく通常のページ（赤い点は東京）が表示されます。
 
@@ -247,7 +247,7 @@ Markdown の書き方:
 1. 公開したい記事の「状態」を「公開」にして保存します。下書きのままの記事や、公開から「下書き」に戻した記事はサイトに出ません。
 2. 記事一覧の「サイトに反映」ボタンを押し、確認画面で実行します。
 3. GitHub 上の最新の `main` から一時的な作業用コピーを作り、そこに `content/news.json` と `static/img/news/` を書き出してサイトのテストを実行します。テストが通れば、`news/publish` ブランチに送信して PR（変更の提案）を作ります。
-4. 完了メッセージの PR へのリンクを開き、GitHub で内容を確認して **マージ** します。マージすると Cloudflare Pages が数分で公開サイトを更新します（https://leadjapan-hp.pages.dev/ ）。
+4. 完了メッセージの PR へのリンクを開き、GitHub で内容を確認して **マージ** します。マージすると Cloudflare Pages が数分で公開サイトを更新します（https://leadjapanllc.com/ ）。
 
 - 作業用コピーは終わると消えます。この Mac のフォルダ（今いるブランチや、作業中のファイル）は変更されません。
 - 反映待ちの PR は常に 1 つです。マージする前にもう一度「サイトに反映」を押すと、新しい PR は作らず、今の PR を最新の内容に置き換えます。
