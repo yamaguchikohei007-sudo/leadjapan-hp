@@ -30,14 +30,14 @@ class FontTests(unittest.TestCase):
 class CompanyFactsTests(unittest.TestCase):
     def test_company_facts(self):
         self.assertEqual(SITE["representative"], "山口康平")
-        self.assertEqual(SITE["founded"], "2026年10月19日")
+        self.assertEqual(SITE["founded"], "2026年5月26日")
         self.assertEqual(SITE["address"], "東京都中野区")
         self.assertEqual(SITE["email"], PLACEHOLDER)  # TBC
 
     def test_founding_news_dated_on_founding_day(self):
         founding = [n for n in NEWS if n.slug == "founding"]
         if founding:
-            self.assertEqual(founding[0].date.isoformat(), "2026-10-19")
+            self.assertEqual(founding[0].date.isoformat(), "2026-05-26")
         self.assertFalse(any("設立のお知らせ" in u for u in UNCONFIRMED))
 
 

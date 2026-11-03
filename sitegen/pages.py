@@ -314,7 +314,6 @@ def body_company() -> str:
         ("代表者", esc(SITE["representative"])),
         ("所在地", esc(SITE["address"])),
         ("事業内容", biz_list),
-        ("現況", esc(SITE["status"])),
     ]
     table = "\n".join(f'<tr><th scope="row">{th}</th><td>{td}</td></tr>' for th, td in rows)
     return f"""{page_hero("会社紹介", "COMPANY")}
