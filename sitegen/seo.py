@@ -10,7 +10,7 @@ from sitegen.content import BOOK, BOOK_AUTHOR, BOOK_SUBTITLE, BOOK_TITLE, BOOK_T
 from sitegen.render import esc
 
 # Shared image for pages (and articles) without their own.
-DEFAULT_OG_IMAGE = "static/img/hero-tokyo.jpg"
+DEFAULT_OG_IMAGE = "static/img/og-logo.png"  # made by tools/og_logo.py
 
 
 def page_url(filename: str, site_url: str = SITE_URL) -> str:

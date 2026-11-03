@@ -164,7 +164,7 @@ Cloudflare Pages（無料プラン・商用利用可）で公開します。`mai
 
 `SITE_URL` をもとに、ビルド時に次のものを自動で作ります（`sitegen/seo.py`）。`SITE_URL` を独自ドメインに変えれば、すべて追従します。
 
-- 各ページの正規 URL（`canonical`）と SNS 共有用の情報（OGP）。共有時の画像は、記事に画像があればその画像、なければ東京の写真（`static/img/hero-tokyo.jpg`）です。
+- 各ページの正規 URL（`canonical`）と SNS 共有用の情報（OGP）。共有時の画像は、記事に画像があればその画像、なければ会社ロゴの画像（`static/img/og-logo.png`）です。ロゴ画像は `python3 tools/og_logo.py` で作り直せます（ロゴ・社名・色を変えたときだけ）。
 - `sitemap.xml`（404 ページを除く全ページ）と `robots.txt`。
 - トップページの会社情報（構造化データ。社名・所在地など。メールアドレスは確定後に自動で追加されます）。
 - 404 ページは検索結果に出ないよう `noindex` にしています。
@@ -297,5 +297,4 @@ GitHub の CI でも、push と PR のたびにサイトのテストと管理画
 
 ## 画像のクレジット
 
-- SNS 共有用の画像（`static/img/hero-tokyo.jpg`、トップページには表示しません）: Louie Martinez / Unsplash（[Unsplash ライセンス](https://unsplash.com/license)、商用利用可・クレジット表記は任意）。元画像: https://unsplash.com/photos/IocJwyqRv3M
 - 地図データ: [Natural Earth](https://www.naturalearthdata.com/)（パブリックドメイン）。国境は日本の見解に沿った版（`ne_10m_admin_0_countries_jpn`）を使っています。
