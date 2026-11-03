@@ -6,7 +6,7 @@ import json
 from typing import Sequence
 from xml.sax.saxutils import escape as xml_escape
 
-from sitegen.content import BOOK, BOOK_AUTHOR, BOOK_SUBTITLE, BOOK_TITLE, PLACEHOLDER, SITE, SITE_URL
+from sitegen.content import BOOK, BOOK_AUTHOR, BOOK_SUBTITLE, BOOK_TITLE, BOOK_TITLE_EN, PLACEHOLDER, SITE, SITE_URL
 from sitegen.render import esc
 
 # Shared image for pages (and articles) without their own.
@@ -77,7 +77,7 @@ def book_jsonld(book: dict[str, str | None] = BOOK, site_url: str = SITE_URL) ->
         "@context": "https://schema.org",
         "@type": "Book",
         "name": BOOK_TITLE,
-        "alternateName": BOOK_SUBTITLE,
+        "alternateName": [BOOK_SUBTITLE, BOOK_TITLE_EN],
         "author": {"@type": "Person", "name": BOOK_AUTHOR},
         "publisher": {"@type": "Organization", "name": SITE["name"]},
         "inLanguage": "ja",
